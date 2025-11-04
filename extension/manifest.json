@@ -36,6 +36,14 @@
       ],
       "js": ["content.js"],
       "run_at": "document_idle"
+    },
+    {
+      "matches": [
+        "*://eclass.doshisha.ac.jp/*"
+      ],
+      "js": ["message-interceptor.js"],
+      "run_at": "document_start",
+      "all_frames": true
     }
   ]
 }

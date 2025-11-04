@@ -13,7 +13,8 @@ BetterE-class is a Chrome extension that allows you to **view submitted report f
 ## ⚡ Features
 
 * **📄 View Files Without Downloading**: Display report files directly in your browser
-* **🆕 Open in New Tab**: Automatically display files in a new tab (customizable in settings)
+* **🆕 Open Files in New Tab**: Automatically display report files in a new tab (customizable in settings)
+* **💬 Open Messages in Tab**: Open the message tool in a regular tab instead of a popup window
 * **⚙️ Customizable**: Easily toggle features on/off from the popup
 * **🔒 Secure**: Safe operation with a simple mechanism
 
@@ -37,8 +38,8 @@ cd BetterE-class
 
 1. Click the extension icon in your toolbar
 2. Toggle features on/off from the popup
-   - **Enable Extension**: View reports without downloading
-   - **Open in New Tab**: Display files in a new tab
+   - **Open Files in New Tab**: Display report files in a new tab
+   - **Open Messages in Tab**: Open message tool in a regular tab instead of popup
 
 ## 🚀 Usage
 
@@ -55,8 +56,8 @@ Click the extension icon to change the following settings:
 
 | Setting | Description | Default |
 |---------|-------------|---------|
-| **Enable Extension** | View reports without downloading | On |
-| **Open in New Tab** | Display files in a new tab | On |
+| **Open Files in New Tab** | Display report files in a new tab | On |
+| **Open Messages in Tab** | Open message tool in a regular tab instead of popup window | On |
 
 Settings are automatically saved and applied in real-time.
 

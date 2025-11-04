@@ -1,6 +1,7 @@
 // Default settings
 const DEFAULT_SETTINGS = {
-  enableNewTab: true
+  enableNewTab: true,
+  preventMessagePopup: true
 };
 
 // Load settings
@@ -40,15 +41,28 @@ function showStatus(message, isSuccess = true) {
 async function initializeUI() {
   const settings = await loadSettings();
   document.getElementById('enableNewTab').checked = settings.enableNewTab;
+  document.getElementById('preventMessagePopup').checked = settings.preventMessagePopup;
 }
 
 // Setup event listeners
 function setupEventListeners() {
   const enableNewTabEl = document.getElementById('enableNewTab');
+  const preventMessagePopupEl = document.getElementById('preventMessagePopup');
   
   enableNewTabEl.addEventListener('change', async (e) => {
     const settings = await loadSettings();
     settings.enableNewTab = e.target.checked;
+    
+    const success = await saveSettings(settings);
+    showStatus(success ? 'Settings saved' : 'Failed to save settings', success);
+    
+    // Notify content scripts
+    notifyContentScripts(settings);
+  });
+
+  preventMessagePopupEl.addEventListener('change', async (e) => {
+    const settings = await loadSettings();
+    settings.preventMessagePopup = e.target.checked;
     
     const success = await saveSettings(settings);
     showStatus(success ? 'Settings saved' : 'Failed to save settings', success);
