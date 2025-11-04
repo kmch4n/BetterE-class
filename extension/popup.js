@@ -2,7 +2,8 @@
 const DEFAULT_SETTINGS = {
   enableNewTab: true,
   preventMessagePopup: true,
-  enableMarkAllAsRead: true
+  enableMarkAllAsRead: true,
+  enableDeadlineHighlight: true
 };
 
 // Load settings
@@ -44,6 +45,7 @@ async function initializeUI() {
   document.getElementById('enableNewTab').checked = settings.enableNewTab;
   document.getElementById('preventMessagePopup').checked = settings.preventMessagePopup;
   document.getElementById('enableMarkAllAsRead').checked = settings.enableMarkAllAsRead;
+  document.getElementById('enableDeadlineHighlight').checked = settings.enableDeadlineHighlight;
 }
 
 // Setup event listeners
@@ -51,14 +53,15 @@ function setupEventListeners() {
   const enableNewTabEl = document.getElementById('enableNewTab');
   const preventMessagePopupEl = document.getElementById('preventMessagePopup');
   const enableMarkAllAsReadEl = document.getElementById('enableMarkAllAsRead');
-  
+  const enableDeadlineHighlightEl = document.getElementById('enableDeadlineHighlight');
+
   enableNewTabEl.addEventListener('change', async (e) => {
     const settings = await loadSettings();
     settings.enableNewTab = e.target.checked;
-    
+
     const success = await saveSettings(settings);
     showStatus(success ? 'Settings saved' : 'Failed to save settings', success);
-    
+
     // Notify content scripts
     notifyContentScripts(settings);
   });
@@ -66,10 +69,10 @@ function setupEventListeners() {
   preventMessagePopupEl.addEventListener('change', async (e) => {
     const settings = await loadSettings();
     settings.preventMessagePopup = e.target.checked;
-    
+
     const success = await saveSettings(settings);
     showStatus(success ? 'Settings saved' : 'Failed to save settings', success);
-    
+
     // Notify content scripts
     notifyContentScripts(settings);
   });
@@ -77,10 +80,21 @@ function setupEventListeners() {
   enableMarkAllAsReadEl.addEventListener('change', async (e) => {
     const settings = await loadSettings();
     settings.enableMarkAllAsRead = e.target.checked;
-    
+
     const success = await saveSettings(settings);
     showStatus(success ? 'Settings saved' : 'Failed to save settings', success);
-    
+
+    // Notify content scripts
+    notifyContentScripts(settings);
+  });
+
+  enableDeadlineHighlightEl.addEventListener('change', async (e) => {
+    const settings = await loadSettings();
+    settings.enableDeadlineHighlight = e.target.checked;
+
+    const success = await saveSettings(settings);
+    showStatus(success ? 'Settings saved' : 'Failed to save settings', success);
+
     // Notify content scripts
     notifyContentScripts(settings);
   });

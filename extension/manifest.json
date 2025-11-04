@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "BetterE-class",
-  "version": "1.1.0",
+  "version": "1.3.0",
   "description": "A project to make E-class easier to use.",
   "author": "kmch4n",
   "icons": {
@@ -53,6 +53,21 @@
       "js": ["message-interceptor.js"],
       "run_at": "document_start",
       "all_frames": true
+    },
+    {
+      "matches": [
+        "*://eclass.doshisha.ac.jp/*"
+      ],
+      "js": ["deadline-highlight.js"],
+      "run_at": "document_start"
+    },
+    {
+      "matches": [
+        "*://eclass.doshisha.ac.jp/webclass/",
+        "*://eclass.doshisha.ac.jp/webclass/?*"
+      ],
+      "js": ["deadline-list.js"],
+      "run_at": "document_idle"
     }
   ]
 }

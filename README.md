@@ -18,6 +18,8 @@ BetterE-class is a Chrome extension that enhances your experience on Doshisha Un
 * **🆕 Open Files in New Tab**: Automatically display report files in a new tab (customizable in settings)
 * **💬 Open Messages in Tab**: Open the message tool in a regular tab instead of a popup window
 * **✅ Mark All Messages as Read**: Add a convenient button to mark all messages as read at once
+* **⚠️ Deadline Warnings**: Highlight upcoming deadlines with red text and warning icons
+* **📋 Deadline Task List**: View all courses with approaching deadlines in a convenient sidebar list
 * **⚙️ Customizable**: Easily toggle features on/off from the popup
 * **🔒 Secure**: Safe operation with a simple mechanism
 
@@ -66,6 +68,11 @@ Click the extension icon to change the following settings:
 | **Open Files in New Tab** | Display report files in a new tab | On |
 | **Open Messages in Tab** | Open message tool in a regular tab instead of popup window | On |
 | **Mark All Messages as Read Button** | Add a button to mark all messages as read at once | On |
+
+### ⚠️ Deadline Features (Always Active)
+
+* **Red Deadline Warnings**: "締切が近い課題があります。" is displayed with ⚠️ red text and bold styling for maximum visibility
+* **Deadline Task List**: On the course list page, a sidebar widget displays all courses with approaching deadlines in an easy-to-read format
 
 Settings are automatically saved and applied in real-time.
 

@@ -1,6 +1,6 @@
 _metadata
-claude/
+.claude/
 release/
+data/
 
 CLAUDE.md
-
