@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "BetterE-class",
-  "version": "1.3.0",
+  "version": "1.4.0",
   "description": "A project to make E-class easier to use.",
   "author": "kmch4n",
   "icons": {
@@ -64,9 +64,37 @@
     {
       "matches": [
         "*://eclass.doshisha.ac.jp/webclass/",
-        "*://eclass.doshisha.ac.jp/webclass/?*"
+        "*://eclass.doshisha.ac.jp/webclass/?*",
+        "*://eclass.doshisha.ac.jp/webclass/index.php*"
+      ],
+      "js": ["schedule-customizer.js"],
+      "run_at": "document_idle"
+    },
+    {
+      "matches": [
+        "*://eclass.doshisha.ac.jp/webclass/",
+        "*://eclass.doshisha.ac.jp/webclass/?*",
+        "*://eclass.doshisha.ac.jp/webclass/index.php*"
       ],
       "js": ["deadline-list.js"],
+      "run_at": "document_idle"
+    },
+    {
+      "matches": [
+        "*://eclass.doshisha.ac.jp/webclass/",
+        "*://eclass.doshisha.ac.jp/webclass/?*",
+        "*://eclass.doshisha.ac.jp/webclass/index.php*"
+      ],
+      "js": ["collapsible-sections.js"],
+      "run_at": "document_idle"
+    },
+    {
+      "matches": [
+        "*://eclass.doshisha.ac.jp/webclass/",
+        "*://eclass.doshisha.ac.jp/webclass/?*",
+        "*://eclass.doshisha.ac.jp/webclass/index.php*"
+      ],
+      "js": ["pinned-courses.js"],
       "run_at": "document_idle"
     }
   ]

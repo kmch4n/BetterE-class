@@ -3,7 +3,9 @@ const DEFAULT_SETTINGS = {
   enableNewTab: true,
   preventMessagePopup: true,
   enableMarkAllAsRead: true,
-  enableDeadlineHighlight: true
+  enableDeadlineHighlight: true,
+  hideSaturday: false,
+  hide67thPeriod: false
 };
 
 // Load settings
@@ -46,6 +48,8 @@ async function initializeUI() {
   document.getElementById('preventMessagePopup').checked = settings.preventMessagePopup;
   document.getElementById('enableMarkAllAsRead').checked = settings.enableMarkAllAsRead;
   document.getElementById('enableDeadlineHighlight').checked = settings.enableDeadlineHighlight;
+  document.getElementById('hideSaturday').checked = settings.hideSaturday;
+  document.getElementById('hide67thPeriod').checked = settings.hide67thPeriod;
 }
 
 // Setup event listeners
@@ -54,6 +58,8 @@ function setupEventListeners() {
   const preventMessagePopupEl = document.getElementById('preventMessagePopup');
   const enableMarkAllAsReadEl = document.getElementById('enableMarkAllAsRead');
   const enableDeadlineHighlightEl = document.getElementById('enableDeadlineHighlight');
+  const hideSaturdayEl = document.getElementById('hideSaturday');
+  const hide67thPeriodEl = document.getElementById('hide67thPeriod');
 
   enableNewTabEl.addEventListener('change', async (e) => {
     const settings = await loadSettings();
@@ -98,6 +104,48 @@ function setupEventListeners() {
     // Notify content scripts
     notifyContentScripts(settings);
   });
+
+  hideSaturdayEl.addEventListener('change', async (e) => {
+    const settings = await loadSettings();
+    settings.hideSaturday = e.target.checked;
+
+    const success = await saveSettings(settings);
+    showStatus(success ? 'Settings saved' : 'Failed to save settings', success);
+
+    // Notify schedule customizer
+    notifyScheduleCustomizer(settings);
+  });
+
+  hide67thPeriodEl.addEventListener('change', async (e) => {
+    const settings = await loadSettings();
+    settings.hide67thPeriod = e.target.checked;
+
+    const success = await saveSettings(settings);
+    showStatus(success ? 'Settings saved' : 'Failed to save settings', success);
+
+    // Notify schedule customizer
+    notifyScheduleCustomizer(settings);
+  });
+}
+
+// Notify schedule customizer content script
+async function notifyScheduleCustomizer(settings) {
+  try {
+    const tabs = await chrome.tabs.query({ url: '*://eclass.doshisha.ac.jp/webclass/*' });
+    for (const tab of tabs) {
+      chrome.tabs.sendMessage(tab.id, {
+        type: 'scheduleSettingsChanged',
+        settings: {
+          hideSaturday: settings.hideSaturday,
+          hide67thPeriod: settings.hide67thPeriod
+        }
+      }).catch(() => {
+        // Ignore if tab doesn't respond
+      });
+    }
+  } catch (error) {
+    console.error('Failed to notify schedule customizer:', error);
+  }
 }
 
 // Notify all tabs' content scripts of settings change

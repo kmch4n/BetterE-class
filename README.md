@@ -14,12 +14,23 @@ BetterE-class is a Chrome extension that enhances your experience on Doshisha Un
 
 ## ⚡ Features
 
+### Core Features
 * **📄 View Files Without Downloading**: Display report files directly in your browser
 * **🆕 Open Files in New Tab**: Automatically display report files in a new tab (customizable in settings)
 * **💬 Open Messages in Tab**: Open the message tool in a regular tab instead of a popup window
 * **✅ Mark All Messages as Read**: Add a convenient button to mark all messages as read at once
+
+### Deadline & Task Management
 * **⚠️ Deadline Warnings**: Highlight upcoming deadlines with red text and warning icons
 * **📋 Deadline Task List**: View all courses with approaching deadlines in a convenient sidebar list
+* **📌 Pinned Courses**: Pin frequently used courses for quick access
+
+### Schedule Customization
+* **🗓️ Hide Saturday Column**: Optionally hide the Saturday column in the schedule table
+* **⏰ Hide 6-7th Period**: Optionally hide 6th and 7th period rows
+* **🔧 Collapsible Sections**: Collapse admin notices, schedule, and course lists to save space
+
+### Customization
 * **⚙️ Customizable**: Easily toggle features on/off from the popup
 * **🔒 Secure**: Safe operation with a simple mechanism
 
