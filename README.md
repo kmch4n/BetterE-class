@@ -17,6 +17,7 @@ BetterE-class is a Chrome extension that enhances your experience on Doshisha Un
 * **📄 View Files Without Downloading**: Display report files directly in your browser
 * **🆕 Open Files in New Tab**: Automatically display report files in a new tab (customizable in settings)
 * **💬 Open Messages in Tab**: Open the message tool in a regular tab instead of a popup window
+* **✅ Mark All Messages as Read**: Add a convenient button to mark all messages as read at once
 * **⚙️ Customizable**: Easily toggle features on/off from the popup
 * **🔒 Secure**: Safe operation with a simple mechanism
 
@@ -64,6 +65,7 @@ Click the extension icon to change the following settings:
 |---------|-------------|---------|
 | **Open Files in New Tab** | Display report files in a new tab | On |
 | **Open Messages in Tab** | Open message tool in a regular tab instead of popup window | On |
+| **Mark All Messages as Read Button** | Add a button to mark all messages as read at once | On |
 
 Settings are automatically saved and applied in real-time.
 
