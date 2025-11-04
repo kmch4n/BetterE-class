@@ -4,11 +4,13 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
+**English** | [日本語](README_ja.md)
+
 ---
 
 ## 🎯 Overview
 
-BetterE-class is a Chrome extension that allows you to **view submitted report files directly in your browser without downloading** on Doshisha University's e-class (WebClass). Previously, you had to download files every time you wanted to check them, but with this extension, you can view them seamlessly in a new tab.
+BetterE-class is a Chrome extension that enhances your experience on Doshisha University's e-class (WebClass). It provides convenient features such as viewing files directly in your browser without downloads, opening files in new tabs, and improving the message tool interface.
 
 ## ⚡ Features
 
@@ -20,21 +22,25 @@ BetterE-class is a Chrome extension that allows you to **view submitted report f
 
 ## 📦 Installation
 
-### Step 1: Clone the Repository
+### For Users (Recommended)
+
+1. Download the latest release from the [**Releases page**](https://github.com/kmch4n/BetterE-class/releases)
+2. Extract the downloaded ZIP file
+3. Open Chrome and navigate to `chrome://extensions/`
+4. Enable **Developer mode** by toggling the switch in the top right corner
+5. Click **Load unpacked**
+6. Select the extracted `extension` folder
+
+### For Developers
 
 ```bash
 git clone https://github.com/kmch4n/BetterE-class.git
 cd BetterE-class
 ```
 
-### Step 2: Load into Chrome
+Then follow steps 3-6 from the "For Users" section above, selecting the `extension` folder.
 
-1. Open Chrome and navigate to `chrome://extensions/`
-2. Enable **Developer mode** by toggling the switch in the top right corner
-3. Click **Load unpacked**
-4. Select the cloned folder
-
-### Step 3: Configure Settings (Optional)
+### Configure Settings (Optional)
 
 1. Click the extension icon in your toolbar
 2. Toggle features on/off from the popup
@@ -67,12 +73,6 @@ Settings are automatically saved and applied in real-time.
 - **Browser**: Works only with Chrome (Manifest V3)
 - **Security**: This extension only manipulates HTTP headers and does not send or store any data
 - **Disclaimer**: The author assumes no responsibility for any damages resulting from the use of this extension
-
-## 🤝 Contributing
-
-Feel free to submit bug reports or feature requests via [Issues](https://github.com/kmch4n/BetterE-class/issues).
-
-Pull requests are also welcome!
 
 ## 📄 License
 
