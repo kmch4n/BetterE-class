@@ -5,7 +5,9 @@ const DEFAULT_SETTINGS = {
   enableMarkAllAsRead: true,
   enableDeadlineHighlight: true,
   hideSaturday: false,
-  hide67thPeriod: false
+  hide67thPeriod: false,
+  enableAttachmentTab: true,
+  enableDirectDownload: true
 };
 
 // Load settings
@@ -50,6 +52,8 @@ async function initializeUI() {
   document.getElementById('enableDeadlineHighlight').checked = settings.enableDeadlineHighlight;
   document.getElementById('hideSaturday').checked = settings.hideSaturday;
   document.getElementById('hide67thPeriod').checked = settings.hide67thPeriod;
+  document.getElementById('enableAttachmentTab').checked = settings.enableAttachmentTab;
+  document.getElementById('enableDirectDownload').checked = settings.enableDirectDownload;
 }
 
 // Setup event listeners
@@ -60,6 +64,8 @@ function setupEventListeners() {
   const enableDeadlineHighlightEl = document.getElementById('enableDeadlineHighlight');
   const hideSaturdayEl = document.getElementById('hideSaturday');
   const hide67thPeriodEl = document.getElementById('hide67thPeriod');
+  const enableAttachmentTabEl = document.getElementById('enableAttachmentTab');
+  const enableDirectDownloadEl = document.getElementById('enableDirectDownload');
 
   enableNewTabEl.addEventListener('change', async (e) => {
     const settings = await loadSettings();
@@ -125,6 +131,28 @@ function setupEventListeners() {
 
     // Notify schedule customizer
     notifyScheduleCustomizer(settings);
+  });
+
+  enableAttachmentTabEl.addEventListener('change', async (e) => {
+    const settings = await loadSettings();
+    settings.enableAttachmentTab = e.target.checked;
+
+    const success = await saveSettings(settings);
+    showStatus(success ? 'Settings saved' : 'Failed to save settings', success);
+
+    // Notify content scripts
+    notifyContentScripts(settings);
+  });
+
+  enableDirectDownloadEl.addEventListener('change', async (e) => {
+    const settings = await loadSettings();
+    settings.enableDirectDownload = e.target.checked;
+
+    const success = await saveSettings(settings);
+    showStatus(success ? 'Settings saved' : 'Failed to save settings', success);
+
+    // Notify content scripts
+    notifyContentScripts(settings);
   });
 }
 

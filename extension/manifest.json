@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "BetterE-class",
-  "version": "1.4.1",
+  "version": "1.5.0",
   "description": "A project to make E-class easier to use.",
   "author": "kmch4n",
   "icons": {
@@ -29,8 +29,12 @@
     "declarativeNetRequest",
     "storage",
     "tabs",
-    "activeTab"
+    "activeTab",
+    "downloads"
   ],
+  "background": {
+    "service_worker": "background.js"
+  },
   "content_scripts": [
     {
       "matches": [
@@ -99,6 +103,14 @@
       "js": ["pinned-courses.js"],
       "css": ["pinned-courses.css"],
       "run_at": "document_idle"
+    },
+    {
+      "matches": [
+        "*://eclass.doshisha.ac.jp/webclass/txtbk_show_chapter.php*"
+      ],
+      "js": ["attachment-opener.js"],
+      "run_at": "document_end",
+      "all_frames": true
     }
   ]
 }
