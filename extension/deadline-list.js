@@ -62,95 +62,11 @@
     const container = document.createElement('div');
     container.id = 'betterEclassDeadlineList';
     container.className = 'side-block-outer';
-    container.style.cssText = `
-      margin-bottom: 20px;
-      animation: slideIn 0.3s ease-out;
-    `;
 
     container.innerHTML = `
-      <style>
-        @keyframes slideIn {
-          from {
-            opacity: 0;
-            transform: translateY(-10px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
-        }
-
-        #betterEclassDeadlineList .side-block {
-          border: 2px solid #ff4444;
-          border-radius: 6px;
-          overflow: hidden;
-        }
-
-        #betterEclassDeadlineList .side-block-title {
-          background: linear-gradient(135deg, #ff4444 0%, #cc3333 100%);
-          color: white;
-          padding: 12px 15px;
-          margin: 0;
-          font-size: 14px;
-          font-weight: bold;
-          display: flex;
-          align-items: center;
-          gap: 8px;
-        }
-
-        #betterEclassDeadlineList .side-block-content {
-          background-color: #fff9f9;
-          padding: 0;
-        }
-
-        #betterEclassDeadlineList .deadline-item {
-          padding: 12px 15px;
-          border-bottom: 1px solid #ffe0e0;
-          transition: background-color 0.2s;
-        }
-
-        #betterEclassDeadlineList .deadline-item:last-child {
-          border-bottom: none;
-        }
-
-        #betterEclassDeadlineList .deadline-item:hover {
-          background-color: #ffebeb;
-        }
-
-        #betterEclassDeadlineList .deadline-course-name {
-          color: #cc3333;
-          font-weight: bold;
-          font-size: 13px;
-          text-decoration: none;
-          display: block;
-          margin-bottom: 4px;
-        }
-
-        #betterEclassDeadlineList .deadline-course-name:hover {
-          color: #ff4444;
-          text-decoration: underline;
-        }
-
-        #betterEclassDeadlineList .deadline-warning {
-          color: #666;
-          font-size: 12px;
-          display: flex;
-          align-items: center;
-          gap: 4px;
-        }
-
-        #betterEclassDeadlineList .deadline-count {
-          background-color: white;
-          color: #ff4444;
-          padding: 2px 8px;
-          border-radius: 12px;
-          font-size: 12px;
-          font-weight: bold;
-        }
-      </style>
       <div class="side-block">
         <h4 class="side-block-title">
-          <span style="font-size: 18px;">⚠</span>
+          <span class="betterEclass-deadline-icon">⚠</span>
           締切が近い課題
           <span class="deadline-count">${courses.length}件</span>
         </h4>
@@ -211,8 +127,6 @@
         userTopInfo.after(deadlineListUI);
       }
     }
-
-    console.log(`[BetterE-class] 締切が近い課題: ${courses.length}件を表示しました`);
   }
 
   // Listen for settings changes

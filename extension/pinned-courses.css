@@ -1,0 +1,114 @@
+/* Pinned courses widget styles */
+
+#betterEclassPinnedCourses {
+  margin-bottom: 20px;
+  animation: slideIn 0.3s ease-out;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+#betterEclassPinnedCourses .side-block {
+  border: 2px solid #4a90e2;
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+#betterEclassPinnedCourses .side-block-title {
+  background: linear-gradient(135deg, #4a90e2 0%, #357abd 100%);
+  color: white;
+  padding: 12px 15px;
+  margin: 0;
+  font-size: 14px;
+  font-weight: bold;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+#betterEclassPinnedCourses .side-block-content {
+  background-color: #f9fcff;
+  padding: 0;
+}
+
+#betterEclassPinnedCourses .pinned-item {
+  padding: 12px 15px;
+  border-bottom: 1px solid #e0f0ff;
+  transition: background-color 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+#betterEclassPinnedCourses .pinned-item:last-child {
+  border-bottom: none;
+}
+
+#betterEclassPinnedCourses .pinned-item:hover {
+  background-color: #e8f4ff;
+}
+
+#betterEclassPinnedCourses .pinned-course-name {
+  color: #357abd;
+  font-weight: bold;
+  font-size: 13px;
+  text-decoration: none;
+  flex: 1;
+}
+
+#betterEclassPinnedCourses .pinned-course-name:hover {
+  color: #4a90e2;
+  text-decoration: underline;
+}
+
+#betterEclassPinnedCourses .unpin-button {
+  background: none;
+  border: none;
+  color: #999;
+  cursor: pointer;
+  font-size: 16px;
+  padding: 0 5px;
+  transition: color 0.2s;
+}
+
+#betterEclassPinnedCourses .unpin-button:hover {
+  color: #ff4444;
+}
+
+#betterEclassPinnedCourses .pinned-count {
+  background-color: white;
+  color: #4a90e2;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: bold;
+}
+
+.betterEclass-pin-icon {
+  font-size: 18px;
+}
+
+.betterEclass-pin-button {
+  cursor: pointer;
+  margin-left: 5px;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+  display: inline-block;
+  vertical-align: middle;
+}
+
+.betterEclass-course-item:hover .betterEclass-pin-button {
+  opacity: 0.6;
+}
+
+.betterEclass-pin-button:hover {
+  opacity: 1 !important;
+}

@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "BetterE-class",
-  "version": "1.4.0",
+  "version": "1.4.1",
   "description": "A project to make E-class easier to use.",
   "author": "kmch4n",
   "icons": {
@@ -77,6 +77,7 @@
         "*://eclass.doshisha.ac.jp/webclass/index.php*"
       ],
       "js": ["deadline-list.js"],
+      "css": ["deadline-list.css"],
       "run_at": "document_idle"
     },
     {
@@ -86,6 +87,7 @@
         "*://eclass.doshisha.ac.jp/webclass/index.php*"
       ],
       "js": ["collapsible-sections.js"],
+      "css": ["collapsible.css"],
       "run_at": "document_idle"
     },
     {
@@ -95,6 +97,7 @@
         "*://eclass.doshisha.ac.jp/webclass/index.php*"
       ],
       "js": ["pinned-courses.js"],
+      "css": ["pinned-courses.css"],
       "run_at": "document_idle"
     }
   ]

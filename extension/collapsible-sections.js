@@ -29,55 +29,9 @@
     const button = document.createElement('span');
     button.className = 'betterEclass-collapse-toggle';
     button.innerHTML = isCollapsed ? '▶' : '▼';
-    button.style.cssText = `
-      cursor: pointer;
-      user-select: none;
-      margin-right: 8px;
-      display: inline-block;
-      transition: transform 0.2s ease;
-      font-size: 0.8em;
-    `;
     return button;
   }
 
-  // Apply collapse styles
-  function applyCollapseStyles() {
-    if (document.getElementById('betterEclassCollapseStyles')) {
-      return;
-    }
-
-    const style = document.createElement('style');
-    style.id = 'betterEclassCollapseStyles';
-    style.textContent = `
-      .betterEclass-collapsible-header {
-        cursor: pointer;
-        user-select: none;
-        transition: background-color 0.2s ease;
-      }
-
-      .betterEclass-collapsible-header:hover {
-        background-color: rgba(0, 0, 0, 0.02);
-      }
-
-      .betterEclass-collapsible-content {
-        overflow: hidden;
-        transition: max-height 0.3s ease, opacity 0.3s ease;
-      }
-
-      .betterEclass-collapsible-content.collapsed {
-        max-height: 0 !important;
-        opacity: 0;
-        margin: 0 !important;
-        padding: 0 !important;
-      }
-
-      .betterEclass-collapse-toggle {
-        transition: transform 0.2s ease;
-      }
-    `;
-
-    document.head.appendChild(style);
-  }
 
   // Make a section collapsible
   function makeCollapsible(sectionId, headerElement, contentElement) {
@@ -273,17 +227,12 @@
 
   // Initialize
   function init() {
-    // Apply styles
-    applyCollapseStyles();
-
     // Wait for DOM to be ready
     setTimeout(() => {
       makeAdminNoticesCollapsible();
       makeCourseScheduleCollapsible();
       makeOtherCoursesCollapsible();
       makeSemesterFilterCollapsible();
-
-      console.log('[BetterE-class] Collapsible sections initialized');
     }, 500);
   }
 

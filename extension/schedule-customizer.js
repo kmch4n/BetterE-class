@@ -61,8 +61,6 @@
   function applyAll() {
     applySaturdayVisibility();
     apply67thPeriodVisibility();
-
-    console.log('[BetterE-class] Schedule customizer initialized');
   }
 
   // Listen for settings changes from popup

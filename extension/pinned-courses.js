@@ -53,92 +53,11 @@
     const container = document.createElement('div');
     container.id = 'betterEclassPinnedCourses';
     container.className = 'side-block-outer';
-    container.style.cssText = `
-      margin-bottom: 20px;
-      animation: slideIn 0.3s ease-out;
-    `;
 
     container.innerHTML = `
-      <style>
-        #betterEclassPinnedCourses .side-block {
-          border: 2px solid #4a90e2;
-          border-radius: 6px;
-          overflow: hidden;
-        }
-
-        #betterEclassPinnedCourses .side-block-title {
-          background: linear-gradient(135deg, #4a90e2 0%, #357abd 100%);
-          color: white;
-          padding: 12px 15px;
-          margin: 0;
-          font-size: 14px;
-          font-weight: bold;
-          display: flex;
-          align-items: center;
-          gap: 8px;
-        }
-
-        #betterEclassPinnedCourses .side-block-content {
-          background-color: #f9fcff;
-          padding: 0;
-        }
-
-        #betterEclassPinnedCourses .pinned-item {
-          padding: 12px 15px;
-          border-bottom: 1px solid #e0f0ff;
-          transition: background-color 0.2s;
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-        }
-
-        #betterEclassPinnedCourses .pinned-item:last-child {
-          border-bottom: none;
-        }
-
-        #betterEclassPinnedCourses .pinned-item:hover {
-          background-color: #e8f4ff;
-        }
-
-        #betterEclassPinnedCourses .pinned-course-name {
-          color: #357abd;
-          font-weight: bold;
-          font-size: 13px;
-          text-decoration: none;
-          flex: 1;
-        }
-
-        #betterEclassPinnedCourses .pinned-course-name:hover {
-          color: #4a90e2;
-          text-decoration: underline;
-        }
-
-        #betterEclassPinnedCourses .unpin-button {
-          background: none;
-          border: none;
-          color: #999;
-          cursor: pointer;
-          font-size: 16px;
-          padding: 0 5px;
-          transition: color 0.2s;
-        }
-
-        #betterEclassPinnedCourses .unpin-button:hover {
-          color: #ff4444;
-        }
-
-        #betterEclassPinnedCourses .pinned-count {
-          background-color: white;
-          color: #4a90e2;
-          padding: 2px 8px;
-          border-radius: 12px;
-          font-size: 12px;
-          font-weight: bold;
-        }
-      </style>
       <div class="side-block">
         <h4 class="side-block-title">
-          <span style="font-size: 18px;">📌</span>
+          <span class="betterEclass-pin-icon">📌</span>
           ピン留め科目
           <span class="pinned-count">${pinnedCourses.length}件</span>
         </h4>
@@ -224,20 +143,11 @@
     pinButton.className = 'betterEclass-pin-button';
     pinButton.innerHTML = isPinned ? '📌' : '📍';
     pinButton.title = isPinned ? 'ピン留めを解除' : 'ピン留めする';
-    pinButton.style.cssText = `
-      cursor: pointer;
-      margin-left: 5px;
-      font-size: 0.9em;
-      opacity: 0;
-      transition: opacity 0.2s;
-    `;
 
-    link.parentElement.addEventListener('mouseenter', () => {
-      pinButton.style.opacity = '0.6';
-    });
-    link.parentElement.addEventListener('mouseleave', () => {
-      pinButton.style.opacity = '0';
-    });
+    // Add course-item class to parent for CSS hover effect
+    if (!link.parentElement.classList.contains('betterEclass-course-item')) {
+      link.parentElement.classList.add('betterEclass-course-item');
+    }
 
     link.after(pinButton);
 
@@ -278,8 +188,6 @@
         addPinButtons();
       }, 600);
     }
-
-    console.log('[BetterE-class] Pinned courses initialized');
   }
 
   init();
