@@ -26,8 +26,26 @@
     const deadlineElements = document.querySelectorAll('.course-contents-info');
 
     deadlineElements.forEach(element => {
-      // Find the parent link (course link)
-      const courseLink = element.closest('a') || element.closest('td')?.querySelector('a');
+      let courseLink = null;
+
+      // Strategy 1: Check if warning is inside a link (schedule table)
+      courseLink = element.closest('a');
+
+      // Strategy 2: Check parent container for a link (other courses section)
+      if (!courseLink) {
+        const container = element.closest('li') || element.closest('.course-data-box-normal');
+        if (container) {
+          courseLink = container.querySelector('a[href*="course.php"]');
+        }
+      }
+
+      // Strategy 3: Check parent td for a link (fallback for schedule table)
+      if (!courseLink) {
+        const td = element.closest('td');
+        if (td) {
+          courseLink = td.querySelector('a[href*="course.php"]');
+        }
+      }
 
       if (courseLink) {
         const courseUrl = courseLink.href;
