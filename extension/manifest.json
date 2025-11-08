@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "BetterE-class",
-  "version": "1.5.2",
+  "version": "1.5.3",
   "description": "A project to make E-class easier to use.",
   "author": "kmch4n",
   "icons": {
@@ -38,6 +38,13 @@
   "content_scripts": [
     {
       "matches": [
+        "*://eclass.doshisha.ac.jp/webclass/course.php/*"
+      ],
+      "js": ["eclass-top-button.js"],
+      "run_at": "document_end"
+    },
+    {
+      "matches": [
         "*://eclass.doshisha.ac.jp/webclass/course.php/*/my-reports*"
       ],
       "js": ["content.js"],
@@ -64,6 +71,13 @@
       ],
       "js": ["deadline-highlight.js"],
       "run_at": "document_start"
+    },
+    {
+      "matches": [
+        "*://eclass.doshisha.ac.jp/*"
+      ],
+      "js": ["footer-branding.js"],
+      "run_at": "document_end"
     },
     {
       "matches": [
