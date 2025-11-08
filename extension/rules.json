@@ -38,5 +38,25 @@
         "sub_frame"
       ]
     }
+  },
+  {
+    "id": 3,
+    "priority": 1,
+    "action": {
+      "type": "modifyHeaders",
+      "responseHeaders": [
+        {
+          "header": "Content-Disposition",
+          "operation": "remove"
+        }
+      ]
+    },
+    "condition": {
+      "urlFilter": "eclass.doshisha.ac.jp/webclass/data/course/*_preview=1*",
+      "resourceTypes": [
+        "main_frame",
+        "sub_frame"
+      ]
+    }
   }
 ]

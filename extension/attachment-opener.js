@@ -35,7 +35,7 @@
   }
 
   function processAttachments() {
-    // Find all attachment links
+    // Find all attachment links (type 1: with filedownload onclick)
     const attachmentLinks = document.querySelectorAll('a[onclick*="filedownload"]');
 
     attachmentLinks.forEach(link => {
@@ -65,6 +65,26 @@
         }
       } catch (error) {
         console.error('Error processing attachment link:', error);
+      }
+    });
+
+    // Find direct PDF links (type 2: "別ウインドウ" links)
+    const directPdfLinks = document.querySelectorAll('a[href*=".pdf"][target="_blank"]');
+
+    directPdfLinks.forEach(link => {
+      try {
+        const href = link.getAttribute('href');
+        if (!href) return;
+
+        // Skip if this link was already processed as type 1
+        if (link.getAttribute('onclick')?.includes('filedownload')) return;
+
+        // Add download button if enabled
+        if (settings.enableDirectDownload) {
+          addDownloadButtonForDirectLink(link, href);
+        }
+      } catch (error) {
+        console.error('Error processing direct PDF link:', error);
       }
     });
   }
@@ -100,6 +120,38 @@
 
     // Insert button after the attachment link
     parent.appendChild(buttonContainer);
+  }
+
+  function addDownloadButtonForDirectLink(pdfLink, pdfUrl) {
+    // Check if button already exists
+    if (pdfLink.nextElementSibling?.classList.contains('betterEclass-download-btns')) {
+      return;
+    }
+
+    // Extract file name from URL path
+    const urlPath = pdfUrl.split('?')[0];
+    const fileName = urlPath.substring(urlPath.lastIndexOf('/') + 1);
+    const decodedFileName = decodeURIComponent(fileName);
+
+    // Create button container
+    const buttonContainer = document.createElement('div');
+    buttonContainer.className = 'betterEclass-download-btns';
+    buttonContainer.style.cssText = 'margin-top: 6px; display: flex; gap: 4px; flex-wrap: wrap;';
+
+    // Create direct download button
+    const downloadBtn = createDownloadButton('⬇️', 'ダウンロード', pdfUrl, decodedFileName);
+    buttonContainer.appendChild(downloadBtn);
+
+    // Create "save as" button
+    const saveAsBtn = createSaveAsButton('💾', '名前を付けて保存', pdfUrl, decodedFileName);
+    buttonContainer.appendChild(saveAsBtn);
+
+    // Create preview button (for direct PDF links, preview is just opening in new tab)
+    const previewBtn = createPreviewButton('👁️', 'プレビュー', pdfUrl, decodedFileName);
+    buttonContainer.appendChild(previewBtn);
+
+    // Insert button container after the link
+    pdfLink.parentNode.insertBefore(buttonContainer, pdfLink.nextSibling);
   }
 
   function createDownloadButton(icon, text, downloadUrl, fileName) {

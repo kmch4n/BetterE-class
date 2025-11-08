@@ -9,6 +9,30 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.type === 'downloadWithDialog') {
     console.log('[BetterE-class] Processing download request:', message.filename);
 
+    // Check if this is a direct PDF URL or needs extraction from file_down.php
+    const isDirectPdf = message.url.includes('.pdf') && !message.url.includes('file_down.php');
+
+    if (isDirectPdf) {
+      // Direct PDF link - download immediately
+      console.log('[BetterE-class] Direct PDF link detected for download:', message.url);
+
+      chrome.downloads.download({
+        url: message.url,
+        filename: message.filename,
+        saveAs: true
+      }, (downloadId) => {
+        if (chrome.runtime.lastError) {
+          console.error('[BetterE-class] Download error:', chrome.runtime.lastError);
+          sendResponse({ error: chrome.runtime.lastError.message });
+        } else {
+          console.log('[BetterE-class] Download started with ID:', downloadId);
+          sendResponse({ success: true, downloadId: downloadId });
+        }
+      });
+
+      return true;
+    }
+
     // Fetch the file_down.php page to extract actual file URL
     fetch(message.url)
       .then(response => response.text())
@@ -75,6 +99,38 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
   if (message.type === 'previewFile') {
     console.log('[BetterE-class] Processing preview request:', message.filename);
+
+    // Check if this is a direct PDF URL or needs extraction from file_down.php
+    const isDirectPdf = message.url.includes('.pdf') && !message.url.includes('file_down.php');
+
+    if (isDirectPdf) {
+      // Direct PDF link - open immediately with preview parameter
+      console.log('[BetterE-class] Direct PDF link detected:', message.url);
+
+      const previewUrl = message.url + (message.url.includes('?') ? '&' : '?') + '_preview=1';
+      console.log('[BetterE-class] Preview URL with parameter:', previewUrl);
+
+      const tabOptions = {
+        url: previewUrl,
+        active: true
+      };
+
+      if (sender.tab && sender.tab.index !== undefined) {
+        tabOptions.index = sender.tab.index + 1;
+      }
+
+      chrome.tabs.create(tabOptions, (tab) => {
+        if (chrome.runtime.lastError) {
+          console.error('[BetterE-class] Tab creation error:', chrome.runtime.lastError);
+          sendResponse({ error: chrome.runtime.lastError.message });
+        } else {
+          console.log('[BetterE-class] Preview tab opened with ID:', tab.id);
+          sendResponse({ success: true, tabId: tab.id });
+        }
+      });
+
+      return true;
+    }
 
     // Fetch the file_down.php page to extract actual file URL
     fetch(message.url)
