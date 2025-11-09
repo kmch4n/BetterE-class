@@ -8,30 +8,29 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
   if (message.type === 'downloadWithDialog') {
     console.log('[BetterE-class] Processing download request:', message.filename);
+    console.log('[BetterE-class] Download URL:', message.url);
 
-    // Check if this is a direct PDF URL or needs extraction from file_down.php
-    const isDirectPdf = message.url.includes('.pdf') && !message.url.includes('file_down.php');
+    // file_down.php URLs are direct download links - no need to fetch HTML
+    chrome.downloads.download({
+      url: message.url,
+      filename: message.filename,
+      saveAs: true
+    }, (downloadId) => {
+      if (chrome.runtime.lastError) {
+        console.error('[BetterE-class] Download error:', chrome.runtime.lastError);
+        sendResponse({ error: chrome.runtime.lastError.message });
+      } else {
+        console.log('[BetterE-class] Download started with ID:', downloadId);
+        sendResponse({ success: true, downloadId: downloadId });
+      }
+    });
 
-    if (isDirectPdf) {
-      // Direct PDF link - download immediately
-      console.log('[BetterE-class] Direct PDF link detected for download:', message.url);
+    return true;
+  }
 
-      chrome.downloads.download({
-        url: message.url,
-        filename: message.filename,
-        saveAs: true
-      }, (downloadId) => {
-        if (chrome.runtime.lastError) {
-          console.error('[BetterE-class] Download error:', chrome.runtime.lastError);
-          sendResponse({ error: chrome.runtime.lastError.message });
-        } else {
-          console.log('[BetterE-class] Download started with ID:', downloadId);
-          sendResponse({ success: true, downloadId: downloadId });
-        }
-      });
-
-      return true;
-    }
+  // Legacy code for loadit.php PDF extraction (kept for backwards compatibility)
+  if (message.type === 'downloadWithDialog_OLD') {
+    console.log('[BetterE-class] Processing download request:', message.filename);
 
     // Fetch the file_down.php page to extract actual file URL
     fetch(message.url)
@@ -99,38 +98,34 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
   if (message.type === 'previewFile') {
     console.log('[BetterE-class] Processing preview request:', message.filename);
+    console.log('[BetterE-class] Preview URL:', message.url);
 
-    // Check if this is a direct PDF URL or needs extraction from file_down.php
-    const isDirectPdf = message.url.includes('.pdf') && !message.url.includes('file_down.php');
+    // file_down.php URLs can be opened directly in a new tab for preview
+    const tabOptions = {
+      url: message.url,
+      active: true
+    };
 
-    if (isDirectPdf) {
-      // Direct PDF link - open immediately with preview parameter
-      console.log('[BetterE-class] Direct PDF link detected:', message.url);
-
-      const previewUrl = message.url + (message.url.includes('?') ? '&' : '?') + '_preview=1';
-      console.log('[BetterE-class] Preview URL with parameter:', previewUrl);
-
-      const tabOptions = {
-        url: previewUrl,
-        active: true
-      };
-
-      if (sender.tab && sender.tab.index !== undefined) {
-        tabOptions.index = sender.tab.index + 1;
-      }
-
-      chrome.tabs.create(tabOptions, (tab) => {
-        if (chrome.runtime.lastError) {
-          console.error('[BetterE-class] Tab creation error:', chrome.runtime.lastError);
-          sendResponse({ error: chrome.runtime.lastError.message });
-        } else {
-          console.log('[BetterE-class] Preview tab opened with ID:', tab.id);
-          sendResponse({ success: true, tabId: tab.id });
-        }
-      });
-
-      return true;
+    if (sender.tab && sender.tab.index !== undefined) {
+      tabOptions.index = sender.tab.index + 1;
     }
+
+    chrome.tabs.create(tabOptions, (tab) => {
+      if (chrome.runtime.lastError) {
+        console.error('[BetterE-class] Tab creation error:', chrome.runtime.lastError);
+        sendResponse({ error: chrome.runtime.lastError.message });
+      } else {
+        console.log('[BetterE-class] Preview tab opened with ID:', tab.id);
+        sendResponse({ success: true, tabId: tab.id });
+      }
+    });
+
+    return true;
+  }
+
+  // Legacy code for loadit.php PDF extraction (kept for backwards compatibility)
+  if (message.type === 'previewFile_OLD') {
+    console.log('[BetterE-class] Processing preview request:', message.filename);
 
     // Fetch the file_down.php page to extract actual file URL
     fetch(message.url)
