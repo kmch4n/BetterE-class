@@ -1,25 +1,16 @@
 // textbook-chapter-buttons.js
 // Adds download buttons next to chapter items in txtbk_show_chapter.php
+// Supports both loadit.php (PDF preview) and file_down.php (attachments)
 
 (function() {
   'use strict';
 
   console.log('[BetterE-class] Textbook chapter buttons initialized');
   console.log('[BetterE-class] Current URL:', window.location.href);
-  console.log('[BetterE-class] Is in frame:', window.self !== window.top);
-  console.log('[BetterE-class] Window name:', window.name);
 
-  let currentPdfUrl = null;
-  let currentFilename = null;
   let settings = {
     enableDirectDownload: true
   };
-
-  // Test: Send a test message to ourselves to verify message listener works
-  setTimeout(() => {
-    console.log('[BetterE-class] Sending test message to self...');
-    window.postMessage({ type: 'test', data: 'test message' }, '*');
-  }, 100);
 
   // Load settings
   chrome.storage.sync.get({
@@ -27,121 +18,164 @@
   }, (items) => {
     settings = items;
     console.log('[BetterE-class] Settings loaded:', settings);
+
+    // Process both types of attachments
+    processLoaditAttachments();
+    processFileDownAttachments();
   });
 
-  // Listen for PDF URL from loadit.php frame
+  // Listen for PDF URL from loadit.php frame (for PDF preview pages)
   window.addEventListener('message', (event) => {
-    console.log('[BetterE-class] Message received:', {
-      origin: event.origin,
-      expectedOrigin: window.location.origin,
-      data: event.data,
-      source: event.source
-    });
-
-    // Security check: only accept messages from same origin OR from our own frames
     const isValidOrigin = event.origin === window.location.origin ||
                           event.origin === 'https://eclass.doshisha.ac.jp';
 
     if (!isValidOrigin) {
-      console.warn('[BetterE-class] Message rejected - origin mismatch:', event.origin);
       return;
     }
 
     if (event.data && event.data.type === 'betterEclass_pdfUrl') {
-      currentPdfUrl = event.data.url;
-      currentFilename = event.data.filename;
-      console.log('[BetterE-class] ✓ Received PDF URL:', currentPdfUrl);
-      console.log('[BetterE-class] ✓ Filename:', currentFilename);
+      const pdfUrl = event.data.url;
+      const filename = event.data.filename;
+      console.log('[BetterE-class] ✓ Received PDF URL:', pdfUrl);
 
-      // Add download buttons to current chapter
-      addDownloadButtons();
-    } else {
-      console.log('[BetterE-class] Message ignored - not betterEclass_pdfUrl type, data:', event.data);
+      // Add download buttons to the row with loadit-style PDF
+      addDownloadButtonsForLoadit(pdfUrl, filename);
     }
   });
 
-  function addDownloadButtons() {
-    console.log('[BetterE-class] addDownloadButtons called');
-    console.log('[BetterE-class] - enableDirectDownload:', settings.enableDirectDownload);
-    console.log('[BetterE-class] - currentPdfUrl:', currentPdfUrl);
-
+  // Process file_down.php attachments (direct attachment links in chapter list)
+  function processFileDownAttachments() {
     if (!settings.enableDirectDownload) {
-      console.warn('[BetterE-class] Direct download disabled in settings');
       return;
     }
 
-    if (!currentPdfUrl) {
-      console.warn('[BetterE-class] No PDF URL available yet');
+    console.log('[BetterE-class] Processing file_down.php attachments...');
+
+    // Find all attachment links with onclick="filedownload(...)" or target="download"
+    const attachmentLinks = document.querySelectorAll('a[onclick*="filedownload"], a[target="download"]');
+    console.log('[BetterE-class] Found file_down attachment links:', attachmentLinks.length);
+
+    attachmentLinks.forEach((link, index) => {
+      try {
+        // Prevent popup window - open in new tab instead
+        link.setAttribute('target', '_blank');
+        link.removeAttribute('onclick');
+
+        // Also prevent default onclick behavior by replacing the onclick with null
+        link.onclick = null;
+
+        const href = link.getAttribute('href');
+        if (!href || !href.includes('file_down.php')) {
+          return;
+        }
+
+        console.log(`[BetterE-class] Processing attachment ${index}:`, href);
+
+        // Convert relative URL to absolute URL
+        let absoluteUrl = href;
+        if (!href.startsWith('http')) {
+          if (href.startsWith('/')) {
+            absoluteUrl = window.location.origin + href;
+          } else {
+            absoluteUrl = window.location.origin + '/webclass/' + href;
+          }
+        }
+        console.log(`[BetterE-class] Absolute URL:`, absoluteUrl);
+
+        // Extract filename from URL
+        const urlParams = new URLSearchParams(href.split('?')[1]);
+        const filename = urlParams.get('file_name') || 'document.pdf';
+        const decodedFilename = decodeURIComponent(filename);
+
+        // Find the parent row
+        const row = link.closest('tr[data-page]');
+        if (!row) {
+          console.warn('[BetterE-class] Could not find parent row for attachment');
+          return;
+        }
+
+        // Check if buttons already exist
+        if (row.querySelector('.betterEclass-chapter-download-btns')) {
+          return;
+        }
+
+        // Find the cell with the attachment link
+        const attachmentCell = link.closest('td');
+        if (!attachmentCell) {
+          return;
+        }
+
+        // Create button container
+        const buttonContainer = document.createElement('div');
+        buttonContainer.className = 'betterEclass-chapter-download-btns';
+        buttonContainer.style.cssText = 'margin-top: 6px; display: flex; gap: 4px; flex-wrap: wrap; justify-content: flex-end;';
+
+        // Add buttons (use absolute URL for save/preview)
+        buttonContainer.appendChild(createDownloadButton(absoluteUrl, decodedFilename));
+        buttonContainer.appendChild(createSaveAsButton(absoluteUrl, decodedFilename));
+        buttonContainer.appendChild(createPreviewButton(absoluteUrl, decodedFilename));
+
+        attachmentCell.appendChild(buttonContainer);
+        console.log(`[BetterE-class] ✓ Buttons added for attachment:`, decodedFilename);
+
+      } catch (error) {
+        console.error('[BetterE-class] Error processing attachment link:', error);
+      }
+    });
+  }
+
+  // Process loadit.php style (receives PDF URL via postMessage)
+  function processLoaditAttachments() {
+    // This is handled by the message listener above
+    console.log('[BetterE-class] Listening for loadit.php PDF URLs...');
+  }
+
+  // Add download buttons for loadit-style PDF (from postMessage)
+  function addDownloadButtonsForLoadit(pdfUrl, filename) {
+    if (!settings.enableDirectDownload || !pdfUrl) {
       return;
     }
+
+    console.log('[BetterE-class] Adding buttons for loadit PDF:', filename);
 
     // Find all chapter rows in the table
     const chapterRows = document.querySelectorAll('#TOCLayout tr[data-page]');
     console.log('[BetterE-class] Found chapter rows:', chapterRows.length);
 
-    if (chapterRows.length === 0) {
-      console.warn('[BetterE-class] No chapter rows found! Checking DOM structure...');
-      console.log('[BetterE-class] Document body:', document.body.innerHTML.substring(0, 500));
-
-      // Try alternative selectors
-      const allRows = document.querySelectorAll('#TOCLayout tr');
-      console.log('[BetterE-class] Total rows in #TOCLayout:', allRows.length);
-
-      const tableElement = document.querySelector('#TOCLayout');
-      console.log('[BetterE-class] #TOCLayout element:', tableElement);
-    }
-
     chapterRows.forEach((row, index) => {
-      console.log(`[BetterE-class] Processing row ${index}`);
-
       // Check if buttons already exist
       if (row.querySelector('.betterEclass-chapter-download-btns')) {
-        console.log(`[BetterE-class] Row ${index} already has buttons, skipping`);
         return;
       }
 
       // Find the cell with the chapter title (after "第1節" etc.)
       const cells = row.querySelectorAll('td');
-      console.log(`[BetterE-class] Row ${index} has ${cells.length} cells`);
-
       if (cells.length < 3) {
-        console.warn(`[BetterE-class] Row ${index} has insufficient cells, skipping`);
         return;
       }
 
       // The third cell (index 2) contains the chapter title area
       const titleCell = cells[2];
-      console.log(`[BetterE-class] Title cell content:`, titleCell.innerHTML);
 
       // Create button container
       const buttonContainer = document.createElement('div');
       buttonContainer.className = 'betterEclass-chapter-download-btns';
       buttonContainer.style.cssText = 'margin-top: 6px; display: flex; gap: 4px; flex-wrap: wrap; justify-content: flex-end;';
 
-      // Create download button
-      const downloadBtn = createDownloadButton();
-      buttonContainer.appendChild(downloadBtn);
+      // Add buttons
+      buttonContainer.appendChild(createDownloadButton(pdfUrl, filename));
+      buttonContainer.appendChild(createSaveAsButton(pdfUrl, filename));
+      buttonContainer.appendChild(createPreviewButton(pdfUrl, filename));
 
-      // Create save as button
-      const saveAsBtn = createSaveAsButton();
-      buttonContainer.appendChild(saveAsBtn);
-
-      // Create preview button
-      const previewBtn = createPreviewButton();
-      buttonContainer.appendChild(previewBtn);
-
-      // Append to title cell
       titleCell.appendChild(buttonContainer);
       console.log(`[BetterE-class] ✓ Buttons added to row ${index}`);
     });
-
-    console.log('[BetterE-class] ✓ addDownloadButtons completed');
   }
 
-  function createDownloadButton() {
+  function createDownloadButton(url, filename) {
     const button = document.createElement('a');
-    button.href = currentPdfUrl;
-    button.download = currentFilename || 'document.pdf';
+    button.href = url;
+    button.download = filename || 'document.pdf';
     button.style.cssText = 'display: inline-flex; align-items: center; gap: 4px; padding: 4px 10px; background: #4a90e2; color: white; text-decoration: none; border-radius: 4px; font-size: 12px; font-weight: 500; transition: background 0.2s ease; cursor: pointer;';
 
     const iconSpan = document.createElement('span');
@@ -163,13 +197,13 @@
     });
 
     button.addEventListener('click', () => {
-      console.log('[BetterE-class] Downloading:', currentFilename);
+      console.log('[BetterE-class] Downloading:', filename);
     });
 
     return button;
   }
 
-  function createSaveAsButton() {
+  function createSaveAsButton(url, filename) {
     const button = document.createElement('button');
     button.type = 'button';
     button.style.cssText = 'display: inline-flex; align-items: center; gap: 4px; padding: 4px 10px; background: #52c41a; color: white; text-decoration: none; border-radius: 4px; font-size: 12px; font-weight: 500; transition: background 0.2s ease; cursor: pointer; border: none;';
@@ -194,21 +228,20 @@
 
     // Click event to trigger Chrome download with save dialog
     button.addEventListener('click', () => {
-      console.log('[BetterE-class] Save As button clicked:', currentFilename);
-
-      if (!currentPdfUrl) {
-        console.error('[BetterE-class] No PDF URL available');
-        return;
-      }
+      console.log('[BetterE-class] Save As button clicked:', filename);
+      console.log('[BetterE-class] URL:', url);
 
       // Send message to background script to trigger download with dialog
       chrome.runtime.sendMessage({
         type: 'downloadWithDialog',
-        url: currentPdfUrl,
-        filename: currentFilename || 'document.pdf'
+        url: url,
+        filename: filename || 'document.pdf'
       }, (response) => {
+        console.log('[BetterE-class] Save As response:', response);
         if (response && response.error) {
           console.error('[BetterE-class] Download error:', response.error);
+        } else if (response && response.success) {
+          console.log('[BetterE-class] Download started successfully');
         }
       });
     });
@@ -216,7 +249,7 @@
     return button;
   }
 
-  function createPreviewButton() {
+  function createPreviewButton(url, filename) {
     const button = document.createElement('button');
     button.type = 'button';
     button.style.cssText = 'display: inline-flex; align-items: center; gap: 4px; padding: 4px 10px; background: #ff9800; color: white; text-decoration: none; border-radius: 4px; font-size: 12px; font-weight: 500; transition: background 0.2s ease; cursor: pointer; border: none;';
@@ -241,21 +274,20 @@
 
     // Click event to open file in new tab for preview
     button.addEventListener('click', () => {
-      console.log('[BetterE-class] Preview button clicked:', currentFilename);
-
-      if (!currentPdfUrl) {
-        console.error('[BetterE-class] No PDF URL available');
-        return;
-      }
+      console.log('[BetterE-class] Preview button clicked:', filename);
+      console.log('[BetterE-class] URL:', url);
 
       // Send message to background script to open preview
       chrome.runtime.sendMessage({
         type: 'previewFile',
-        url: currentPdfUrl,
-        filename: currentFilename || 'document.pdf'
+        url: url,
+        filename: filename || 'document.pdf'
       }, (response) => {
+        console.log('[BetterE-class] Preview response:', response);
         if (response && response.error) {
           console.error('[BetterE-class] Preview error:', response.error);
+        } else if (response && response.success) {
+          console.log('[BetterE-class] Preview tab opened successfully');
         }
       });
     });
