@@ -1,104 +1,167 @@
 # BetterE-class
 
-**Chrome Extension for Doshisha University e-class**
+**同志社大学e-class用の非公式Chrome拡張機能**
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
-**English** | [日本語](README_ja.md)
-
 ---
 
-## 🎯 Overview
+## 🎯 概要
 
-BetterE-class is a Chrome extension that enhances your experience on Doshisha University's e-class (WebClass). It provides convenient features such as viewing files directly in your browser without downloads, opening files in new tabs, and improving the message tool interface.
+BetterE-classは、同志社大学のe-class（WebClass）をより快適に使えるようにする**非公式**のChrome拡張機能です。ファイルをダウンロードせずにブラウザで直接閲覧したり、新しいタブで開いたり、メッセージツールを使いやすくしたりと、日々のe-class利用を便利にします。
 
-## ⚡ Features
+> **⚠️ 注意**: この拡張機能は同志社大学および公式e-classシステムとは一切関係のない、個人が開発した非公式ツールです。
 
-### Core Features
-* **📄 View Files Without Downloading**: Display report files directly in your browser
-* **🆕 Open Files in New Tab**: Automatically display report files in a new tab (customizable in settings)
-* **💬 Open Messages in Tab**: Open the message tool in a regular tab instead of a popup window
-* **✅ Mark All Messages as Read**: Add a convenient button to mark all messages as read at once
+## ✨ 主な機能
 
-### Deadline & Task Management
-* **⚠️ Deadline Warnings**: Highlight upcoming deadlines with red text and warning icons
-* **📋 Deadline Task List**: View all courses with approaching deadlines in a convenient sidebar widget
-* **📌 Pinned Courses**: Pin frequently accessed courses for quick access
+### ファイル閲覧機能
+- **📄 ブラウザで直接閲覧**: レポートファイルをダウンロードせずにブラウザ上で表示
+- **🆕 新しいタブで開く**: レポートファイルを自動的に新しいタブで表示
+- **📚 教科書ダウンロードボタン**: 教科書ページに「ダウンロード」「名前を付けて保存」「プレビュー」ボタンを追加
+- **🚫 ポップアップ防止**: 添付資料を新しいタブで開く（ポップアップウィンドウを防止）
 
-### Schedule Customization
-* **🗓️ Hide Saturday Column**: Optionally hide the Saturday column in the schedule table
-* **⏰ Hide 6-7th Period**: Optionally hide 6th and 7th period rows
-* **📦 Collapsible Sections**: Collapse admin notices, schedule, and course lists to save space
+### メッセージ機能
+- **💬 タブでメッセージを開く**: メッセージツールをポップアップウィンドウではなく通常のタブで開く
+- **✅ 一括既読機能**: ワンクリックですべてのメッセージを既読にできる便利なボタン
 
-## 📦 Installation
+### 締切・課題管理
+- **⚠️ 締切警告の強調表示**: 締切が近い課題を目立つ赤色でハイライト
+- **📋 締切課題リスト**: 締切が近い課題をサイドバーで一覧表示
+- **📌 科目のピン留め**: よく使う科目をピン留めして素早くアクセス
 
-### For Users (Recommended)
+### 時間割カスタマイズ
+- **🗓️ 土曜日を非表示**: 時間割表の土曜日列を非表示（設定で切替可能）
+- **⏰ 6・7限を非表示**: 6限と7限の行を非表示（設定で切替可能）
+- **📦 セクション折りたたみ**: お知らせ、時間割、科目リストを折りたたんでスペース節約
 
-1. Download the latest release from the [**Releases page**](https://github.com/kmch4n/BetterE-class/releases)
-2. Extract the downloaded ZIP file
-3. Open Chrome and navigate to `chrome://extensions/`
-4. Enable **Developer mode** by toggling the switch in the top right corner
-5. Click **Load unpacked**
-6. Select the extracted `extension` folder
+### その他の機能
+- **🏠 E-classトップボタン**: コースページからトップページへ素早く戻るボタン
+- **🚀 フッターブランディング**: ページ下部にBetterE-classのバージョン表示（クリックでGitHubへ）
 
-### For Developers
+## 📦 インストール方法
+
+### 一般ユーザー向け（推奨）
+
+1. [**リリースページ**](https://github.com/kmch4n/BetterE-class/releases)から最新版をダウンロード
+2. ダウンロードしたZIPファイルを解凍
+3. Chromeで `chrome://extensions/` を開く
+4. 右上の **デベロッパーモード** をオンにする
+5. **パッケージ化されていない拡張機能を読み込む** をクリック
+6. 解凍した `extension` フォルダを選択
+
+### 開発者向け
 
 ```bash
 git clone https://github.com/kmch4n/BetterE-class.git
 cd BetterE-class
 ```
 
-Then follow steps 3-6 from the "For Users" section above, selecting the `extension` folder.
+その後、上記「一般ユーザー向け」の手順3〜6を実行し、`extension` フォルダを選択してください。
 
-## 🚀 Usage
+## 🚀 使い方
 
-### Basic Usage
+### 基本的な使い方
 
-1. Log in to e-class
-2. Open **My Reports** from a course page
-3. Click on a file name
-4. **The file will be displayed in a new tab** (no download required!)
+#### レポートファイルの閲覧
+1. e-classにログイン
+2. コースページから **提出済みレポート** を開く
+3. ファイル名をクリック
+4. **ファイルが新しいタブで表示されます**（ダウンロード不要！）
 
-### Customize Settings
+#### 教科書ファイルのダウンロード
+1. 教科書ページを開く
+2. 各章の横に表示される「ダウンロード」「名前を付けて保存」「プレビュー」ボタンを使用
+3. **添付資料リンクも新しいタブで開きます**（ポップアップウィンドウは出ません）
 
-Click the extension icon to change the following settings:
+#### メッセージの一括既読
+1. メッセージページを開く
+2. 「✓ すべて既読にする」ボタンをクリック
+3. すべてのメッセージが一度に既読になります
 
-| Setting | Description | Default |
-|---------|-------------|---------|
-| **Open Files in New Tab** | Display report files in a new tab | ✅ On |
-| **Open Messages in Tab** | Open message tool in a regular tab instead of popup window | ✅ On |
-| **Mark All Messages as Read Button** | Add a button to mark all messages as read at once | ✅ On |
-| **Deadline Warnings** | Highlight upcoming deadlines with red text | ✅ On |
-| **Hide Saturday Column** | Hide Saturday in the schedule table | ❌ Off |
-| **Hide 6-7th Period** | Hide 6th and 7th period rows | ❌ Off |
+### 設定のカスタマイズ
 
-Settings are automatically saved and applied in real-time.
+拡張機能アイコンをクリックすると、時間割表示に関する設定を変更できます：
 
-## ⚙️ Advanced Features
+| 設定項目 | 説明 | デフォルト |
+|---------|------|----------|
+| **土曜日を非表示** | 時間割表の土曜日列を非表示 | ❌ オフ |
+| **6・7限を非表示** | 6限と7限の行を非表示 | ❌ オフ |
 
-### Deadline Task List
-A sidebar widget on the course list page displays all courses with approaching deadlines in an organized, easy-to-read format. This feature is always active when deadline warnings are enabled.
+**その他の機能はすべてデフォルトで有効**になっています。設定は自動的に保存され、リアルタイムで反映されます。
 
-### Pinned Courses
-Hover over any course link to reveal a pin button (📍). Click to pin frequently accessed courses, which will appear in a dedicated widget for quick access. Pinned courses persist across sessions.
+## 🔧 高度な機能
 
-### Collapsible Sections
-The following sections can be collapsed/expanded by clicking the header:
-- Admin notices
-- Course schedule table
-- Other courses list
-- Semester filter
+### 締切課題リスト
+科目一覧ページのサイドバーに、締切が近い課題がある科目を整理して一覧表示するウィジェットが表示されます。締切日時と残り時間が一目でわかります。
 
-## ⚠️ Notes
+### 科目のピン留め
+科目リンクにマウスを合わせると、ピン留めボタン（📍）が表示されます。クリックすることで、よく使う科目を専用のウィジェットに固定して素早くアクセスできます。ピン留めした科目はブラウザを閉じても保持されます。
 
-- **Target**: Designed exclusively for Doshisha University's e-class system
-- **Browser**: Works only with Chrome (Manifest V3)
-- **Security**: This extension only manipulates HTTP headers and does not send or store any data externally
-- **Disclaimer**: The author assumes no responsibility for any damages resulting from the use of this extension
+### セクションの折りたたみ
+科目一覧ページで、以下のセクションは見出しをクリックすることで折りたたみ・展開ができます：
+- 管理者からのお知らせ
+- 時間割表
+- その他の科目リスト
+- 学期フィルター
 
-## 📄 License
+これにより、画面のスクロールを減らし、必要な情報に素早くアクセスできます。
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+### E-classトップボタン
+コースページの「トップへ戻る」ボタンの隣に、「E-class Top」ボタンが追加されます。クリックすると、e-classのトップページ（科目一覧）に素早く戻ることができます。
+
+### フッターブランディング
+すべてのe-classページの下部に、「🚀 BetterE-class v1.5.4」というリンクが表示されます。クリックすると、このGitHubリポジトリが開きます。
+
+## 🛠️ 技術仕様
+
+### 対応環境
+- **ブラウザ**: Google Chrome（Manifest V3対応）
+- **対象システム**: 同志社大学e-class（WebClass）
+
+### アーキテクチャ
+- Manifest V3ベースのChrome拡張機能
+- Content Scriptsによるページ操作
+- declarativeNetRequestによるHTTPヘッダー操作
+- Chrome Storage APIによる設定の永続化
+
+### セキュリティとプライバシー
+- **データの外部送信なし**: すべての処理はブラウザ内で完結
+- **データの外部保存なし**: 設定はChromeのローカルストレージに保存
+- **HTTPヘッダー操作のみ**: Content-Dispositionヘッダーの変更のみを行い、他のデータは一切変更しません
+
+## ⚠️ 注意事項・免責事項
+
+- **非公式ツール**: この拡張機能は同志社大学および公式e-classシステムとは一切関係のない、個人開発の非公式ツールです
+- **対象システム**: 同志社大学のe-classシステム専用です。他の大学のシステムでは動作しません
+- **動作保証なし**: e-classシステムの仕様変更により、予告なく動作しなくなる可能性があります
+- **免責**: この拡張機能の使用によって生じたいかなる損害についても、作者は一切の責任を負いません
+- **自己責任**: 使用は自己責任でお願いします
+
+## 🆕 更新履歴
+
+### v1.5.4 (2025-11-10)
+- ポップアップUIをシンプル化（時間割表示オプションのみに）
+- 教科書ページの添付資料形式（loadit.php/file_down.php）に完全対応
+- 添付資料のポップアップウィンドウ問題を修正（新しいタブで開くように）
+- すべての教科書添付ファイルにダウンロード/保存/プレビューボタンを追加
+
+### v1.5.3 (2025-11-10)
+- E-classトップボタンを追加
+- フッターにBetterE-classブランディングを追加
+
+### v1.5.2 (2025-11-10)
+- 教科書章リストにダウンロードボタンを追加
+
+### v1.5.1以前
+- 詳細は[リリースページ](https://github.com/kmch4n/BetterE-class/releases)をご覧ください
+
+## 📄 ライセンス
+
+このプロジェクトはMITライセンスの下で公開されています。詳細は [LICENSE](LICENSE) ファイルをご覧ください。
+
+## 🤝 コントリビューション
+
+バグ報告や機能リクエストは、[Issues](https://github.com/kmch4n/BetterE-class/issues)ページからお願いします。
 
 ---
 

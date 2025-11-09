@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "BetterE-class",
-  "version": "1.5.3",
-  "description": "A project to make E-class easier to use.",
+  "version": "1.5.4",
+  "description": "同志社大学のe-classをより快適に使うための非公式Chrome拡張機能",
   "author": "kmch4n",
   "icons": {
     "16": "icons/icon-16.png",
@@ -11,7 +11,7 @@
   },
   "action": {
     "default_popup": "popup.html",
-    "default_title": "BetterE-class Settings"
+    "default_title": "BetterE-class 設定"
   },
   "declarative_net_request": {
     "rule_resources": [
