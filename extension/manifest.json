@@ -76,6 +76,13 @@
       "matches": [
         "*://eclass.doshisha.ac.jp/*"
       ],
+      "js": ["dark-mode.js"],
+      "run_at": "document_start"
+    },
+    {
+      "matches": [
+        "*://eclass.doshisha.ac.jp/*"
+      ],
       "js": ["footer-branding.js"],
       "run_at": "document_end"
     },

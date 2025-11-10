@@ -1,6 +1,7 @@
 // Default settings
 // Most features are always enabled, only schedule display options are configurable
 const DEFAULT_SETTINGS = {
+  enableDarkMode: false,
   hideSaturday: false,
   hide67thPeriod: false,
   enableTocSidebar: true,
@@ -21,7 +22,11 @@ async function loadSettings() {
 // Save settings
 async function saveSettings(settings) {
   try {
-    await chrome.storage.sync.set(settings);
+    // Save to both local (for speed) and sync (for cross-device sync)
+    await Promise.all([
+      chrome.storage.local.set(settings),
+      chrome.storage.sync.set(settings)
+    ]);
     return true;
   } catch (error) {
     console.error('Failed to save settings:', error);
@@ -43,6 +48,7 @@ function showStatus(message, isSuccess = true) {
 // Initialize UI
 async function initializeUI() {
   const settings = await loadSettings();
+  document.getElementById('enableDarkMode').checked = settings.enableDarkMode;
   document.getElementById('hideSaturday').checked = settings.hideSaturday;
   document.getElementById('hide67thPeriod').checked = settings.hide67thPeriod;
   document.getElementById('enableTocSidebar').checked = settings.enableTocSidebar;
@@ -51,10 +57,22 @@ async function initializeUI() {
 
 // Setup event listeners
 function setupEventListeners() {
+  const enableDarkModeEl = document.getElementById('enableDarkMode');
   const hideSaturdayEl = document.getElementById('hideSaturday');
   const hide67thPeriodEl = document.getElementById('hide67thPeriod');
   const enableTocSidebarEl = document.getElementById('enableTocSidebar');
   const enableAvailableMaterialsEl = document.getElementById('enableAvailableMaterials');
+
+  enableDarkModeEl.addEventListener('change', async (e) => {
+    const settings = await loadSettings();
+    settings.enableDarkMode = e.target.checked;
+
+    const success = await saveSettings(settings);
+    showStatus(success ? '設定を保存しました' : '設定の保存に失敗しました', success);
+
+    // Notify dark mode script
+    notifyDarkMode(settings);
+  });
 
   hideSaturdayEl.addEventListener('change', async (e) => {
     const settings = await loadSettings();
@@ -93,6 +111,25 @@ function setupEventListeners() {
     const success = await saveSettings(settings);
     showStatus(success ? '設定を保存しました' : '設定の保存に失敗しました', success);
   });
+}
+
+// Notify dark mode content script
+async function notifyDarkMode(settings) {
+  try {
+    const tabs = await chrome.tabs.query({ url: '*://eclass.doshisha.ac.jp/*' });
+    for (const tab of tabs) {
+      chrome.tabs.sendMessage(tab.id, {
+        type: 'darkModeSettingChanged',
+        settings: {
+          enableDarkMode: settings.enableDarkMode
+        }
+      }).catch(() => {
+        // Ignore if tab doesn't respond
+      });
+    }
+  } catch (error) {
+    console.error('Failed to notify dark mode:', error);
+  }
 }
 
 // Notify schedule customizer content script

@@ -7,22 +7,22 @@
 body {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica', 'Arial', sans-serif;
   font-size: 14px;
-  color: #333;
-  background: #f5f5f5;
+  color: #c9d1d9;
+  background: #0d1117;
   min-width: 320px;
 }
 
 .container {
   padding: 20px;
-  background: white;
+  background: #161b22;
 }
 
 h1 {
   font-size: 20px;
   font-weight: 600;
   margin-bottom: 20px;
-  color: #1a73e8;
-  border-bottom: 2px solid #1a73e8;
+  color: #58a6ff;
+  border-bottom: 2px solid #58a6ff;
   padding-bottom: 10px;
   display: flex;
   align-items: center;
@@ -32,32 +32,52 @@ h1 {
 .version {
   font-size: 12px;
   font-weight: 400;
-  color: #666;
-  background: #f0f0f0;
+  color: #8b949e;
+  background: #21262d;
   padding: 2px 8px;
   border-radius: 12px;
+}
+
+.beta-badge {
+  font-size: 10px;
+  font-weight: 600;
+  color: #0d1117;
+  background: #d29922;
+  padding: 2px 6px;
+  border-radius: 8px;
+  margin-left: 6px;
 }
 
 h2.section-title {
   font-size: 14px;
   font-weight: 600;
   margin-bottom: 12px;
-  color: #333;
+  color: #c9d1d9;
   padding-bottom: 6px;
-  border-bottom: 1px solid #e0e0e0;
+  border-bottom: 1px solid #30363d;
 }
 
-.settings {
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
+.settings-section {
+  margin-bottom: 24px;
+}
+
+.settings-section:last-of-type {
+  margin-bottom: 0;
+}
+
+.settings-section .setting-item {
+  margin-bottom: 12px;
+}
+
+.settings-section .setting-item:last-child {
+  margin-bottom: 0;
 }
 
 .setting-item {
   padding: 12px;
-  background: #f8f9fa;
+  background: #0d1117;
   border-radius: 8px;
-  border: 1px solid #e0e0e0;
+  border: 1px solid #30363d;
 }
 
 .toggle-label {
@@ -79,7 +99,7 @@ h2.section-title {
   position: relative;
   width: 44px;
   height: 24px;
-  background: #ccc;
+  background: #30363d;
   border-radius: 24px;
   transition: background 0.3s;
   flex-shrink: 0;
@@ -99,7 +119,7 @@ h2.section-title {
 }
 
 .toggle-checkbox:checked + .toggle-slider {
-  background: #1a73e8;
+  background: #58a6ff;
 }
 
 .toggle-checkbox:checked + .toggle-slider::after {
@@ -108,13 +128,13 @@ h2.section-title {
 
 .toggle-text {
   font-weight: 500;
-  color: #333;
+  color: #c9d1d9;
 }
 
 .description {
   margin-top: 8px;
   font-size: 12px;
-  color: #666;
+  color: #8b949e;
   padding-left: 56px;
 }
 
@@ -133,15 +153,15 @@ h2.section-title {
 }
 
 .status.success {
-  background: #d4edda;
-  color: #155724;
-  border: 1px solid #c3e6cb;
+  background: rgba(126, 231, 135, 0.15);
+  color: #7ee787;
+  border: 1px solid rgba(126, 231, 135, 0.3);
 }
 
 .status.error {
-  background: #f8d7da;
-  color: #721c24;
-  border: 1px solid #f5c6cb;
+  background: rgba(255, 123, 114, 0.15);
+  color: #ff7b72;
+  border: 1px solid rgba(255, 123, 114, 0.3);
 }
 
 /* Removed action buttons section */
