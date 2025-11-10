@@ -2,7 +2,9 @@
 // Most features are always enabled, only schedule display options are configurable
 const DEFAULT_SETTINGS = {
   hideSaturday: false,
-  hide67thPeriod: false
+  hide67thPeriod: false,
+  enableTocSidebar: true,
+  enableAvailableMaterials: true
 };
 
 // Load settings
@@ -43,12 +45,16 @@ async function initializeUI() {
   const settings = await loadSettings();
   document.getElementById('hideSaturday').checked = settings.hideSaturday;
   document.getElementById('hide67thPeriod').checked = settings.hide67thPeriod;
+  document.getElementById('enableTocSidebar').checked = settings.enableTocSidebar;
+  document.getElementById('enableAvailableMaterials').checked = settings.enableAvailableMaterials;
 }
 
 // Setup event listeners
 function setupEventListeners() {
   const hideSaturdayEl = document.getElementById('hideSaturday');
   const hide67thPeriodEl = document.getElementById('hide67thPeriod');
+  const enableTocSidebarEl = document.getElementById('enableTocSidebar');
+  const enableAvailableMaterialsEl = document.getElementById('enableAvailableMaterials');
 
   hideSaturdayEl.addEventListener('change', async (e) => {
     const settings = await loadSettings();
@@ -70,6 +76,22 @@ function setupEventListeners() {
 
     // Notify schedule customizer
     notifyScheduleCustomizer(settings);
+  });
+
+  enableTocSidebarEl.addEventListener('change', async (e) => {
+    const settings = await loadSettings();
+    settings.enableTocSidebar = e.target.checked;
+
+    const success = await saveSettings(settings);
+    showStatus(success ? '設定を保存しました' : '設定の保存に失敗しました', success);
+  });
+
+  enableAvailableMaterialsEl.addEventListener('change', async (e) => {
+    const settings = await loadSettings();
+    settings.enableAvailableMaterials = e.target.checked;
+
+    const success = await saveSettings(settings);
+    showStatus(success ? '設定を保存しました' : '設定の保存に失敗しました', success);
   });
 }
 
