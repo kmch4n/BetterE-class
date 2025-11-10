@@ -52,23 +52,39 @@ BetterE-classは、同志社大学のe-class（WebClass）をより快適に使�
 
 ## 📦 インストール方法
 
-### 一般ユーザー向け（推奨）
+### 🌟 Chrome Web Store（推奨）
 
-1. [**リリースページ**](https://github.com/kmch4n/BetterE-class/releases)から最新版をダウンロード
+**最も簡単で安全なインストール方法です**
+
+[![Chrome Web Store](https://img.shields.io/badge/Chrome%20Web%20Store-Download-blue?logo=googlechrome)](https://chromewebstore.google.com/detail/cadnlcomccllmcigggjcceocibeicpbj)
+
+1. [**Chrome Web Store**](https://chromewebstore.google.com/detail/cadnlcomccllmcigggjcceocibeicpbj)にアクセス
+2. **「Chromeに追加」**ボタンをクリック
+3. 確認ダイアログで**「拡張機能を追加」**をクリック
+
+✅ 自動更新が有効になり、常に最新の安定版を利用できます
+
+### 🧪 ベータ版を試す（GitHub Releases）
+
+最新の実験的機能を先行体験したい方向けです。
+
+1. [**リリースページ**](https://github.com/kmch4n/BetterE-class/releases)から最新のベータ版をダウンロード
 2. ダウンロードしたZIPファイルを解凍
 3. Chromeで `chrome://extensions/` を開く
 4. 右上の **デベロッパーモード** をオンにする
 5. **パッケージ化されていない拡張機能を読み込む** をクリック
 6. 解凍した `extension` フォルダを選択
 
-### 開発者向け
+⚠️ ベータ版は不安定な場合があります。安定版が必要な場合はChrome Web Storeからインストールしてください。
+
+### 💻 開発者向け
 
 ```bash
 git clone https://github.com/kmch4n/BetterE-class.git
 cd BetterE-class
 ```
 
-その後、上記「一般ユーザー向け」の手順3〜6を実行し、`extension` フォルダを選択してください。
+その後、上記「ベータ版を試す」の手順3〜6を実行し、`extension` フォルダを選択してください。
 
 ## 🚀 使い方
 
