@@ -8,7 +8,8 @@
   // Load settings
   async function loadSettings() {
     try {
-      const result = await chrome.storage.sync.get({
+      // Use storage.local for faster access
+      const result = await chrome.storage.local.get({
         enableDeadlineHighlight: true
       });
       settings = result;
@@ -159,13 +160,14 @@
   async function init() {
     await loadSettings();
 
-    // Wait for the page to fully load
+    // Insert immediately for faster display
     if (document.readyState === 'loading') {
-      document.addEventListener('DOMContentLoaded', () => {
-        setTimeout(insertDeadlineList, 500);
-      });
+      document.addEventListener('DOMContentLoaded', insertDeadlineList);
     } else {
-      setTimeout(insertDeadlineList, 500);
+      // Small delay to ensure deadline highlights are applied first
+      requestAnimationFrame(() => {
+        setTimeout(insertDeadlineList, 50);
+      });
     }
   }
 

@@ -177,16 +177,22 @@
 
     if (document.readyState === 'loading') {
       document.addEventListener('DOMContentLoaded', () => {
+        // Small delay to ensure deadline list is inserted first
+        requestAnimationFrame(() => {
+          setTimeout(() => {
+            refreshPinnedCoursesUI();
+            addPinButtons();
+          }, 100);
+        });
+      });
+    } else {
+      // Small delay to ensure deadline list is inserted first
+      requestAnimationFrame(() => {
         setTimeout(() => {
           refreshPinnedCoursesUI();
           addPinButtons();
-        }, 600);
+        }, 100);
       });
-    } else {
-      setTimeout(() => {
-        refreshPinnedCoursesUI();
-        addPinButtons();
-      }, 600);
     }
   }
 

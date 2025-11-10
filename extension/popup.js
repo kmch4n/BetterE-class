@@ -47,6 +47,11 @@ function showStatus(message, isSuccess = true) {
 
 // Initialize UI
 async function initializeUI() {
+  // Set version from manifest
+  const manifest = chrome.runtime.getManifest();
+  document.getElementById('version').textContent = `v${manifest.version}`;
+
+  // Load and set settings
   const settings = await loadSettings();
   document.getElementById('enableDarkMode').checked = settings.enableDarkMode;
   document.getElementById('hideSaturday').checked = settings.hideSaturday;
