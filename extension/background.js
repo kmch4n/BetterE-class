@@ -4,6 +4,7 @@
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.type === 'downloadDirect' || message.type === 'downloadWithDialog') {
     const saveAs = message.type === 'downloadWithDialog';
+
     // Check if this is a file_down.php or loadit.php URL that needs HTML extraction
     if (message.url.includes('file_down.php') || message.url.includes('loadit.php')) {
       // Fetch the page to extract actual file URL
@@ -54,24 +55,24 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
           sendResponse({ error: error.message });
         });
 
-      return true;
+      return true; // Indicate async response
+    } else {
+      // For direct file URLs, download directly
+      chrome.downloads.download({
+        url: message.url,
+        filename: message.filename,
+        saveAs: saveAs
+      }, (downloadId) => {
+        if (chrome.runtime.lastError) {
+          console.error('[BetterE-class] Download error:', chrome.runtime.lastError);
+          sendResponse({ error: chrome.runtime.lastError.message });
+        } else {
+          sendResponse({ success: true, downloadId: downloadId });
+        }
+      });
+
+      return true; // Indicate async response
     }
-
-    // For direct file URLs, download directly
-    chrome.downloads.download({
-      url: message.url,
-      filename: message.filename,
-      saveAs: saveAs
-    }, (downloadId) => {
-      if (chrome.runtime.lastError) {
-        console.error('[BetterE-class] Download error:', chrome.runtime.lastError);
-        sendResponse({ error: chrome.runtime.lastError.message });
-      } else {
-        sendResponse({ success: true, downloadId: downloadId });
-      }
-    });
-
-    return true;
   }
 
   // Legacy code for loadit.php PDF extraction (kept for backwards compatibility)
@@ -188,29 +189,29 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
           sendResponse({ error: error.message });
         });
 
-      return true;
-    }
+      return true; // Indicate async response
+    } else {
+      // For direct file URLs, open directly in a new tab for preview
+      const tabOptions = {
+        url: message.url,
+        active: true
+      };
 
-    // For direct file URLs, open directly in a new tab for preview
-    const tabOptions = {
-      url: message.url,
-      active: true
-    };
-
-    if (sender.tab && sender.tab.index !== undefined) {
-      tabOptions.index = sender.tab.index + 1;
-    }
-
-    chrome.tabs.create(tabOptions, (tab) => {
-      if (chrome.runtime.lastError) {
-        console.error('[BetterE-class] Tab creation error:', chrome.runtime.lastError);
-        sendResponse({ error: chrome.runtime.lastError.message });
-      } else {
-        sendResponse({ success: true, tabId: tab.id });
+      if (sender.tab && sender.tab.index !== undefined) {
+        tabOptions.index = sender.tab.index + 1;
       }
-    });
 
-    return true;
+      chrome.tabs.create(tabOptions, (tab) => {
+        if (chrome.runtime.lastError) {
+          console.error('[BetterE-class] Tab creation error:', chrome.runtime.lastError);
+          sendResponse({ error: chrome.runtime.lastError.message });
+        } else {
+          sendResponse({ success: true, tabId: tab.id });
+        }
+      });
+
+      return true; // Indicate async response
+    }
   }
 
   // Legacy code for loadit.php PDF extraction (kept for backwards compatibility)
