@@ -44,8 +44,8 @@
       return;
     }
 
-    // Find all attachment links with onclick="filedownload(...)" or target="download"
-    const attachmentLinks = document.querySelectorAll('a[onclick*="filedownload"], a[target="download"]');
+    // Find all file_down.php links (attachment links in chapter list)
+    const attachmentLinks = document.querySelectorAll('a[href*="file_down.php"]');
 
     attachmentLinks.forEach((link, index) => {
       try {
@@ -156,10 +156,9 @@
   }
 
   function createDownloadButton(url, filename) {
-    const button = document.createElement('a');
-    button.href = url;
-    button.download = filename || 'document.pdf';
-    button.style.cssText = 'display: inline-flex; align-items: center; gap: 4px; padding: 4px 10px; background: #4a90e2; color: white; text-decoration: none; border-radius: 4px; font-size: 12px; font-weight: 500; transition: background 0.2s ease; cursor: pointer;';
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.style.cssText = 'display: inline-flex; align-items: center; gap: 4px; padding: 4px 10px; background: #4a90e2; color: white; text-decoration: none; border-radius: 4px; font-size: 12px; font-weight: 500; transition: background 0.2s ease; cursor: pointer; border: none;';
 
     const iconSpan = document.createElement('span');
     iconSpan.textContent = '⬇️';
@@ -170,6 +169,21 @@
 
     button.appendChild(iconSpan);
     button.appendChild(textSpan);
+
+    // Click event to trigger Chrome download without save dialog
+    button.addEventListener('click', () => {
+      // For file_down.php URLs, we need to use the background script
+      // to extract the actual file URL before downloading
+      chrome.runtime.sendMessage({
+        type: 'downloadDirect',
+        url: url,
+        filename: filename || 'document.pdf'
+      }, (response) => {
+        if (response && response.error) {
+          console.error('[BetterE-class] Download error:', response.error);
+        }
+      });
+    });
 
     // Hover effect
     button.addEventListener('mouseenter', () => {

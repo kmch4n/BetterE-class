@@ -127,8 +127,15 @@
 
         const url = new URL(href, window.location.origin);
         const fileParam = url.searchParams.get('file');
+        const actionParam = url.searchParams.get('action');
 
-        if (fileParam) {
+        // Skip redirect links (external links like Panopto videos)
+        if (actionParam === 'redirect') {
+          return;
+        }
+
+        // Only process if file parameter exists and appears to be a PDF
+        if (fileParam && (fileParam.toLowerCase().endsWith('.pdf') || fileParam.includes('.pdf'))) {
           if (settings.enableDirectDownload) {
             addDownloadButtonForLoaditLink(link, href, fileParam);
           }
@@ -271,13 +278,9 @@
   }
 
   function createDownloadButton(icon, text, downloadUrl, fileName) {
-    const button = document.createElement('a');
-    button.href = downloadUrl;
-
-    // Direct download with download attribute
-    button.download = fileName || 'file';
-
-    button.style.cssText = 'display: inline-flex; align-items: center; gap: 4px; padding: 4px 10px; background: #4a90e2; color: white; text-decoration: none; border-radius: 4px; font-size: 12px; font-weight: 500; transition: background 0.2s ease; cursor: pointer;';
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.style.cssText = 'display: inline-flex; align-items: center; gap: 4px; padding: 4px 10px; background: #4a90e2; color: white; text-decoration: none; border-radius: 4px; font-size: 12px; font-weight: 500; transition: background 0.2s ease; cursor: pointer; border: none;';
 
     const iconSpan = document.createElement('span');
     iconSpan.textContent = icon;
@@ -288,6 +291,34 @@
 
     button.appendChild(iconSpan);
     button.appendChild(textSpan);
+
+    // Click event to trigger Chrome download without save dialog
+    button.addEventListener('click', () => {
+      try {
+        // Convert relative URL to absolute URL
+        const absoluteUrl = downloadUrl.startsWith('http')
+          ? downloadUrl
+          : `${window.location.origin}/webclass/${downloadUrl}`;
+
+        // Use Chrome downloads API for direct download
+        chrome.runtime.sendMessage({
+          type: 'downloadDirect',
+          url: absoluteUrl,
+          filename: fileName
+        }, (response) => {
+          if (chrome.runtime.lastError) {
+            console.error('[BetterE-class] Runtime error:', chrome.runtime.lastError);
+            return;
+          }
+
+          if (response && response.error) {
+            console.error('[BetterE-class] Download error:', response.error);
+          }
+        });
+      } catch (error) {
+        console.error('[BetterE-class] Error triggering download:', error);
+      }
+    });
 
     // Hover effect
     button.addEventListener('mouseenter', () => {
