@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "BetterE-class",
-  "version": "1.7.1",
+  "version": "1.7.2",
   "description": "同志社大学のe-classをより快適に使うための非公式Chrome拡張機能",
   "author": "kmch4n",
   "icons": {
@@ -29,7 +29,6 @@
     "declarativeNetRequest",
     "storage",
     "tabs",
-    "activeTab",
     "downloads"
   ],
   "background": {
@@ -144,6 +143,16 @@
     {
       "matches": [
         "*://eclass.doshisha.ac.jp/webclass/txtbk_show_text.php*"
+      ],
+      "js": ["attachment-opener.js"],
+      "run_at": "document_end",
+      "all_frames": true
+    },
+    {
+      "matches": [
+        "*://eclass.doshisha.ac.jp/webclass/qstn_frame.php*",
+        "*://eclass.doshisha.ac.jp/webclass/dqstn_answer.php*",
+        "*://eclass.doshisha.ac.jp/webclass/loadit.php?lang=*"
       ],
       "js": ["attachment-opener.js"],
       "run_at": "document_end",

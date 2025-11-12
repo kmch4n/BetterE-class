@@ -5,9 +5,6 @@
 (function() {
   'use strict';
 
-  console.log('[BetterE-class] Textbook chapter buttons initialized');
-  console.log('[BetterE-class] Current URL:', window.location.href);
-
   let settings = {
     enableDirectDownload: true
   };
@@ -17,7 +14,6 @@
     enableDirectDownload: true
   }, (items) => {
     settings = items;
-    console.log('[BetterE-class] Settings loaded:', settings);
 
     // Process both types of attachments
     processLoaditAttachments();
@@ -36,7 +32,6 @@
     if (event.data && event.data.type === 'betterEclass_pdfUrl') {
       const pdfUrl = event.data.url;
       const filename = event.data.filename;
-      console.log('[BetterE-class] ✓ Received PDF URL:', pdfUrl);
 
       // Add download buttons to the row with loadit-style PDF
       addDownloadButtonsForLoadit(pdfUrl, filename);
@@ -49,11 +44,8 @@
       return;
     }
 
-    console.log('[BetterE-class] Processing file_down.php attachments...');
-
     // Find all attachment links with onclick="filedownload(...)" or target="download"
     const attachmentLinks = document.querySelectorAll('a[onclick*="filedownload"], a[target="download"]');
-    console.log('[BetterE-class] Found file_down attachment links:', attachmentLinks.length);
 
     attachmentLinks.forEach((link, index) => {
       try {
@@ -69,8 +61,6 @@
           return;
         }
 
-        console.log(`[BetterE-class] Processing attachment ${index}:`, href);
-
         // Convert relative URL to absolute URL
         let absoluteUrl = href;
         if (!href.startsWith('http')) {
@@ -80,7 +70,6 @@
             absoluteUrl = window.location.origin + '/webclass/' + href;
           }
         }
-        console.log(`[BetterE-class] Absolute URL:`, absoluteUrl);
 
         // Extract filename from URL
         const urlParams = new URLSearchParams(href.split('?')[1]);
@@ -116,7 +105,6 @@
         buttonContainer.appendChild(createPreviewButton(absoluteUrl, decodedFilename));
 
         attachmentCell.appendChild(buttonContainer);
-        console.log(`[BetterE-class] ✓ Buttons added for attachment:`, decodedFilename);
 
       } catch (error) {
         console.error('[BetterE-class] Error processing attachment link:', error);
@@ -127,7 +115,6 @@
   // Process loadit.php style (receives PDF URL via postMessage)
   function processLoaditAttachments() {
     // This is handled by the message listener above
-    console.log('[BetterE-class] Listening for loadit.php PDF URLs...');
   }
 
   // Add download buttons for loadit-style PDF (from postMessage)
@@ -136,11 +123,8 @@
       return;
     }
 
-    console.log('[BetterE-class] Adding buttons for loadit PDF:', filename);
-
     // Find all chapter rows in the table
     const chapterRows = document.querySelectorAll('#TOCLayout tr[data-page]');
-    console.log('[BetterE-class] Found chapter rows:', chapterRows.length);
 
     chapterRows.forEach((row, index) => {
       // Check if buttons already exist
@@ -168,7 +152,6 @@
       buttonContainer.appendChild(createPreviewButton(pdfUrl, filename));
 
       titleCell.appendChild(buttonContainer);
-      console.log(`[BetterE-class] ✓ Buttons added to row ${index}`);
     });
   }
 
@@ -194,10 +177,6 @@
     });
     button.addEventListener('mouseleave', () => {
       button.style.background = '#4a90e2';
-    });
-
-    button.addEventListener('click', () => {
-      console.log('[BetterE-class] Downloading:', filename);
     });
 
     return button;
@@ -228,20 +207,14 @@
 
     // Click event to trigger Chrome download with save dialog
     button.addEventListener('click', () => {
-      console.log('[BetterE-class] Save As button clicked:', filename);
-      console.log('[BetterE-class] URL:', url);
-
       // Send message to background script to trigger download with dialog
       chrome.runtime.sendMessage({
         type: 'downloadWithDialog',
         url: url,
         filename: filename || 'document.pdf'
       }, (response) => {
-        console.log('[BetterE-class] Save As response:', response);
         if (response && response.error) {
           console.error('[BetterE-class] Download error:', response.error);
-        } else if (response && response.success) {
-          console.log('[BetterE-class] Download started successfully');
         }
       });
     });
@@ -274,20 +247,14 @@
 
     // Click event to open file in new tab for preview
     button.addEventListener('click', () => {
-      console.log('[BetterE-class] Preview button clicked:', filename);
-      console.log('[BetterE-class] URL:', url);
-
       // Send message to background script to open preview
       chrome.runtime.sendMessage({
         type: 'previewFile',
         url: url,
         filename: filename || 'document.pdf'
       }, (response) => {
-        console.log('[BetterE-class] Preview response:', response);
         if (response && response.error) {
           console.error('[BetterE-class] Preview error:', response.error);
-        } else if (response && response.success) {
-          console.log('[BetterE-class] Preview tab opened successfully');
         }
       });
     });
@@ -300,7 +267,6 @@
     if (namespace === 'sync') {
       if (changes.enableDirectDownload) {
         settings.enableDirectDownload = changes.enableDirectDownload.newValue;
-        console.log('[BetterE-class] Settings updated:', settings);
       }
     }
   });
