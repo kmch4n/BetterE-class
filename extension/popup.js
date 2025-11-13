@@ -118,18 +118,30 @@ function setupEventListeners() {
   });
 }
 
+// Helper: send a message without throwing on older Chrome (Promise/callback safe)
+function sendMessageSafe(tabId, message) {
+  try {
+    const maybePromise = chrome.tabs.sendMessage(tabId, message, () => {
+      // Swallow callback errors silently
+      void chrome.runtime.lastError;
+    });
+    // If Promise is returned (modern Chrome), attach a catch to swallow errors
+    if (maybePromise && typeof maybePromise.then === 'function') {
+      return maybePromise.catch(() => {});
+    }
+  } catch (_) {
+    // Ignore if API throws synchronously
+  }
+}
+
 // Notify dark mode content script
 async function notifyDarkMode(settings) {
   try {
     const tabs = await chrome.tabs.query({ url: '*://eclass.doshisha.ac.jp/*' });
     for (const tab of tabs) {
-      chrome.tabs.sendMessage(tab.id, {
+      sendMessageSafe(tab.id, {
         type: 'darkModeSettingChanged',
-        settings: {
-          enableDarkMode: settings.enableDarkMode
-        }
-      }).catch(() => {
-        // Ignore if tab doesn't respond
+        settings: { enableDarkMode: settings.enableDarkMode }
       });
     }
   } catch (error) {
@@ -142,14 +154,12 @@ async function notifyScheduleCustomizer(settings) {
   try {
     const tabs = await chrome.tabs.query({ url: '*://eclass.doshisha.ac.jp/webclass/*' });
     for (const tab of tabs) {
-      chrome.tabs.sendMessage(tab.id, {
+      sendMessageSafe(tab.id, {
         type: 'scheduleSettingsChanged',
         settings: {
           hideSaturday: settings.hideSaturday,
           hide67thPeriod: settings.hide67thPeriod
         }
-      }).catch(() => {
-        // Ignore if tab doesn't respond
       });
     }
   } catch (error) {

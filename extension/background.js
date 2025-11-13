@@ -7,8 +7,8 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
     // Check if this is a file_down.php or loadit.php URL that needs HTML extraction
     if (message.url.includes('file_down.php') || message.url.includes('loadit.php')) {
-      // Fetch the page to extract actual file URL
-      fetch(message.url)
+      // Fetch the page to extract actual file URL (include credentials for session-protected pages)
+      fetch(message.url, { credentials: 'include' })
         .then(response => response.text())
         .then(html => {
           // Extract URL from the download link
@@ -78,7 +78,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   // Legacy code for loadit.php PDF extraction (kept for backwards compatibility)
   if (message.type === 'downloadWithDialog_OLD') {
     // Fetch the file_down.php page to extract actual file URL
-    fetch(message.url)
+    fetch(message.url, { credentials: 'include' })
       .then(response => response.text())
       .then(html => {
         // Extract URL from the download link
@@ -133,8 +133,8 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.type === 'previewFile') {
     // Check if this is a file_down.php or loadit.php URL that needs HTML extraction
     if (message.url.includes('file_down.php') || message.url.includes('loadit.php')) {
-      // Fetch the page to extract actual file URL
-      fetch(message.url)
+      // Fetch the page to extract actual file URL (include credentials for session-protected pages)
+      fetch(message.url, { credentials: 'include' })
         .then(response => response.text())
         .then(html => {
           // Extract URL from the download link
@@ -217,7 +217,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   // Legacy code for loadit.php PDF extraction (kept for backwards compatibility)
   if (message.type === 'previewFile_OLD') {
     // Fetch the file_down.php page to extract actual file URL
-    fetch(message.url)
+    fetch(message.url, { credentials: 'include' })
       .then(response => response.text())
       .then(html => {
         // Extract URL from the download link
