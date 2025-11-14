@@ -29,6 +29,17 @@
   // Save original window.open
   const originalWindowOpen = window.open;
 
+  // Override filedownload function used in quiz/survey pages
+  window.filedownload = function(url) {
+    if (!settings.preventMessagePopup) {
+      // Use original popup behavior
+      return originalWindowOpen.call(window, url, "download",
+        "toolbar=no,location=no,directories=no,status=yes,menubar=no,scrollbars=yes,resizable=yes,width=320,height=250");
+    }
+    // Open in new tab instead
+    return originalWindowOpen.call(window, url, '_blank');
+  };
+
   // Override window.open
   window.open = function(url, target, features) {
     // If feature is disabled, use original behavior
@@ -52,7 +63,7 @@
     return originalWindowOpen.call(window, url, target, features);
   };
 
-  // Override onclick handlers that use openMessageWindow or openMessage
+  // Override onclick handlers that use openMessageWindow, openMessage, or filedownload
   function interceptOnclickHandlers() {
     document.addEventListener('click', function(e) {
       if (!settings.preventMessagePopup) return;
@@ -66,12 +77,15 @@
       // Check if it's calling openMessageWindow or openMessage
       const messageWindowMatch = onclickAttr.match(/openMessageWindow\s*\(\s*['"]([^'"]+)['"]/);
       const messageMatch = onclickAttr.match(/openMessage\s*\(\s*['"]([^'"]+)['"]/);
-      
-      if (messageWindowMatch || messageMatch) {
+      const filedownloadMatch = onclickAttr.match(/filedownload\s*\(\s*['"]([^'"]+)['"]/);
+
+      if (messageWindowMatch || messageMatch || filedownloadMatch) {
         e.preventDefault();
         e.stopPropagation();
-        
-        const url = messageWindowMatch ? messageWindowMatch[1] : messageMatch[1];
+
+        const url = messageWindowMatch ? messageWindowMatch[1]
+                  : messageMatch ? messageMatch[1]
+                  : filedownloadMatch[1];
         window.open(url, '_blank');
         return false;
       }

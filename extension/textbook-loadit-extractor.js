@@ -5,6 +5,34 @@
   'use strict';
 
   function findAndSendPdfUrl() {
+    // Check if this is a textbook page (has webclass_chapter frame)
+    // If not, skip this script (it's probably a quiz/survey page)
+    try {
+      let hasChapterFrame = false;
+      if (window.top && window.top.frames) {
+        // Check if webclass_chapter frame exists
+        if (window.top.frames['webclass_chapter']) {
+          hasChapterFrame = true;
+        } else {
+          // Try iterating through frames
+          for (let i = 0; i < window.top.frames.length; i++) {
+            if (window.top.frames[i].name === 'webclass_chapter') {
+              hasChapterFrame = true;
+              break;
+            }
+          }
+        }
+      }
+
+      // If no chapter frame found, this is not a textbook page - skip processing
+      if (!hasChapterFrame) {
+        return false;
+      }
+    } catch (e) {
+      // If we can't access frames, skip processing
+      return false;
+    }
+
     // Find the "別ウィンドウ" link
     const betsuWindowLink = document.querySelector('a[target="_blank"]');
 
@@ -47,17 +75,6 @@
 
           if (chapterFrame) {
             chapterFrame.postMessage(message, '*');
-          } else {
-            console.warn('[BetterE-class] Could not find chapter frame, broadcasting to all');
-            // Fallback: broadcast to all frames
-            window.top.postMessage(message, '*');
-            for (let i = 0; i < window.top.frames.length; i++) {
-              try {
-                window.top.frames[i].postMessage(message, '*');
-              } catch (e) {
-                console.warn(`[BetterE-class] Could not send to frame ${i}:`, e);
-              }
-            }
           }
         }
 

@@ -12,8 +12,9 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         .then(response => response.text())
         .then(html => {
           // Extract URL from the download link
-          // Pattern: <a href='/webclass/download.php/filename.pdf?...'>
-          let linkMatch = html.match(/<a\s+href=['"]([^'"]+download\.php[^'"]+)['"]/);
+          // Pattern 1: <a href='/webclass/download.php/filename.pdf?...'>
+          // Pattern 2: <a href='https://eclass.doshisha.ac.jp/webclass/data/course/.../filename.pdf' target="_blank">
+          let linkMatch = html.match(/<a\s+href=['"]([^'"]+(?:download\.php|\.pdf)[^'"]*)['"]/);
 
           if (linkMatch && linkMatch[1]) {
             let actualFileUrl = linkMatch[1];
@@ -138,8 +139,9 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         .then(response => response.text())
         .then(html => {
           // Extract URL from the download link
-          // Pattern: <a href='/webclass/download.php/filename.pdf?...'>
-          let linkMatch = html.match(/<a\s+href=['"]([^'"]+download\.php[^'"]+)['"]/);
+          // Pattern 1: <a href='/webclass/download.php/filename.pdf?...'>
+          // Pattern 2: <a href='https://eclass.doshisha.ac.jp/webclass/data/course/.../filename.pdf' target="_blank">
+          let linkMatch = html.match(/<a\s+href=['"]([^'"]+(?:download\.php|\.pdf)[^'"]*)['"]/);
 
           if (linkMatch && linkMatch[1]) {
             let actualFileUrl = linkMatch[1];

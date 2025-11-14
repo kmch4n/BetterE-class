@@ -24,6 +24,11 @@
   });
 
   function init() {
+    // Check if this is the button frame (dqstn_button.php) and listen for PDF messages
+    if (window.name === 'button' || window.location.href.includes('dqstn_button.php')) {
+      window.addEventListener('message', handleButtonFrameMessage);
+    }
+
     // Wait for page to load
     if (document.readyState === 'loading') {
       document.addEventListener('DOMContentLoaded', () => {
@@ -31,6 +36,112 @@
       });
     } else {
       setTimeout(processAttachments, 100);
+    }
+  }
+
+  // Handle messages in button frame
+  function handleButtonFrameMessage(event) {
+    const isValidOrigin = event.origin === window.location.origin ||
+                          event.origin === 'https://eclass.doshisha.ac.jp';
+
+    if (!isValidOrigin) return;
+
+    if (event.data && event.data.type === 'betterEclass_quizPdfUrl') {
+      const { url, filename } = event.data;
+      addButtonsToSidebar(url, filename);
+    }
+  }
+
+  // Send PDF URL to button frame
+  function sendPdfToButtonFrame(pdfUrl) {
+    try {
+      // Extract filename from URL
+      const urlParts = pdfUrl.split('/');
+      const filename = decodeURIComponent(urlParts[urlParts.length - 1]);
+
+      const message = {
+        type: 'betterEclass_quizPdfUrl',
+        url: pdfUrl,
+        filename: filename
+      };
+
+      // Find button frame (it's at the top level frameset)
+      let buttonFrame = null;
+      try {
+        // Try accessing from top level
+        if (window.top && window.top.frames && window.top.frames['button']) {
+          buttonFrame = window.top.frames['button'];
+        } else if (window.top && window.top.frames) {
+          // Try iterating through all frames at top level
+          for (let i = 0; i < window.top.frames.length; i++) {
+            if (window.top.frames[i].name === 'button') {
+              buttonFrame = window.top.frames[i];
+              break;
+            }
+          }
+        }
+      } catch (e) {
+        console.warn('[BetterE-class] Error accessing button frame:', e);
+      }
+
+      if (buttonFrame) {
+        buttonFrame.postMessage(message, '*');
+        console.log('[BetterE-class] Sent PDF URL to button frame:', pdfUrl);
+      } else {
+        console.warn('[BetterE-class] Could not find button frame');
+      }
+    } catch (error) {
+      console.error('[BetterE-class] Error sending PDF to button frame:', error);
+    }
+  }
+
+  // Add buttons to quiz/survey sidebar
+  function addButtonsToSidebar(pdfUrl, filename) {
+    // Find the table in the sidebar
+    const table = document.querySelector('table[align="CENTER"]');
+    if (!table) return;
+
+    // Check if buttons already exist
+    if (document.querySelector('.betterEclass-quiz-download-btns')) return;
+
+    // Create a new row for buttons
+    const tbody = table.querySelector('tbody');
+    if (!tbody) return;
+
+    const newRow = document.createElement('tr');
+    const cell = document.createElement('td');
+    cell.setAttribute('colspan', '2');
+    cell.style.cssText = 'padding: 10px 5px;';
+
+    const buttonContainer = document.createElement('div');
+    buttonContainer.className = 'betterEclass-quiz-download-btns';
+    buttonContainer.style.cssText = 'display: flex; flex-direction: column; gap: 6px;';
+
+    // Create buttons
+    const downloadBtn = createDownloadButton('⬇️', 'ダウンロード', pdfUrl, filename);
+    const saveAsBtn = createSaveAsButton('💾', '名前を付けて保存', pdfUrl, filename);
+    const previewBtn = createPreviewButton('👁️', 'プレビュー', pdfUrl, filename);
+
+    downloadBtn.style.width = '100%';
+    downloadBtn.style.justifyContent = 'center';
+    saveAsBtn.style.width = '100%';
+    saveAsBtn.style.justifyContent = 'center';
+    previewBtn.style.width = '100%';
+    previewBtn.style.justifyContent = 'center';
+
+    buttonContainer.appendChild(downloadBtn);
+    buttonContainer.appendChild(saveAsBtn);
+    buttonContainer.appendChild(previewBtn);
+
+    cell.appendChild(buttonContainer);
+    newRow.appendChild(cell);
+
+    // Insert after the Q.1 row (first row)
+    const firstRow = tbody.querySelector('tr');
+    if (firstRow && firstRow.nextSibling) {
+      tbody.insertBefore(newRow, firstRow.nextSibling);
+    } else {
+      tbody.appendChild(newRow);
     }
   }
 
@@ -73,14 +184,32 @@
 
     directPdfLinks.forEach(link => {
       try {
-        const href = link.getAttribute('href');
+        // Use link.href property (not getAttribute) to get absolute URL
+        const href = link.href;
         if (!href) return;
 
         // Skip if this link was already processed as type 1
         if (link.getAttribute('onclick')?.includes('filedownload')) return;
 
-        // Add download button if enabled
-        if (settings.enableDirectDownload) {
+        // Check if this is a quiz/survey page (loadit.php in question frame)
+        const isQuizPage = (window.name === 'question' || window.location.href.includes('loadit.php')) &&
+                           window.parent && window.parent !== window;
+
+        if (isQuizPage && settings.enableDirectDownload) {
+          // Send PDF URL to button frame instead of adding buttons here
+          sendPdfToButtonFrame(href);
+          // Still hide the original "別ウインドウ" text
+          const textBefore = link.previousSibling;
+          if (textBefore && textBefore.nodeType === Node.TEXT_NODE) {
+            textBefore.textContent = '';
+          }
+          const textAfter = link.nextSibling;
+          if (textAfter && textAfter.nodeType === Node.TEXT_NODE) {
+            textAfter.textContent = '';
+          }
+          link.style.display = 'none';
+        } else if (settings.enableDirectDownload) {
+          // Normal behavior: add buttons next to link
           addDownloadButtonForDirectLink(link, href);
         }
       } catch (error) {
@@ -292,29 +421,41 @@
     button.appendChild(iconSpan);
     button.appendChild(textSpan);
 
-    // Click event to trigger Chrome download without save dialog
-    button.addEventListener('click', () => {
+    // Click event to trigger download using fetch and Blob
+    button.addEventListener('click', async () => {
       try {
-        // Convert relative URL to absolute URL
-        const absoluteUrl = downloadUrl.startsWith('http')
-          ? downloadUrl
-          : `${window.location.origin}/webclass/${downloadUrl}`;
+        // Ensure we have an absolute URL
+        // downloadUrl should already be absolute if from link.href, but handle all cases
+        let absoluteUrl;
+        if (downloadUrl.startsWith('http')) {
+          absoluteUrl = downloadUrl;
+        } else if (downloadUrl.startsWith('/')) {
+          absoluteUrl = `${window.location.origin}${downloadUrl}`;
+        } else {
+          absoluteUrl = `${window.location.origin}/webclass/${downloadUrl}`;
+        }
 
-        // Use Chrome downloads API for direct download
-        chrome.runtime.sendMessage({
-          type: 'downloadDirect',
-          url: absoluteUrl,
-          filename: fileName
-        }, (response) => {
-          if (chrome.runtime.lastError) {
-            console.error('[BetterE-class] Runtime error:', chrome.runtime.lastError);
-            return;
-          }
+        // Fetch the file with credentials to maintain session
+        const response = await fetch(absoluteUrl, { credentials: 'include' });
+        if (!response.ok) {
+          console.error('[BetterE-class] Download failed:', response.status);
+          return;
+        }
 
-          if (response && response.error) {
-            console.error('[BetterE-class] Download error:', response.error);
-          }
-        });
+        const blob = await response.blob();
+        const url = URL.createObjectURL(blob);
+
+        // Create a temporary link and click it
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = fileName || 'download';
+        link.style.display = 'none';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+
+        // Clean up the URL object
+        setTimeout(() => URL.revokeObjectURL(url), 100);
       } catch (error) {
         console.error('[BetterE-class] Error triggering download:', error);
       }
@@ -348,12 +489,19 @@
     button.appendChild(textSpan);
 
     // Click event to trigger Chrome download with save dialog
+    // Note: Save as button still uses background script because chrome.downloads.download
+    // supports the saveAs parameter which shows the save dialog
     button.addEventListener('click', () => {
       try {
-        // Convert relative URL to absolute URL
-        const absoluteUrl = downloadUrl.startsWith('http')
-          ? downloadUrl
-          : `${window.location.origin}/webclass/${downloadUrl}`;
+        // Ensure we have an absolute URL
+        let absoluteUrl;
+        if (downloadUrl.startsWith('http')) {
+          absoluteUrl = downloadUrl;
+        } else if (downloadUrl.startsWith('/')) {
+          absoluteUrl = `${window.location.origin}${downloadUrl}`;
+        } else {
+          absoluteUrl = `${window.location.origin}/webclass/${downloadUrl}`;
+        }
 
         // Use Chrome downloads API to prompt save dialog
         chrome.runtime.sendMessage({
@@ -363,30 +511,14 @@
         }, (response) => {
           if (chrome.runtime.lastError) {
             console.error('[BetterE-class] Runtime error:', chrome.runtime.lastError);
-            // Fallback to regular download
-            const link = document.createElement('a');
-            link.href = downloadUrl;
-            link.download = fileName;
-            link.click();
-            return;
           }
 
           if (response && response.error) {
             console.error('[BetterE-class] Download error:', response.error);
-            // Fallback to regular download
-            const link = document.createElement('a');
-            link.href = downloadUrl;
-            link.download = fileName;
-            link.click();
           }
         });
       } catch (error) {
         console.error('[BetterE-class] Error triggering save as:', error);
-        // Fallback to regular download
-        const link = document.createElement('a');
-        link.href = downloadUrl;
-        link.download = fileName;
-        link.click();
       }
     });
 
@@ -420,35 +552,21 @@
     // Click event to open file in new tab for preview
     button.addEventListener('click', () => {
       try {
-        // Convert relative URL to absolute URL
-        const absoluteUrl = downloadUrl.startsWith('http')
-          ? downloadUrl
-          : `${window.location.origin}/webclass/${downloadUrl}`;
+        // Ensure we have an absolute URL
+        let absoluteUrl;
+        if (downloadUrl.startsWith('http')) {
+          absoluteUrl = downloadUrl;
+        } else if (downloadUrl.startsWith('/')) {
+          absoluteUrl = `${window.location.origin}${downloadUrl}`;
+        } else {
+          absoluteUrl = `${window.location.origin}/webclass/${downloadUrl}`;
+        }
 
-        // Use background service worker to extract actual file URL
-        chrome.runtime.sendMessage({
-          type: 'previewFile',
-          url: absoluteUrl,
-          filename: fileName
-        }, (response) => {
-          if (chrome.runtime.lastError) {
-            console.error('[BetterE-class] Runtime error:', chrome.runtime.lastError);
-            // Fallback to opening the download page
-            window.open(downloadUrl, '_blank', 'noopener,noreferrer');
-            return;
-          }
-
-          if (response && response.error) {
-            console.error('[BetterE-class] Preview error:', response.error);
-            // Fallback to opening the download page
-            window.open(downloadUrl, '_blank', 'noopener,noreferrer');
-          }
-          // If successful, the background script will open the tab
-        });
+        // For direct PDF URLs, just open in new tab
+        // The browser will handle the preview
+        window.open(absoluteUrl, '_blank', 'noopener,noreferrer');
       } catch (error) {
         console.error('[BetterE-class] Error triggering preview:', error);
-        // Fallback to opening the download page
-        window.open(downloadUrl, '_blank', 'noopener,noreferrer');
       }
     });
 
