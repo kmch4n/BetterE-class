@@ -1,33 +1,33 @@
-// Default settings
-// Most features are always enabled, only schedule display options are configurable
-const DEFAULT_SETTINGS = {
-  enableDarkMode: false,
-  hideSaturday: false,
-  hide67thPeriod: false,
-  enableTocSidebar: true,
-  enableAvailableMaterials: true
-};
+// Get settings utility (loaded from utils/settings.js)
+const settingsAPI = window.BetterEclassUtils.settings;
 
 // Load settings
 async function loadSettings() {
   try {
-    const result = await chrome.storage.sync.get(DEFAULT_SETTINGS);
+    const result = await settingsAPI.getSettings([
+      'enableDarkMode',
+      'hideSaturday',
+      'hide67thPeriod',
+      'enableTocSidebar',
+      'enableAvailableMaterials'
+    ]);
     return result;
   } catch (error) {
     console.error('Failed to load settings:', error);
-    return DEFAULT_SETTINGS;
+    return {
+      enableDarkMode: false,
+      hideSaturday: false,
+      hide67thPeriod: false,
+      enableTocSidebar: true,
+      enableAvailableMaterials: true
+    };
   }
 }
 
 // Save settings
 async function saveSettings(settings) {
   try {
-    // Save to both local (for speed) and sync (for cross-device sync)
-    await Promise.all([
-      chrome.storage.local.set(settings),
-      chrome.storage.sync.set(settings)
-    ]);
-    return true;
+    return await settingsAPI.setSettings(settings);
   } catch (error) {
     console.error('Failed to save settings:', error);
     return false;
@@ -50,6 +50,9 @@ async function initializeUI() {
   // Set version from manifest
   const manifest = chrome.runtime.getManifest();
   document.getElementById('version').textContent = `v${manifest.version}`;
+
+  // Migrate old settings from sync storage to local storage (one-time migration)
+  await settingsAPI.migrateFromSync();
 
   // Load and set settings
   const settings = await loadSettings();
@@ -107,6 +110,11 @@ function setupEventListeners() {
 
     const success = await saveSettings(settings);
     showStatus(success ? '設定を保存しました' : '設定の保存に失敗しました', success);
+
+    // Reload course pages to apply the change
+    if (success) {
+      reloadCoursePages();
+    }
   });
 
   enableAvailableMaterialsEl.addEventListener('change', async (e) => {
@@ -115,6 +123,11 @@ function setupEventListeners() {
 
     const success = await saveSettings(settings);
     showStatus(success ? '設定を保存しました' : '設定の保存に失敗しました', success);
+
+    // Reload course pages to apply the change
+    if (success) {
+      reloadCoursePages();
+    }
   });
 }
 
@@ -164,6 +177,18 @@ async function notifyScheduleCustomizer(settings) {
     }
   } catch (error) {
     console.error('Failed to notify schedule customizer:', error);
+  }
+}
+
+// Reload course pages to apply TOC sidebar and available materials changes
+async function reloadCoursePages() {
+  try {
+    const tabs = await chrome.tabs.query({ url: '*://eclass.doshisha.ac.jp/webclass/course.php*' });
+    for (const tab of tabs) {
+      chrome.tabs.reload(tab.id);
+    }
+  } catch (error) {
+    console.error('Failed to reload course pages:', error);
   }
 }
 
