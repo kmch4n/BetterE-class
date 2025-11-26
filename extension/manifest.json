@@ -128,7 +128,7 @@
       "matches": [
         "*://eclass.doshisha.ac.jp/webclass/txtbk_show_chapter.php*"
       ],
-      "js": ["textbook-chapter-buttons.js"],
+      "js": ["utils/button-factory.js", "textbook-chapter-buttons.js"],
       "run_at": "document_end",
       "all_frames": true
     },
@@ -144,7 +144,7 @@
       "matches": [
         "*://eclass.doshisha.ac.jp/webclass/loadit.php*"
       ],
-      "js": ["attachment-opener.js"],
+      "js": ["utils/button-factory.js", "attachment-opener.js"],
       "run_at": "document_end",
       "all_frames": true
     },
@@ -152,7 +152,7 @@
       "matches": [
         "*://eclass.doshisha.ac.jp/webclass/txtbk_show_text.php*"
       ],
-      "js": ["attachment-opener.js"],
+      "js": ["utils/button-factory.js", "attachment-opener.js"],
       "run_at": "document_end",
       "all_frames": true
     },
@@ -162,7 +162,7 @@
         "*://eclass.doshisha.ac.jp/webclass/dqstn_answer.php*",
         "*://eclass.doshisha.ac.jp/webclass/dqstn_button.php*"
       ],
-      "js": ["attachment-opener.js"],
+      "js": ["utils/button-factory.js", "attachment-opener.js"],
       "run_at": "document_end",
       "all_frames": true
     }

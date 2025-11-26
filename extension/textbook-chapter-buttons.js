@@ -156,22 +156,8 @@
   }
 
   function createDownloadButton(url, filename) {
-    const button = document.createElement('button');
-    button.type = 'button';
-    button.style.cssText = 'display: inline-flex; align-items: center; gap: 4px; padding: 4px 10px; background: #4a90e2; color: white; text-decoration: none; border-radius: 4px; font-size: 12px; font-weight: 500; transition: background 0.2s ease; cursor: pointer; border: none;';
-
-    const iconSpan = document.createElement('span');
-    iconSpan.textContent = '⬇️';
-    iconSpan.style.fontSize = '14px';
-
-    const textSpan = document.createElement('span');
-    textSpan.textContent = 'ダウンロード';
-
-    button.appendChild(iconSpan);
-    button.appendChild(textSpan);
-
-    // Click event to trigger Chrome download without save dialog
-    button.addEventListener('click', () => {
+    // Use shared button factory from utils/button-factory.js
+    return window.BetterEclassUtils.createDownloadButton('⬇️', 'ダウンロード', () => {
       // For file_down.php URLs, we need to use the background script
       // to extract the actual file URL before downloading
       chrome.runtime.sendMessage({
@@ -184,43 +170,11 @@
         }
       });
     });
-
-    // Hover effect
-    button.addEventListener('mouseenter', () => {
-      button.style.background = '#357abd';
-    });
-    button.addEventListener('mouseleave', () => {
-      button.style.background = '#4a90e2';
-    });
-
-    return button;
   }
 
   function createSaveAsButton(url, filename) {
-    const button = document.createElement('button');
-    button.type = 'button';
-    button.style.cssText = 'display: inline-flex; align-items: center; gap: 4px; padding: 4px 10px; background: #52c41a; color: white; text-decoration: none; border-radius: 4px; font-size: 12px; font-weight: 500; transition: background 0.2s ease; cursor: pointer; border: none;';
-
-    const iconSpan = document.createElement('span');
-    iconSpan.textContent = '💾';
-    iconSpan.style.fontSize = '14px';
-
-    const textSpan = document.createElement('span');
-    textSpan.textContent = '名前を付けて保存';
-
-    button.appendChild(iconSpan);
-    button.appendChild(textSpan);
-
-    // Hover effect
-    button.addEventListener('mouseenter', () => {
-      button.style.background = '#3da80f';
-    });
-    button.addEventListener('mouseleave', () => {
-      button.style.background = '#52c41a';
-    });
-
-    // Click event to trigger Chrome download with save dialog
-    button.addEventListener('click', () => {
+    // Use shared button factory from utils/button-factory.js
+    return window.BetterEclassUtils.createSaveAsButton('💾', '名前を付けて保存', () => {
       // Send message to background script to trigger download with dialog
       chrome.runtime.sendMessage({
         type: 'downloadWithDialog',
@@ -232,35 +186,11 @@
         }
       });
     });
-
-    return button;
   }
 
   function createPreviewButton(url, filename) {
-    const button = document.createElement('button');
-    button.type = 'button';
-    button.style.cssText = 'display: inline-flex; align-items: center; gap: 4px; padding: 4px 10px; background: #ff9800; color: white; text-decoration: none; border-radius: 4px; font-size: 12px; font-weight: 500; transition: background 0.2s ease; cursor: pointer; border: none;';
-
-    const iconSpan = document.createElement('span');
-    iconSpan.textContent = '👁️';
-    iconSpan.style.fontSize = '14px';
-
-    const textSpan = document.createElement('span');
-    textSpan.textContent = 'プレビュー';
-
-    button.appendChild(iconSpan);
-    button.appendChild(textSpan);
-
-    // Hover effect
-    button.addEventListener('mouseenter', () => {
-      button.style.background = '#e68900';
-    });
-    button.addEventListener('mouseleave', () => {
-      button.style.background = '#ff9800';
-    });
-
-    // Click event to open file in new tab for preview
-    button.addEventListener('click', () => {
+    // Use shared button factory from utils/button-factory.js
+    return window.BetterEclassUtils.createPreviewButton('👁️', 'プレビュー', () => {
       // Send message to background script to open preview
       chrome.runtime.sendMessage({
         type: 'previewFile',
@@ -272,8 +202,6 @@
         }
       });
     });
-
-    return button;
   }
 
   // Monitor for changes in settings

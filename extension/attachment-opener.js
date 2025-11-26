@@ -87,9 +87,8 @@
       if (buttonFrame) {
         buttonFrame.postMessage(message, '*');
         console.log('[BetterE-class] Sent PDF URL to button frame:', pdfUrl);
-      } else {
-        console.warn('[BetterE-class] Could not find button frame');
       }
+      // Note: If button frame not found, isQuizPage check should prevent this from being called
     } catch (error) {
       console.error('[BetterE-class] Error sending PDF to button frame:', error);
     }
@@ -191,9 +190,24 @@
         // Skip if this link was already processed as type 1
         if (link.getAttribute('onclick')?.includes('filedownload')) return;
 
-        // Check if this is a quiz/survey page (loadit.php in question frame)
+        // Check if this is a quiz/survey page (loadit.php in question frame of qstn_frame.php)
+        // More strict check: look for button frame in parent frameset to confirm it's a quiz page
         const isQuizPage = (window.name === 'question' || window.location.href.includes('loadit.php')) &&
-                           window.parent && window.parent !== window;
+                           window.parent && window.parent !== window &&
+                           (() => {
+                             try {
+                               // Check if button frame exists (indicates quiz/survey page)
+                               return window.top && window.top.frames && window.top.frames['button'];
+                             } catch (e) {
+                               return false;
+                             }
+                           })();
+
+        // Check if this is inside a textbook frameset (loadit.php in a frame, but not quiz page)
+        // In this case, buttons are already in the chapter list, so skip adding here
+        const isTextbookFrameset = window.location.href.includes('loadit.php') &&
+                                   window.parent && window.parent !== window &&
+                                   !isQuizPage;
 
         if (isQuizPage && settings.enableDirectDownload) {
           // Send PDF URL to button frame instead of adding buttons here
@@ -208,6 +222,10 @@
             textAfter.textContent = '';
           }
           link.style.display = 'none';
+        } else if (isTextbookFrameset) {
+          // Skip adding buttons - they're already in the chapter list sidebar
+          // No action needed, buttons will be added by textbook-chapter-buttons.js
+          return;
         } else if (settings.enableDirectDownload) {
           // Normal behavior: add buttons next to link
           addDownloadButtonForDirectLink(link, href);
@@ -279,6 +297,11 @@
     // Create a floating button overlay near the frame
     const frameContainer = frameElement.parentElement;
     if (!frameContainer) return;
+
+    // Skip if parent is a frameset (buttons should be added inside the frame content, not on frameset)
+    if (frameContainer.tagName === 'FRAMESET') {
+      return;
+    }
 
     // Check if button already exists
     if (frameContainer.querySelector('.betterEclass-frame-download')) {
@@ -407,25 +430,10 @@
   }
 
   function createDownloadButton(icon, text, downloadUrl, fileName) {
-    const button = document.createElement('button');
-    button.type = 'button';
-    button.style.cssText = 'display: inline-flex; align-items: center; gap: 4px; padding: 4px 10px; background: #4a90e2; color: white; text-decoration: none; border-radius: 4px; font-size: 12px; font-weight: 500; transition: background 0.2s ease; cursor: pointer; border: none;';
-
-    const iconSpan = document.createElement('span');
-    iconSpan.textContent = icon;
-    iconSpan.style.fontSize = '14px';
-
-    const textSpan = document.createElement('span');
-    textSpan.textContent = text;
-
-    button.appendChild(iconSpan);
-    button.appendChild(textSpan);
-
-    // Click event to trigger download using fetch and Blob
-    button.addEventListener('click', async () => {
+    // Use shared button factory from utils/button-factory.js
+    return window.BetterEclassUtils.createDownloadButton(icon, text, async () => {
       try {
         // Ensure we have an absolute URL
-        // downloadUrl should already be absolute if from link.href, but handle all cases
         let absoluteUrl;
         if (downloadUrl.startsWith('http')) {
           absoluteUrl = downloadUrl;
@@ -460,38 +468,11 @@
         console.error('[BetterE-class] Error triggering download:', error);
       }
     });
-
-    // Hover effect
-    button.addEventListener('mouseenter', () => {
-      button.style.background = '#357abd';
-    });
-
-    button.addEventListener('mouseleave', () => {
-      button.style.background = '#4a90e2';
-    });
-
-    return button;
   }
 
   function createSaveAsButton(icon, text, downloadUrl, fileName) {
-    const button = document.createElement('button');
-    button.type = 'button';
-    button.style.cssText = 'display: inline-flex; align-items: center; gap: 4px; padding: 4px 10px; background: #52c41a; color: white; text-decoration: none; border-radius: 4px; font-size: 12px; font-weight: 500; transition: background 0.2s ease; cursor: pointer; border: none;';
-
-    const iconSpan = document.createElement('span');
-    iconSpan.textContent = icon;
-    iconSpan.style.fontSize = '14px';
-
-    const textSpan = document.createElement('span');
-    textSpan.textContent = text;
-
-    button.appendChild(iconSpan);
-    button.appendChild(textSpan);
-
-    // Click event to trigger Chrome download with save dialog
-    // Note: Save as button still uses background script because chrome.downloads.download
-    // supports the saveAs parameter which shows the save dialog
-    button.addEventListener('click', () => {
+    // Use shared button factory from utils/button-factory.js
+    return window.BetterEclassUtils.createSaveAsButton(icon, text, () => {
       try {
         // Ensure we have an absolute URL
         let absoluteUrl;
@@ -521,36 +502,11 @@
         console.error('[BetterE-class] Error triggering save as:', error);
       }
     });
-
-    // Hover effect
-    button.addEventListener('mouseenter', () => {
-      button.style.background = '#389e0d';
-    });
-
-    button.addEventListener('mouseleave', () => {
-      button.style.background = '#52c41a';
-    });
-
-    return button;
   }
 
   function createPreviewButton(icon, text, downloadUrl, fileName) {
-    const button = document.createElement('button');
-    button.type = 'button';
-    button.style.cssText = 'display: inline-flex; align-items: center; gap: 4px; padding: 4px 10px; background: #ff9800; color: white; text-decoration: none; border-radius: 4px; font-size: 12px; font-weight: 500; transition: background 0.2s ease; cursor: pointer; border: none;';
-
-    const iconSpan = document.createElement('span');
-    iconSpan.textContent = icon;
-    iconSpan.style.fontSize = '14px';
-
-    const textSpan = document.createElement('span');
-    textSpan.textContent = text;
-
-    button.appendChild(iconSpan);
-    button.appendChild(textSpan);
-
-    // Click event to open file in new tab for preview
-    button.addEventListener('click', () => {
+    // Use shared button factory from utils/button-factory.js
+    return window.BetterEclassUtils.createPreviewButton(icon, text, () => {
       try {
         // Ensure we have an absolute URL
         let absoluteUrl;
@@ -569,17 +525,6 @@
         console.error('[BetterE-class] Error triggering preview:', error);
       }
     });
-
-    // Hover effect
-    button.addEventListener('mouseenter', () => {
-      button.style.background = '#f57c00';
-    });
-
-    button.addEventListener('mouseleave', () => {
-      button.style.background = '#ff9800';
-    });
-
-    return button;
   }
 
   // Listen for settings changes
