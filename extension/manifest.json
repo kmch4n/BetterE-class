@@ -39,7 +39,7 @@
       "matches": [
         "*://eclass.doshisha.ac.jp/webclass/course.php/*"
       ],
-      "js": ["eclass-top-button.js", "course-toc-sidebar.js", "course-available-materials.js"],
+      "js": ["utils/material-icons.js", "eclass-top-button.js", "course-toc-sidebar.js", "course-available-materials.js"],
       "run_at": "document_end"
     },
     {

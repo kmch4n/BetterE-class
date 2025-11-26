@@ -351,22 +351,8 @@
     });
   }
 
-  function getMaterialTypeIcon(materialType) {
-    // Return icon based on material type
-    const typeMap = {
-      '資料': '📚',
-      '試験': '✏️',
-      'レポート': '📋',
-      'レポート(成績非公開)': '📋',
-      'アンケート': '📊',
-      '掲示板': '💬',
-      '教材': '📎',
-      'リンク': '🔗',
-      '動画': '🎥'
-    };
-
-    return typeMap[materialType] || '📌';
-  }
+  // Use shared utility function from utils/material-icons.js
+  const getMaterialTypeIcon = window.BetterEclassUtils.getMaterialTypeIcon;
 
   function createFlatSidebar() {
     // Find all materials directly on the page (no parent sections)
