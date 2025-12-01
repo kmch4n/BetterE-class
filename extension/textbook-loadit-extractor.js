@@ -59,25 +59,18 @@
                     try {
                         // Try accessing by name
                         if (window.top.frames["webclass_chapter"]) {
-                            chapterFrame =
-                                window.top.frames["webclass_chapter"];
+                            chapterFrame = window.top.frames["webclass_chapter"];
                         } else {
                             // Try iterating through frames
                             for (let i = 0; i < window.top.frames.length; i++) {
-                                if (
-                                    window.top.frames[i].name ===
-                                    "webclass_chapter"
-                                ) {
+                                if (window.top.frames[i].name === "webclass_chapter") {
                                     chapterFrame = window.top.frames[i];
                                     break;
                                 }
                             }
                         }
                     } catch (e) {
-                        console.warn(
-                            "[BetterE-class] Error accessing frames:",
-                            e,
-                        );
+                        console.warn("[BetterE-class] Error accessing frames:", e);
                     }
 
                     if (chapterFrame) {
@@ -85,10 +78,7 @@
                     }
                 }
             } catch (error) {
-                console.error(
-                    "[BetterE-class] Error sending message to parent:",
-                    error,
-                );
+                console.error("[BetterE-class] Error sending message to parent:", error);
             }
             return true;
         }

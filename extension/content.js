@@ -29,48 +29,11 @@
 
             // Query suggests file
             const queryKeys = Array.from(u.searchParams.keys());
-            const fileHint = queryKeys.some((k) =>
-                /^(file|download|attachment|content|view)$/i.test(k),
-            );
+            const fileHint = queryKeys.some((k) => /^(file|download|attachment|content|view)$/i.test(k));
 
             // File extension
-            const fileExt = (u.pathname.match(/\.([a-z0-9]+)$/i) || [
-                ,
-                "",
-            ])[1].toLowerCase();
-            const extWhitelist = new Set([
-                "pdf",
-                "doc",
-                "docx",
-                "ppt",
-                "pptx",
-                "xls",
-                "xlsx",
-                "csv",
-                "txt",
-                "rtf",
-                "odt",
-                "odp",
-                "ods",
-                "png",
-                "jpg",
-                "jpeg",
-                "gif",
-                "svg",
-                "webp",
-                "zip",
-                "rar",
-                "7z",
-                "tar",
-                "gz",
-                "bz2",
-                "xz",
-                "mp4",
-                "webm",
-                "ogg",
-                "mp3",
-                "wav",
-            ]);
+            const fileExt = (u.pathname.match(/\.([a-z0-9]+)$/i) || [, ""])[1].toLowerCase();
+            const extWhitelist = new Set(["pdf", "doc", "docx", "ppt", "pptx", "xls", "xlsx", "csv", "txt", "rtf", "odt", "odp", "ods", "png", "jpg", "jpeg", "gif", "svg", "webp", "zip", "rar", "7z", "tar", "gz", "bz2", "xz", "mp4", "webm", "ogg", "mp3", "wav"]);
 
             return fileHint || extWhitelist.has(fileExt);
         } catch (_) {
@@ -82,8 +45,7 @@
         if (!anchor) return false;
         if (!settings.enableNewTab) return false;
         const href = anchor.getAttribute("href") || "";
-        if (!href || href.startsWith("#") || href.startsWith("javascript:"))
-            return false;
+        if (!href || href.startsWith("#") || href.startsWith("javascript:")) return false;
         return isFileLikeUrl(href);
     }
 
@@ -105,8 +67,7 @@
                 a.setAttribute("target", "_blank");
                 a.setAttribute("rel", "noopener");
             } else if (isInternalNav(a.href)) {
-                if (a.getAttribute("target") === "_blank")
-                    a.removeAttribute("target");
+                if (a.getAttribute("target") === "_blank") a.removeAttribute("target");
             }
         }
     }
@@ -138,29 +99,20 @@
                                 node.setAttribute("target", "_blank");
                                 node.setAttribute("rel", "noopener");
                             } else if (isInternalNav(node.href)) {
-                                if (node.getAttribute("target") === "_blank")
-                                    node.removeAttribute("target");
+                                if (node.getAttribute("target") === "_blank") node.removeAttribute("target");
                             }
                         } else {
                             retargetAllAnchors(node);
                         }
                     }
                 }
-            } else if (
-                m.type === "attributes" &&
-                m.target.tagName === "A" &&
-                m.attributeName === "href"
-            ) {
+            } else if (m.type === "attributes" && m.target.tagName === "A" && m.attributeName === "href") {
                 const a = m.target;
                 if (shouldRetarget(a)) {
                     a.setAttribute("target", "_blank");
                     a.setAttribute("rel", "noopener");
                 } else {
-                    if (
-                        isInternalNav(a.href) &&
-                        a.getAttribute("target") === "_blank"
-                    )
-                        a.removeAttribute("target");
+                    if (isInternalNav(a.href) && a.getAttribute("target") === "_blank") a.removeAttribute("target");
                 }
             }
         }

@@ -31,18 +31,13 @@
     // Listen for settings changes
     chrome.storage.onChanged.addListener((changes, namespace) => {
         if (namespace === "sync" && changes.enableAvailableMaterials) {
-            settings.enableAvailableMaterials =
-                changes.enableAvailableMaterials.newValue;
+            settings.enableAvailableMaterials = changes.enableAvailableMaterials.newValue;
 
             if (settings.enableAvailableMaterials) {
                 location.reload();
             } else {
-                const widget = document.getElementById(
-                    "betterEclass-available-materials",
-                );
-                const styles = document.getElementById(
-                    "betterEclass-available-materials-styles",
-                );
+                const widget = document.getElementById("betterEclass-available-materials");
+                const styles = document.getElementById("betterEclass-available-materials-styles");
                 if (widget) widget.remove();
                 if (styles) styles.remove();
             }
@@ -100,9 +95,7 @@
                 if (!linkElement) return; // Skip if no link
 
                 // Check for New badge
-                const newBadge = titleElement.querySelector(
-                    ".cl-contentsList_new",
-                );
+                const newBadge = titleElement.querySelector(".cl-contentsList_new");
                 const isNew = !!newBadge;
 
                 // Check if unread (no "利用回数" text)
@@ -110,12 +103,8 @@
                 const isUnread = !itemText.includes("利用回数");
 
                 // Get material type
-                const categoryLabel = item.querySelector(
-                    ".cl-contentsList_categoryLabel",
-                );
-                const materialType = categoryLabel
-                    ? categoryLabel.textContent.trim()
-                    : "";
+                const categoryLabel = item.querySelector(".cl-contentsList_categoryLabel");
+                const materialType = categoryLabel ? categoryLabel.textContent.trim() : "";
 
                 // Get title
                 let title = titleElement.textContent.trim();
@@ -127,9 +116,7 @@
                 const url = linkElement.getAttribute("href");
 
                 // Check for deadline info
-                const deadlineInfo = item.querySelector(
-                    ".course-contents-info",
-                );
+                const deadlineInfo = item.querySelector(".course-contents-info");
                 let deadline = null;
                 if (deadlineInfo) {
                     deadline = deadlineInfo.textContent.trim();
@@ -294,11 +281,7 @@
             // Toggle functionality
             sectionHeader.addEventListener("click", () => {
                 sectionGroup.classList.toggle("expanded");
-                toggleIcon.textContent = sectionGroup.classList.contains(
-                    "expanded",
-                )
-                    ? "▼"
-                    : "▶";
+                toggleIcon.textContent = sectionGroup.classList.contains("expanded") ? "▼" : "▶";
             });
 
             sectionGroup.appendChild(sectionHeader);

@@ -4,10 +4,7 @@
 (function () {
     "use strict";
 
-    console.log(
-        "[BetterE-class] Quiz export all script initialized, frame name:",
-        window.name,
-    );
+    console.log("[BetterE-class] Quiz export all script initialized, frame name:", window.name);
 
     // Check if this page has quiz navigation buttons
     const hasQuizButtons = () => {
@@ -216,9 +213,7 @@
         }
 
         // Get total number of questions
-        const questionButtons = document.querySelectorAll(
-            'input[name="page_num"]',
-        );
+        const questionButtons = document.querySelectorAll('input[name="page_num"]');
         state.totalQuestions = questionButtons.length;
 
         if (state.totalQuestions === 0) {
@@ -227,9 +222,7 @@
         }
 
         const modeText = mode === "copy" ? "コピー" : "エクスポート";
-        const confirmed = confirm(
-            `${state.totalQuestions}問の問題を${modeText}します。\n\n※ Q1から実行してください。Q1以外から実行すると、途中の問題から収集されます。`,
-        );
+        const confirmed = confirm(`${state.totalQuestions}問の問題を${modeText}します。\n\n※ Q1から実行してください。Q1以外から実行すると、途中の問題から収集されます。`);
         if (!confirmed) {
             return;
         }
@@ -251,12 +244,8 @@
 
     async function collectNextQuestion() {
         const state = getExportState();
-        const copyButton = document.querySelector(
-            ".betterEclass-quiz-copy-all-btn",
-        );
-        const exportButton = document.querySelector(
-            ".betterEclass-quiz-export-all-btn",
-        );
+        const copyButton = document.querySelector(".betterEclass-quiz-copy-all-btn");
+        const exportButton = document.querySelector(".betterEclass-quiz-export-all-btn");
 
         if (!copyButton || !exportButton) {
             // Buttons not found, wait and try again
@@ -341,25 +330,17 @@
         }
 
         try {
-            const questionData = await collectQuestionData(
-                state.currentQuestion,
-            );
+            const questionData = await collectQuestionData(state.currentQuestion);
             if (questionData) {
                 // Check for duplicate questions (same question text already collected)
-                const isDuplicate = state.exportData.some(
-                    (item) =>
-                        item.question.trim() === questionData.question.trim(),
-                );
+                const isDuplicate = state.exportData.some((item) => item.question.trim() === questionData.question.trim());
 
                 if (!isDuplicate) {
                     state.exportData.push(questionData);
                 }
             }
         } catch (error) {
-            console.error(
-                `[BetterE-class] Error collecting question ${state.currentQuestion}:`,
-                error,
-            );
+            console.error(`[BetterE-class] Error collecting question ${state.currentQuestion}:`, error);
         }
 
         // Navigate to next question
@@ -368,9 +349,7 @@
 
             try {
                 // Find the navigation button for the next question
-                const navigationButtons = document.querySelectorAll(
-                    'input[name="page_num"]',
-                );
+                const navigationButtons = document.querySelectorAll('input[name="page_num"]');
 
                 // Since we always start from Q1, use simple index-based navigation
                 // Q1 = index 0, Q2 = index 1, Q3 = index 2, etc.
@@ -386,15 +365,10 @@
                     nextButton.click();
                     // The frame will reload and resumeExport will be called
                 } else {
-                    throw new Error(
-                        `Navigation button not found at index ${buttonIndex}`,
-                    );
+                    throw new Error(`Navigation button not found at index ${buttonIndex}`);
                 }
             } catch (error) {
-                console.error(
-                    "[BetterE-class] Error navigating to next question:",
-                    error,
-                );
+                console.error("[BetterE-class] Error navigating to next question:", error);
                 state.isExporting = false;
             }
         } else {
@@ -407,10 +381,8 @@
     async function waitForFrames(maxAttempts = 20) {
         for (let i = 0; i < maxAttempts; i++) {
             try {
-                const questionFrame =
-                    parent.parent.question || parent.parent.frames["question"];
-                const answerFrame =
-                    parent.parent.answer || parent.parent.frames["answer"];
+                const questionFrame = parent.parent.question || parent.parent.frames["question"];
+                const answerFrame = parent.parent.answer || parent.parent.frames["answer"];
 
                 // Basic frame existence check
                 const framesExist = !!questionFrame && !!answerFrame;
@@ -432,11 +404,8 @@
 
                 // If frames and documents are accessible, check for content elements
                 if (docsAccessible && questionDoc.body && answerDoc.body) {
-                    const questionElement = questionDoc.querySelector(
-                        ".question p, .question .content",
-                    );
-                    const answerElement =
-                        answerDoc.querySelector(".seloptions");
+                    const questionElement = questionDoc.querySelector(".question p, .question .content");
+                    const answerElement = answerDoc.querySelector(".seloptions");
 
                     if (questionElement && answerElement) {
                         return true;
@@ -449,27 +418,18 @@
             await sleep(500);
         }
 
-        console.error(
-            "[BetterE-class] Timeout: Frames never became ready after",
-            maxAttempts,
-            "attempts",
-        );
+        console.error("[BetterE-class] Timeout: Frames never became ready after", maxAttempts, "attempts");
         return false;
     }
 
     async function collectQuestionData(questionNumber) {
         try {
             // Access the question and answer frames from buttons frame
-            const questionFrame =
-                parent.parent.question || parent.parent.frames["question"];
-            const answerFrame =
-                parent.parent.answer || parent.parent.frames["answer"];
+            const questionFrame = parent.parent.question || parent.parent.frames["question"];
+            const answerFrame = parent.parent.answer || parent.parent.frames["answer"];
 
             if (!questionFrame || !answerFrame) {
-                console.error(
-                    "[BetterE-class] Frames not found for question",
-                    questionNumber,
-                );
+                console.error("[BetterE-class] Frames not found for question", questionNumber);
                 return null;
             }
 
@@ -477,31 +437,23 @@
             let questionText = "";
             try {
                 const questionDoc = questionFrame.document;
-                const questionElement = questionDoc.querySelector(
-                    ".question p, .question .content",
-                );
+                const questionElement = questionDoc.querySelector(".question p, .question .content");
                 if (questionElement) {
                     questionText = questionElement.textContent.trim();
                 }
             } catch (error) {
-                console.error(
-                    "[BetterE-class] Error accessing question text:",
-                    error,
-                );
+                console.error("[BetterE-class] Error accessing question text:", error);
             }
 
             // Extract answer options
             const answers = [];
             try {
                 const answerDoc = answerFrame.document;
-                const answerElements =
-                    answerDoc.querySelectorAll(".seloptions tr");
+                const answerElements = answerDoc.querySelectorAll(".seloptions tr");
 
                 answerElements.forEach((row) => {
                     const prefixLabel = row.querySelector(".prefix label");
-                    const optionLabel = row.querySelector(
-                        ".option-label p, .option-label .content",
-                    );
+                    const optionLabel = row.querySelector(".option-label p, .option-label .content");
 
                     if (prefixLabel && optionLabel) {
                         const number = prefixLabel.textContent.trim();
@@ -510,10 +462,7 @@
                     }
                 });
             } catch (error) {
-                console.error(
-                    "[BetterE-class] Error accessing answer options:",
-                    error,
-                );
+                console.error("[BetterE-class] Error accessing answer options:", error);
             }
 
             return {
@@ -522,10 +471,7 @@
                 answers: answers,
             };
         } catch (error) {
-            console.error(
-                `[BetterE-class] Error collecting question ${questionNumber}:`,
-                error,
-            );
+            console.error(`[BetterE-class] Error collecting question ${questionNumber}:`, error);
             return null;
         }
     }
@@ -588,10 +534,7 @@
                 throw new Error("Copy command failed");
             }
         } catch (error) {
-            console.error(
-                "[BetterE-class] Failed to copy to clipboard:",
-                error,
-            );
+            console.error("[BetterE-class] Failed to copy to clipboard:", error);
             throw error;
         }
     }

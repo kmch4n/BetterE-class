@@ -33,12 +33,7 @@
     window.filedownload = function (url) {
         if (!settings.preventMessagePopup) {
             // Use original popup behavior
-            return originalWindowOpen.call(
-                window,
-                url,
-                "download",
-                "toolbar=no,location=no,directories=no,status=yes,menubar=no,scrollbars=yes,resizable=yes,width=320,height=250",
-            );
+            return originalWindowOpen.call(window, url, "download", "toolbar=no,location=no,directories=no,status=yes,menubar=no,scrollbars=yes,resizable=yes,width=320,height=250");
         }
         // Open in new tab instead
         return originalWindowOpen.call(window, url, "_blank");
@@ -52,24 +47,14 @@
         }
 
         // Check if this is a message tool navigation (msg_editor.php <-> msg_viewer.php)
-        const currentIsMessagePage =
-            window.location.href.includes("msg_editor.php") ||
-            window.location.href.includes("msg_viewer.php");
-        const targetIsMessagePage =
-            url &&
-            (url.includes("msg_editor.php") || url.includes("msg_viewer.php"));
+        const currentIsMessagePage = window.location.href.includes("msg_editor.php") || window.location.href.includes("msg_viewer.php");
+        const targetIsMessagePage = url && (url.includes("msg_editor.php") || url.includes("msg_viewer.php"));
 
         // If navigating within message tool, preserve named targets (like "msgeditor")
         // or open in current tab if target is _self or empty
         if (currentIsMessagePage && targetIsMessagePage) {
             // Use named target if provided, otherwise open in current tab
-            if (
-                target &&
-                target !== "_blank" &&
-                target !== "_self" &&
-                target !== "_parent" &&
-                target !== "_top"
-            ) {
+            if (target && target !== "_blank" && target !== "_self" && target !== "_parent" && target !== "_top") {
                 // Named target like "msgeditor" - use original behavior (reuse same window)
                 return originalWindowOpen.call(window, url, target, features);
             } else {
@@ -82,13 +67,8 @@
         // If features contain popup-like properties (width, height, toolbar=no, etc.)
         // and it's an e-class URL, open in a new tab instead
         if (features && typeof features === "string") {
-            const hasPopupFeatures =
-                /width=|height=|toolbar=no|menubar=no|location=no/.test(
-                    features,
-                );
-            const isEclassUrl =
-                url &&
-                (url.includes("eclass.doshisha.ac.jp") || url.startsWith("/"));
+            const hasPopupFeatures = /width=|height=|toolbar=no|menubar=no|location=no/.test(features);
+            const isEclassUrl = url && (url.includes("eclass.doshisha.ac.jp") || url.startsWith("/"));
 
             if (hasPopupFeatures && isEclassUrl) {
                 // Open in a new tab instead of popup window
@@ -114,12 +94,8 @@
                     const linkTarget = link.getAttribute("target");
 
                     // Check if this is a message tool navigation (msg_editor.php <-> msg_viewer.php)
-                    const currentIsMessagePage =
-                        window.location.href.includes("msg_editor.php") ||
-                        window.location.href.includes("msg_viewer.php");
-                    const targetIsMessagePage =
-                        href.includes("msg_editor.php") ||
-                        href.includes("msg_viewer.php");
+                    const currentIsMessagePage = window.location.href.includes("msg_editor.php") || window.location.href.includes("msg_viewer.php");
+                    const targetIsMessagePage = href.includes("msg_editor.php") || href.includes("msg_viewer.php");
 
                     if (currentIsMessagePage && targetIsMessagePage) {
                         // Intercept msg_viewer.php links and open in same tab
@@ -138,33 +114,19 @@
                 if (!onclickAttr) return;
 
                 // Check if it's calling openMessageWindow or openMessage
-                const messageWindowMatch = onclickAttr.match(
-                    /openMessageWindow\s*\(\s*['"]([^'"]+)['"]/,
-                );
-                const messageMatch = onclickAttr.match(
-                    /openMessage\s*\(\s*['"]([^'"]+)['"]/,
-                );
-                const filedownloadMatch = onclickAttr.match(
-                    /filedownload\s*\(\s*['"]([^'"]+)['"]/,
-                );
+                const messageWindowMatch = onclickAttr.match(/openMessageWindow\s*\(\s*['"]([^'"]+)['"]/);
+                const messageMatch = onclickAttr.match(/openMessage\s*\(\s*['"]([^'"]+)['"]/);
+                const filedownloadMatch = onclickAttr.match(/filedownload\s*\(\s*['"]([^'"]+)['"]/);
 
                 if (messageWindowMatch || messageMatch || filedownloadMatch) {
                     e.preventDefault();
                     e.stopPropagation();
 
-                    const url = messageWindowMatch
-                        ? messageWindowMatch[1]
-                        : messageMatch
-                          ? messageMatch[1]
-                          : filedownloadMatch[1];
+                    const url = messageWindowMatch ? messageWindowMatch[1] : messageMatch ? messageMatch[1] : filedownloadMatch[1];
 
                     // Check if this is a message tool navigation (msg_editor.php <-> msg_viewer.php)
-                    const currentIsMessagePage =
-                        window.location.href.includes("msg_editor.php") ||
-                        window.location.href.includes("msg_viewer.php");
-                    const targetIsMessagePage =
-                        url.includes("msg_editor.php") ||
-                        url.includes("msg_viewer.php");
+                    const currentIsMessagePage = window.location.href.includes("msg_editor.php") || window.location.href.includes("msg_viewer.php");
+                    const targetIsMessagePage = url.includes("msg_editor.php") || url.includes("msg_viewer.php");
 
                     if (currentIsMessagePage && targetIsMessagePage) {
                         // Open in the current tab to avoid multiple tabs

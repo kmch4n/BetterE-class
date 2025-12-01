@@ -39,9 +39,7 @@
         }
 
         // Check if already made collapsible
-        if (
-            headerElement.classList.contains("betterEclass-collapsible-header")
-        ) {
+        if (headerElement.classList.contains("betterEclass-collapsible-header")) {
             return;
         }
 
@@ -65,20 +63,17 @@
 
         // Toggle function
         function toggle() {
-            const isCurrentlyCollapsed =
-                contentElement.classList.contains("collapsed");
+            const isCurrentlyCollapsed = contentElement.classList.contains("collapsed");
 
             if (isCurrentlyCollapsed) {
                 // Expand - remove collapsed class first to get correct scrollHeight
                 contentElement.classList.remove("collapsed");
-                contentElement.style.maxHeight =
-                    contentElement.scrollHeight + "px";
+                contentElement.style.maxHeight = contentElement.scrollHeight + "px";
                 toggleButton.innerHTML = "▼";
                 saveCollapsedState(sectionId, false);
             } else {
                 // Collapse
-                contentElement.style.maxHeight =
-                    contentElement.scrollHeight + "px";
+                contentElement.style.maxHeight = contentElement.scrollHeight + "px";
                 // Force reflow
                 contentElement.offsetHeight;
                 contentElement.style.maxHeight = "0";
@@ -94,8 +89,7 @@
         // Update max-height on window resize
         window.addEventListener("resize", () => {
             if (!contentElement.classList.contains("collapsed")) {
-                contentElement.style.maxHeight =
-                    contentElement.scrollHeight + "px";
+                contentElement.style.maxHeight = contentElement.scrollHeight + "px";
             }
         });
     }
@@ -110,11 +104,7 @@
 
         if (h4 && newsDiv) {
             // Check if already wrapped
-            if (
-                newsDiv.parentElement.classList.contains(
-                    "betterEclass-admin-notices-wrapper",
-                )
-            ) {
+            if (newsDiv.parentElement.classList.contains("betterEclass-admin-notices-wrapper")) {
                 return;
             }
 
@@ -150,11 +140,7 @@
             let nextElement = header.nextElementSibling;
 
             // Collect elements until the next h3 or end
-            while (
-                nextElement &&
-                nextElement.tagName !== "H3" &&
-                nextElement.tagName !== "H2"
-            ) {
+            while (nextElement && nextElement.tagName !== "H3" && nextElement.tagName !== "H2") {
                 contentElements.push(nextElement);
                 nextElement = nextElement.nextElementSibling;
             }
@@ -164,10 +150,7 @@
                 const wrapper = document.createElement("div");
                 wrapper.className = "betterEclass-course-schedule-wrapper";
 
-                contentElements[0].parentNode.insertBefore(
-                    wrapper,
-                    contentElements[0],
-                );
+                contentElements[0].parentNode.insertBefore(wrapper, contentElements[0]);
                 contentElements.forEach((el) => wrapper.appendChild(el));
 
                 makeCollapsible("courseSchedule", header, wrapper);
@@ -183,9 +166,7 @@
         headers.forEach((header) => {
             if (header.textContent.includes("その他の科目")) {
                 // Check if already made collapsible
-                if (
-                    header.classList.contains("betterEclass-collapsible-header")
-                ) {
+                if (header.classList.contains("betterEclass-collapsible-header")) {
                     return;
                 }
 
@@ -195,18 +176,11 @@
 
                 // Collect the search input and courses list
                 while (nextElement && contentElements.length < 3) {
-                    if (
-                        nextElement.tagName === "INPUT" ||
-                        nextElement.tagName === "BR" ||
-                        nextElement.tagName === "DIV"
-                    ) {
+                    if (nextElement.tagName === "INPUT" || nextElement.tagName === "BR" || nextElement.tagName === "DIV") {
                         contentElements.push(nextElement);
 
                         // Stop after finding the main courses div
-                        if (
-                            nextElement.tagName === "DIV" &&
-                            nextElement.id === "courses_list_left"
-                        ) {
+                        if (nextElement.tagName === "DIV" && nextElement.id === "courses_list_left") {
                             break;
                         }
                     }
@@ -218,10 +192,7 @@
                     const wrapper = document.createElement("div");
                     wrapper.className = "betterEclass-other-courses-wrapper";
 
-                    contentElements[0].parentNode.insertBefore(
-                        wrapper,
-                        contentElements[0],
-                    );
+                    contentElements[0].parentNode.insertBefore(wrapper, contentElements[0]);
                     contentElements.forEach((el) => wrapper.appendChild(el));
 
                     makeCollapsible("otherCourses", header, wrapper);
@@ -237,9 +208,7 @@
         headers.forEach((header) => {
             if (header.textContent.includes("表示する学期")) {
                 // Check if already made collapsible
-                if (
-                    header.classList.contains("betterEclass-collapsible-header")
-                ) {
+                if (header.classList.contains("betterEclass-collapsible-header")) {
                     return;
                 }
 

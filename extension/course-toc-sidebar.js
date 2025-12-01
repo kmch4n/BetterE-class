@@ -39,15 +39,9 @@
                 location.reload();
             } else {
                 // Remove sidebar if disabled
-                const sidebar = document.getElementById(
-                    "betterEclass-toc-sidebar",
-                );
-                const styles = document.getElementById(
-                    "betterEclass-toc-sidebar-styles",
-                );
-                const hideOriginalStyles = document.getElementById(
-                    "betterEclass-hide-original-toc",
-                );
+                const sidebar = document.getElementById("betterEclass-toc-sidebar");
+                const styles = document.getElementById("betterEclass-toc-sidebar-styles");
+                const hideOriginalStyles = document.getElementById("betterEclass-hide-original-toc");
                 if (sidebar) sidebar.remove();
                 if (styles) styles.remove();
                 if (hideOriginalStyles) hideOriginalStyles.remove();
@@ -114,9 +108,7 @@
             newLink.className = "toc-link";
 
             // Copy the onclick behavior
-            const onclickMatch = link
-                .getAttribute("href")
-                .match(/switchQuestion\('([^']+)'\)/);
+            const onclickMatch = link.getAttribute("href").match(/switchQuestion\('([^']+)'\)/);
             if (onclickMatch) {
                 const targetId = onclickMatch[1];
 
@@ -124,8 +116,7 @@
                 const subListResult = createSubItems(targetId);
 
                 if (subListResult) {
-                    const { subList, hasAvailable, hasNew, allLocked } =
-                        subListResult;
+                    const { subList, hasAvailable, hasNew, allLocked } = subListResult;
 
                     // Add status icons (can show multiple)
                     const statusIcon = document.createElement("span");
@@ -166,22 +157,14 @@
                     toggleBtn.addEventListener("click", (e) => {
                         e.stopPropagation();
                         newItem.classList.toggle("expanded");
-                        toggleBtn.textContent = newItem.classList.contains(
-                            "expanded",
-                        )
-                            ? "▼"
-                            : "▶";
+                        toggleBtn.textContent = newItem.classList.contains("expanded") ? "▼" : "▶";
                     });
 
                     // Click on link also toggles
                     newLink.addEventListener("click", (e) => {
                         e.preventDefault();
                         newItem.classList.toggle("expanded");
-                        toggleBtn.textContent = newItem.classList.contains(
-                            "expanded",
-                        )
-                            ? "▼"
-                            : "▶";
+                        toggleBtn.textContent = newItem.classList.contains("expanded") ? "▼" : "▶";
                     });
 
                     newList.appendChild(newItem);
@@ -189,9 +172,7 @@
                     // No sub-items, just add the link
                     newLink.addEventListener("click", (e) => {
                         e.preventDefault();
-                        const targetElement = document.getElementById(
-                            targetId.replace("#", ""),
-                        );
+                        const targetElement = document.getElementById(targetId.replace("#", ""));
                         if (targetElement) {
                             targetElement.scrollIntoView({
                                 behavior: "smooth",
@@ -199,9 +180,7 @@
                             });
 
                             // Highlight active item
-                            document
-                                .querySelectorAll(".toc-link")
-                                .forEach((l) => l.classList.remove("active"));
+                            document.querySelectorAll(".toc-link").forEach((l) => l.classList.remove("active"));
                             newLink.classList.add("active");
                         }
                     });
@@ -229,9 +208,7 @@
 
         toggleBtn.addEventListener("click", () => {
             sidebar.classList.toggle("collapsed");
-            toggleIcon.textContent = sidebar.classList.contains("collapsed")
-                ? "▶"
-                : "◀";
+            toggleIcon.textContent = sidebar.classList.contains("collapsed") ? "▶" : "◀";
         });
 
         // Add expand/collapse all functionality
@@ -283,10 +260,7 @@
                 const tocText = tocLink.textContent.trim();
                 sections.forEach((section) => {
                     const sectionTitle = section.querySelector(".panel-title");
-                    if (
-                        sectionTitle &&
-                        sectionTitle.textContent.trim() === tocText
-                    ) {
+                    if (sectionTitle && sectionTitle.textContent.trim() === tocText) {
                         sectionMap.set(section.id, item);
                     }
                 });
@@ -384,9 +358,7 @@
 
     function createFlatSidebar() {
         // Find all materials directly on the page (no parent sections)
-        const allMaterials = document.querySelectorAll(
-            "section.panel-default .list-group-item",
-        );
+        const allMaterials = document.querySelectorAll("section.panel-default .list-group-item");
 
         if (allMaterials.length === 0) {
             return;
@@ -427,12 +399,8 @@
             const isUnread = hasLink && !itemText.includes("利用回数");
 
             // Get material type
-            const categoryLabel = material.querySelector(
-                ".cl-contentsList_categoryLabel",
-            );
-            const materialType = categoryLabel
-                ? categoryLabel.textContent.trim()
-                : "";
+            const categoryLabel = material.querySelector(".cl-contentsList_categoryLabel");
+            const materialType = categoryLabel ? categoryLabel.textContent.trim() : "";
 
             // Get title text (remove New text if present)
             let title = titleElement.textContent.trim();
@@ -505,9 +473,7 @@
                     }, 2000);
 
                     // Highlight active item
-                    document
-                        .querySelectorAll(".toc-link")
-                        .forEach((l) => l.classList.remove("active"));
+                    document.querySelectorAll(".toc-link").forEach((l) => l.classList.remove("active"));
                     link.classList.add("active");
                 });
             } else {
@@ -528,9 +494,7 @@
 
         toggleBtn.addEventListener("click", () => {
             sidebar.classList.toggle("collapsed");
-            toggleIcon.textContent = sidebar.classList.contains("collapsed")
-                ? "▶"
-                : "◀";
+            toggleIcon.textContent = sidebar.classList.contains("collapsed") ? "▶" : "◀";
         });
 
         // Add styles
@@ -579,12 +543,8 @@
             const isUnread = hasLink && !itemText.includes("利用回数");
 
             // Get material type
-            const categoryLabel = material.querySelector(
-                ".cl-contentsList_categoryLabel",
-            );
-            const materialType = categoryLabel
-                ? categoryLabel.textContent.trim()
-                : "";
+            const categoryLabel = material.querySelector(".cl-contentsList_categoryLabel");
+            const materialType = categoryLabel ? categoryLabel.textContent.trim() : "";
 
             // Update status flags
             if (hasLink) availableCount++;
@@ -654,9 +614,7 @@
                     });
 
                     // Highlight active item
-                    document
-                        .querySelectorAll(".toc-sublink")
-                        .forEach((l) => l.classList.remove("active"));
+                    document.querySelectorAll(".toc-sublink").forEach((l) => l.classList.remove("active"));
                     subLink.classList.add("active");
                 });
             } else {

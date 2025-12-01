@@ -27,24 +27,18 @@
         if (!table) return;
 
         const headers = table.querySelectorAll("thead th");
-        const saturdayIndex = Array.from(headers).findIndex((th) =>
-            th.textContent.includes("土曜日"),
-        );
+        const saturdayIndex = Array.from(headers).findIndex((th) => th.textContent.includes("土曜日"));
 
         if (saturdayIndex === -1) return;
 
         // Hide/show Saturday column
-        headers[saturdayIndex].style.display = settings.hideSaturday
-            ? "none"
-            : "";
+        headers[saturdayIndex].style.display = settings.hideSaturday ? "none" : "";
 
         // Hide/show Saturday cells in all rows
         table.querySelectorAll("tbody tr").forEach((row) => {
             const cells = row.querySelectorAll("td");
             if (cells[saturdayIndex]) {
-                cells[saturdayIndex].style.display = settings.hideSaturday
-                    ? "none"
-                    : "";
+                cells[saturdayIndex].style.display = settings.hideSaturday ? "none" : "";
             }
         });
     }

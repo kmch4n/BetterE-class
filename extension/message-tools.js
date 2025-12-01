@@ -27,8 +27,7 @@
             marginRight: "1em",
             transition: "all 0.2s ease",
             boxShadow: "0 2px 4px rgba(26, 115, 232, 0.3)",
-            fontFamily:
-                '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+            fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
         });
 
         // Hover effect
@@ -67,9 +66,7 @@
     function markAllMessagesAsRead() {
         try {
             // 1. Click the "select all" checkbox
-            const selectAllCheckbox = document.querySelector(
-                'input[type="checkbox"][name="autochecker"]',
-            );
+            const selectAllCheckbox = document.querySelector('input[type="checkbox"][name="autochecker"]');
             if (!selectAllCheckbox) {
                 console.error("[BetterE-class] Select all checkbox not found");
                 return;
@@ -83,32 +80,23 @@
             // 2. Use requestAnimationFrame for smoother execution
             requestAnimationFrame(() => {
                 // Click the "mark as read" button
-                const markAsReadButton = document.querySelector(
-                    'input[type="submit"][name="UNSET_UNREADFLAG"]',
-                );
+                const markAsReadButton = document.querySelector('input[type="submit"][name="UNSET_UNREADFLAG"]');
                 if (!markAsReadButton) {
-                    console.error(
-                        "[BetterE-class] Mark as read button not found",
-                    );
+                    console.error("[BetterE-class] Mark as read button not found");
                     return;
                 }
 
                 markAsReadButton.click();
             });
         } catch (error) {
-            console.error(
-                "[BetterE-class] Error marking all messages as read:",
-                error,
-            );
+            console.error("[BetterE-class] Error marking all messages as read:", error);
         }
     }
 
     // Insert the button into the page
     function insertButton() {
         // Find the download button
-        const downloadButton = document.querySelector(
-            'input[type="submit"][name="downloadmsg"][value="ダウンロード"]',
-        );
+        const downloadButton = document.querySelector('input[type="submit"][name="downloadmsg"][value="ダウンロード"]');
         if (!downloadButton) {
             return;
         }
@@ -122,10 +110,7 @@
         const newButton = createMarkAllAsReadButton();
 
         // Insert after "ダウンロード" button (at the end)
-        downloadButton.parentNode.insertBefore(
-            newButton,
-            downloadButton.nextSibling,
-        );
+        downloadButton.parentNode.insertBefore(newButton, downloadButton.nextSibling);
     }
 
     // Initialize

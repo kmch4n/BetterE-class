@@ -42,17 +42,13 @@
 
     function addCopyButton() {
         // Find the question element
-        const questionElement = document.querySelector(
-            ".question.previewPlace, .question, .previewPlace",
-        );
+        const questionElement = document.querySelector(".question.previewPlace, .question, .previewPlace");
         if (!questionElement) {
             return false;
         }
 
         // Check if button already exists
-        const existingButton = questionElement.parentElement?.querySelector(
-            ".betterEclass-quiz-copy-btn",
-        );
+        const existingButton = questionElement.parentElement?.querySelector(".betterEclass-quiz-copy-btn");
         if (existingButton) {
             return true;
         }
@@ -114,31 +110,23 @@
             // Extract question text from current document
             let questionText = "";
             try {
-                const questionElement = document.querySelector(
-                    ".question p, .question .content",
-                );
+                const questionElement = document.querySelector(".question p, .question .content");
                 if (questionElement) {
                     questionText = questionElement.textContent.trim();
                 }
             } catch (error) {
-                console.error(
-                    "[BetterE-class] Error accessing question text:",
-                    error,
-                );
+                console.error("[BetterE-class] Error accessing question text:", error);
             }
 
             // Extract answer options from answer frame
             const answers = [];
             try {
                 const answerDoc = answerFrame.document;
-                const answerElements =
-                    answerDoc.querySelectorAll(".seloptions tr");
+                const answerElements = answerDoc.querySelectorAll(".seloptions tr");
 
                 answerElements.forEach((row) => {
                     const prefixLabel = row.querySelector(".prefix label");
-                    const optionLabel = row.querySelector(
-                        ".option-label p, .option-label .content",
-                    );
+                    const optionLabel = row.querySelector(".option-label p, .option-label .content");
 
                     if (prefixLabel && optionLabel) {
                         const number = prefixLabel.textContent.trim();
@@ -147,10 +135,7 @@
                     }
                 });
             } catch (error) {
-                console.error(
-                    "[BetterE-class] Error accessing answer frame:",
-                    error,
-                );
+                console.error("[BetterE-class] Error accessing answer frame:", error);
             }
 
             // Format text

@@ -24,9 +24,7 @@
     function getCoursesWithDeadlines() {
         const courses = [];
         const seen = new Set(); // Track unique courses by URL
-        const deadlineElements = document.querySelectorAll(
-            ".course-contents-info",
-        );
+        const deadlineElements = document.querySelectorAll(".course-contents-info");
 
         deadlineElements.forEach((element) => {
             let courseLink = null;
@@ -36,13 +34,9 @@
 
             // Strategy 2: Check parent container for a link (other courses section)
             if (!courseLink) {
-                const container =
-                    element.closest("li") ||
-                    element.closest(".course-data-box-normal");
+                const container = element.closest("li") || element.closest(".course-data-box-normal");
                 if (container) {
-                    courseLink = container.querySelector(
-                        'a[href*="course.php"]',
-                    );
+                    courseLink = container.querySelector('a[href*="course.php"]');
                 }
             }
 
@@ -63,15 +57,10 @@
                 }
                 seen.add(courseUrl);
 
-                const courseName = courseLink.textContent
-                    .trim()
-                    .replace(/^»\s*/, "");
+                const courseName = courseLink.textContent.trim().replace(/^»\s*/, "");
 
                 // Extract just the subject name without the code
-                const cleanCourseName = courseName
-                    .replace(/^△/, "")
-                    .split("-")[0]
-                    .trim();
+                const cleanCourseName = courseName.replace(/^△/, "").split("-")[0].trim();
 
                 courses.push({
                     name: cleanCourseName,
@@ -126,9 +115,7 @@
     // Insert deadline list into the page
     function insertDeadlineList() {
         // First, remove any existing deadline list to prevent duplicates
-        const existingList = document.getElementById(
-            "betterEclassDeadlineList",
-        );
+        const existingList = document.getElementById("betterEclassDeadlineList");
         if (existingList) {
             existingList.remove();
         }

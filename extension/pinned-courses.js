@@ -108,9 +108,7 @@
         if (!widget) return;
 
         // Find the deadline list or sidebar
-        const deadlineList = document.getElementById(
-            "betterEclassDeadlineList",
-        );
+        const deadlineList = document.getElementById("betterEclassDeadlineList");
         const sidebar = document.querySelector(".col-sm-3");
 
         if (deadlineList) {
@@ -130,22 +128,17 @@
     // Add pin buttons to course links
     function addPinButtons() {
         // Add to schedule table
-        const scheduleLinks = document.querySelectorAll(
-            '#schedule-table a[href*="/course.php/"]',
-        );
+        const scheduleLinks = document.querySelectorAll('#schedule-table a[href*="/course.php/"]');
         scheduleLinks.forEach(addPinButton);
 
         // Add to course list
-        const courseListLinks = document.querySelectorAll(
-            '.courseTree a[href*="/course.php/"]',
-        );
+        const courseListLinks = document.querySelectorAll('.courseTree a[href*="/course.php/"]');
         courseListLinks.forEach(addPinButton);
     }
 
     function addPinButton(link) {
         // Skip if already has pin button
-        if (link.parentElement.querySelector(".betterEclass-pin-button"))
-            return;
+        if (link.parentElement.querySelector(".betterEclass-pin-button")) return;
 
         const url = link.href;
         const isPinned = pinnedCourses.some((course) => course.url === url);
@@ -156,9 +149,7 @@
         pinButton.title = isPinned ? "ピン留めを解除" : "ピン留めする";
 
         // Add course-item class to parent for CSS hover effect
-        if (
-            !link.parentElement.classList.contains("betterEclass-course-item")
-        ) {
+        if (!link.parentElement.classList.contains("betterEclass-course-item")) {
             link.parentElement.classList.add("betterEclass-course-item");
         }
 
@@ -168,10 +159,7 @@
             e.preventDefault();
             e.stopPropagation();
 
-            const courseName = link.textContent
-                .trim()
-                .replace(/^»\s*/, "")
-                .replace(/^△/, "");
+            const courseName = link.textContent.trim().replace(/^»\s*/, "").replace(/^△/, "");
 
             if (isPinned) {
                 unpinCourse(url);

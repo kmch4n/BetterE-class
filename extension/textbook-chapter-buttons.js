@@ -25,9 +25,7 @@
 
     // Listen for PDF URL from loadit.php frame (for PDF preview pages)
     window.addEventListener("message", (event) => {
-        const isValidOrigin =
-            event.origin === window.location.origin ||
-            event.origin === "https://eclass.doshisha.ac.jp";
+        const isValidOrigin = event.origin === window.location.origin || event.origin === "https://eclass.doshisha.ac.jp";
 
         if (!isValidOrigin) {
             return;
@@ -49,9 +47,7 @@
         }
 
         // Find all file_down.php links (attachment links in chapter list)
-        const attachmentLinks = document.querySelectorAll(
-            'a[href*="file_down.php"]',
-        );
+        const attachmentLinks = document.querySelectorAll('a[href*="file_down.php"]');
 
         attachmentLinks.forEach((link, index) => {
             try {
@@ -73,8 +69,7 @@
                     if (href.startsWith("/")) {
                         absoluteUrl = window.location.origin + href;
                     } else {
-                        absoluteUrl =
-                            window.location.origin + "/webclass/" + href;
+                        absoluteUrl = window.location.origin + "/webclass/" + href;
                     }
                 }
 
@@ -86,9 +81,7 @@
                 // Find the parent row
                 const row = link.closest("tr[data-page]");
                 if (!row) {
-                    console.warn(
-                        "[BetterE-class] Could not find parent row for attachment",
-                    );
+                    console.warn("[BetterE-class] Could not find parent row for attachment");
                     return;
                 }
 
@@ -105,28 +98,17 @@
 
                 // Create button container
                 const buttonContainer = document.createElement("div");
-                buttonContainer.className =
-                    "betterEclass-chapter-download-btns";
-                buttonContainer.style.cssText =
-                    "margin-top: 6px; display: flex; gap: 4px; flex-wrap: wrap; justify-content: flex-end;";
+                buttonContainer.className = "betterEclass-chapter-download-btns";
+                buttonContainer.style.cssText = "margin-top: 6px; display: flex; gap: 4px; flex-wrap: wrap; justify-content: flex-end;";
 
                 // Add buttons (use absolute URL for save/preview)
-                buttonContainer.appendChild(
-                    createDownloadButton(absoluteUrl, decodedFilename),
-                );
-                buttonContainer.appendChild(
-                    createSaveAsButton(absoluteUrl, decodedFilename),
-                );
-                buttonContainer.appendChild(
-                    createPreviewButton(absoluteUrl, decodedFilename),
-                );
+                buttonContainer.appendChild(createDownloadButton(absoluteUrl, decodedFilename));
+                buttonContainer.appendChild(createSaveAsButton(absoluteUrl, decodedFilename));
+                buttonContainer.appendChild(createPreviewButton(absoluteUrl, decodedFilename));
 
                 attachmentCell.appendChild(buttonContainer);
             } catch (error) {
-                console.error(
-                    "[BetterE-class] Error processing attachment link:",
-                    error,
-                );
+                console.error("[BetterE-class] Error processing attachment link:", error);
             }
         });
     }
@@ -143,9 +125,7 @@
         }
 
         // Find all chapter rows in the table
-        const chapterRows = document.querySelectorAll(
-            "#TOCLayout tr[data-page]",
-        );
+        const chapterRows = document.querySelectorAll("#TOCLayout tr[data-page]");
 
         chapterRows.forEach((row, index) => {
             // Check if buttons already exist
@@ -165,8 +145,7 @@
             // Create button container
             const buttonContainer = document.createElement("div");
             buttonContainer.className = "betterEclass-chapter-download-btns";
-            buttonContainer.style.cssText =
-                "margin-top: 6px; display: flex; gap: 4px; flex-wrap: wrap; justify-content: flex-end;";
+            buttonContainer.style.cssText = "margin-top: 6px; display: flex; gap: 4px; flex-wrap: wrap; justify-content: flex-end;";
 
             // Add buttons
             buttonContainer.appendChild(createDownloadButton(pdfUrl, filename));
@@ -179,89 +158,67 @@
 
     function createDownloadButton(url, filename) {
         // Use shared button factory from utils/button-factory.js
-        return window.BetterEclassUtils.createDownloadButton(
-            "⬇️",
-            "ダウンロード",
-            () => {
-                // For file_down.php URLs, we need to use the background script
-                // to extract the actual file URL before downloading
-                chrome.runtime.sendMessage(
-                    {
-                        type: "downloadDirect",
-                        url: url,
-                        filename: filename || "document.pdf",
-                    },
-                    (response) => {
-                        if (response && response.error) {
-                            console.error(
-                                "[BetterE-class] Download error:",
-                                response.error,
-                            );
-                        }
-                    },
-                );
-            },
-        );
+        return window.BetterEclassUtils.createDownloadButton("⬇️", "ダウンロード", () => {
+            // For file_down.php URLs, we need to use the background script
+            // to extract the actual file URL before downloading
+            chrome.runtime.sendMessage(
+                {
+                    type: "downloadDirect",
+                    url: url,
+                    filename: filename || "document.pdf",
+                },
+                (response) => {
+                    if (response && response.error) {
+                        console.error("[BetterE-class] Download error:", response.error);
+                    }
+                },
+            );
+        });
     }
 
     function createSaveAsButton(url, filename) {
         // Use shared button factory from utils/button-factory.js
-        return window.BetterEclassUtils.createSaveAsButton(
-            "💾",
-            "名前を付けて保存",
-            () => {
-                // Send message to background script to trigger download with dialog
-                chrome.runtime.sendMessage(
-                    {
-                        type: "downloadWithDialog",
-                        url: url,
-                        filename: filename || "document.pdf",
-                    },
-                    (response) => {
-                        if (response && response.error) {
-                            console.error(
-                                "[BetterE-class] Download error:",
-                                response.error,
-                            );
-                        }
-                    },
-                );
-            },
-        );
+        return window.BetterEclassUtils.createSaveAsButton("💾", "名前を付けて保存", () => {
+            // Send message to background script to trigger download with dialog
+            chrome.runtime.sendMessage(
+                {
+                    type: "downloadWithDialog",
+                    url: url,
+                    filename: filename || "document.pdf",
+                },
+                (response) => {
+                    if (response && response.error) {
+                        console.error("[BetterE-class] Download error:", response.error);
+                    }
+                },
+            );
+        });
     }
 
     function createPreviewButton(url, filename) {
         // Use shared button factory from utils/button-factory.js
-        return window.BetterEclassUtils.createPreviewButton(
-            "👁️",
-            "プレビュー",
-            () => {
-                // Send message to background script to open preview
-                chrome.runtime.sendMessage(
-                    {
-                        type: "previewFile",
-                        url: url,
-                        filename: filename || "document.pdf",
-                    },
-                    (response) => {
-                        if (response && response.error) {
-                            console.error(
-                                "[BetterE-class] Preview error:",
-                                response.error,
-                            );
-                        }
-                    },
-                );
-            },
-        );
+        return window.BetterEclassUtils.createPreviewButton("👁️", "プレビュー", () => {
+            // Send message to background script to open preview
+            chrome.runtime.sendMessage(
+                {
+                    type: "previewFile",
+                    url: url,
+                    filename: filename || "document.pdf",
+                },
+                (response) => {
+                    if (response && response.error) {
+                        console.error("[BetterE-class] Preview error:", response.error);
+                    }
+                },
+            );
+        });
     }
 
     // Monitor for changes in settings
     chrome.storage.onChanged.addListener((changes, namespace) => {
         if (namespace === "sync") {
             if (changes.enableDirectDownload) {
-                settings.enableDirectDownload =
-                    changes.enableDirectDownload.newValue;
+                settings.enableDirectDownload = changes.enableDirectDownload.newValue;
             }
         }
     });

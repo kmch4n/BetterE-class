@@ -8,32 +8,20 @@
     };
 
     // Load settings
-    chrome.storage.sync.get(
-        ["enableAttachmentTab", "enableDirectDownload"],
-        (result) => {
-            try {
-                settings.enableAttachmentTab =
-                    result.enableAttachmentTab !== undefined
-                        ? result.enableAttachmentTab
-                        : true;
-                settings.enableDirectDownload =
-                    result.enableDirectDownload !== undefined
-                        ? result.enableDirectDownload
-                        : true;
+    chrome.storage.sync.get(["enableAttachmentTab", "enableDirectDownload"], (result) => {
+        try {
+            settings.enableAttachmentTab = result.enableAttachmentTab !== undefined ? result.enableAttachmentTab : true;
+            settings.enableDirectDownload = result.enableDirectDownload !== undefined ? result.enableDirectDownload : true;
 
-                init();
-            } catch (error) {
-                console.error("Failed to load attachment settings:", error);
-            }
-        },
-    );
+            init();
+        } catch (error) {
+            console.error("Failed to load attachment settings:", error);
+        }
+    });
 
     function init() {
         // Check if this is the button frame (dqstn_button.php) and listen for PDF messages
-        if (
-            window.name === "button" ||
-            window.location.href.includes("dqstn_button.php")
-        ) {
+        if (window.name === "button" || window.location.href.includes("dqstn_button.php")) {
             window.addEventListener("message", handleButtonFrameMessage);
         }
 
@@ -49,9 +37,7 @@
 
     // Handle messages in button frame
     function handleButtonFrameMessage(event) {
-        const isValidOrigin =
-            event.origin === window.location.origin ||
-            event.origin === "https://eclass.doshisha.ac.jp";
+        const isValidOrigin = event.origin === window.location.origin || event.origin === "https://eclass.doshisha.ac.jp";
 
         if (!isValidOrigin) return;
 
@@ -78,11 +64,7 @@
             let buttonFrame = null;
             try {
                 // Try accessing from top level
-                if (
-                    window.top &&
-                    window.top.frames &&
-                    window.top.frames["button"]
-                ) {
+                if (window.top && window.top.frames && window.top.frames["button"]) {
                     buttonFrame = window.top.frames["button"];
                 } else if (window.top && window.top.frames) {
                     // Try iterating through all frames at top level
@@ -94,10 +76,7 @@
                     }
                 }
             } catch (e) {
-                console.warn(
-                    "[BetterE-class] Error accessing button frame:",
-                    e,
-                );
+                console.warn("[BetterE-class] Error accessing button frame:", e);
             }
 
             if (buttonFrame) {
@@ -105,10 +84,7 @@
             }
             // Note: If button frame not found, isQuizPage check should prevent this from being called
         } catch (error) {
-            console.error(
-                "[BetterE-class] Error sending PDF to button frame:",
-                error,
-            );
+            console.error("[BetterE-class] Error sending PDF to button frame:", error);
         }
     }
 
@@ -132,28 +108,12 @@
 
         const buttonContainer = document.createElement("div");
         buttonContainer.className = "betterEclass-quiz-download-btns";
-        buttonContainer.style.cssText =
-            "display: flex; flex-direction: column; gap: 6px;";
+        buttonContainer.style.cssText = "display: flex; flex-direction: column; gap: 6px;";
 
         // Create buttons
-        const downloadBtn = createDownloadButton(
-            "⬇️",
-            "ダウンロード",
-            pdfUrl,
-            filename,
-        );
-        const saveAsBtn = createSaveAsButton(
-            "💾",
-            "名前を付けて保存",
-            pdfUrl,
-            filename,
-        );
-        const previewBtn = createPreviewButton(
-            "👁️",
-            "プレビュー",
-            pdfUrl,
-            filename,
-        );
+        const downloadBtn = createDownloadButton("⬇️", "ダウンロード", pdfUrl, filename);
+        const saveAsBtn = createSaveAsButton("💾", "名前を付けて保存", pdfUrl, filename);
+        const previewBtn = createPreviewButton("👁️", "プレビュー", pdfUrl, filename);
 
         downloadBtn.style.width = "100%";
         downloadBtn.style.justifyContent = "center";
@@ -180,9 +140,7 @@
 
     function processAttachments() {
         // Find all attachment links (type 1: with filedownload onclick)
-        const attachmentLinks = document.querySelectorAll(
-            'a[onclick*="filedownload"]',
-        );
+        const attachmentLinks = document.querySelectorAll('a[onclick*="filedownload"]');
 
         attachmentLinks.forEach((link) => {
             try {
@@ -219,9 +177,7 @@
         });
 
         // Find direct PDF links (type 2: "別ウインドウ" links)
-        const directPdfLinks = document.querySelectorAll(
-            'a[href*=".pdf"][target="_blank"]',
-        );
+        const directPdfLinks = document.querySelectorAll('a[href*=".pdf"][target="_blank"]');
 
         directPdfLinks.forEach((link) => {
             try {
@@ -230,24 +186,18 @@
                 if (!href) return;
 
                 // Skip if this link was already processed as type 1
-                if (link.getAttribute("onclick")?.includes("filedownload"))
-                    return;
+                if (link.getAttribute("onclick")?.includes("filedownload")) return;
 
                 // Check if this is a quiz/survey page (loadit.php in question frame of qstn_frame.php)
                 // More strict check: look for button frame in parent frameset to confirm it's a quiz page
                 const isQuizPage =
-                    (window.name === "question" ||
-                        window.location.href.includes("loadit.php")) &&
+                    (window.name === "question" || window.location.href.includes("loadit.php")) &&
                     window.parent &&
                     window.parent !== window &&
                     (() => {
                         try {
                             // Check if button frame exists (indicates quiz/survey page)
-                            return (
-                                window.top &&
-                                window.top.frames &&
-                                window.top.frames["button"]
-                            );
+                            return window.top && window.top.frames && window.top.frames["button"];
                         } catch (e) {
                             return false;
                         }
@@ -255,11 +205,7 @@
 
                 // Check if this is inside a textbook frameset (loadit.php in a frame, but not quiz page)
                 // In this case, buttons are already in the chapter list, so skip adding here
-                const isTextbookFrameset =
-                    window.location.href.includes("loadit.php") &&
-                    window.parent &&
-                    window.parent !== window &&
-                    !isQuizPage;
+                const isTextbookFrameset = window.location.href.includes("loadit.php") && window.parent && window.parent !== window && !isQuizPage;
 
                 if (isQuizPage && settings.enableDirectDownload) {
                     // Send PDF URL to button frame instead of adding buttons here
@@ -334,11 +280,7 @@
                 }
 
                 // Only process if file parameter exists and appears to be a PDF
-                if (
-                    fileParam &&
-                    (fileParam.toLowerCase().endsWith(".pdf") ||
-                        fileParam.includes(".pdf"))
-                ) {
+                if (fileParam && (fileParam.toLowerCase().endsWith(".pdf") || fileParam.includes(".pdf"))) {
                     if (settings.enableDirectDownload) {
                         addDownloadButtonForLoaditLink(link, href, fileParam);
                     }
@@ -371,32 +313,18 @@
         // Create button container
         const buttonContainer = document.createElement("div");
         buttonContainer.className = "betterEclass-frame-download";
-        buttonContainer.style.cssText =
-            "position: absolute; top: 10px; right: 10px; z-index: 1000; display: flex; gap: 4px; background: rgba(255, 255, 255, 0.95); padding: 6px; border-radius: 6px; box-shadow: 0 2px 8px rgba(0,0,0,0.15);";
+        buttonContainer.style.cssText = "position: absolute; top: 10px; right: 10px; z-index: 1000; display: flex; gap: 4px; background: rgba(255, 255, 255, 0.95); padding: 6px; border-radius: 6px; box-shadow: 0 2px 8px rgba(0,0,0,0.15);";
 
         // Create direct download button
-        const downloadBtn = createDownloadButton(
-            "⬇️",
-            "ダウンロード",
-            loaditUrl,
-            decodedFileName,
-        );
+        const downloadBtn = createDownloadButton("⬇️", "ダウンロード", loaditUrl, decodedFileName);
         buttonContainer.appendChild(downloadBtn);
 
         // Create "save as" button
-        const saveAsBtn = createSaveAsButton(
-            "💾",
-            "名前を付けて保存",
-            loaditUrl,
-            decodedFileName,
-        );
+        const saveAsBtn = createSaveAsButton("💾", "名前を付けて保存", loaditUrl, decodedFileName);
         buttonContainer.appendChild(saveAsBtn);
 
         // Insert button container
-        if (
-            frameContainer.style.position === "" ||
-            frameContainer.style.position === "static"
-        ) {
+        if (frameContainer.style.position === "" || frameContainer.style.position === "static") {
             frameContainer.style.position = "relative";
         }
         frameContainer.appendChild(buttonContainer);
@@ -416,34 +344,18 @@
         // Create button container
         const buttonContainer = document.createElement("div");
         buttonContainer.className = "betterEclass-download-btns";
-        buttonContainer.style.cssText =
-            "margin-top: 6px; display: flex; gap: 4px; flex-wrap: wrap;";
+        buttonContainer.style.cssText = "margin-top: 6px; display: flex; gap: 4px; flex-wrap: wrap;";
 
         // Create direct download button
-        const downloadBtn = createDownloadButton(
-            "⬇️",
-            "ダウンロード",
-            loaditUrl,
-            decodedFileName,
-        );
+        const downloadBtn = createDownloadButton("⬇️", "ダウンロード", loaditUrl, decodedFileName);
         buttonContainer.appendChild(downloadBtn);
 
         // Create "save as" button
-        const saveAsBtn = createSaveAsButton(
-            "💾",
-            "名前を付けて保存",
-            loaditUrl,
-            decodedFileName,
-        );
+        const saveAsBtn = createSaveAsButton("💾", "名前を付けて保存", loaditUrl, decodedFileName);
         buttonContainer.appendChild(saveAsBtn);
 
         // Create preview button
-        const previewBtn = createPreviewButton(
-            "👁️",
-            "プレビュー",
-            loaditUrl,
-            decodedFileName,
-        );
+        const previewBtn = createPreviewButton("👁️", "プレビュー", loaditUrl, decodedFileName);
         buttonContainer.appendChild(previewBtn);
 
         // Insert button after the link
@@ -460,41 +372,23 @@
         // Extract file name from URL
         const urlParams = new URLSearchParams(downloadUrl.split("?")[1]);
         const fileName = urlParams.get("file_name");
-        const decodedFileName = fileName
-            ? decodeURIComponent(fileName)
-            : "file";
+        const decodedFileName = fileName ? decodeURIComponent(fileName) : "file";
 
         // Create button container
         const buttonContainer = document.createElement("div");
         buttonContainer.className = "betterEclass-download-btns";
-        buttonContainer.style.cssText =
-            "margin-top: 6px; display: flex; gap: 4px; flex-wrap: wrap;";
+        buttonContainer.style.cssText = "margin-top: 6px; display: flex; gap: 4px; flex-wrap: wrap;";
 
         // Create direct download button
-        const downloadBtn = createDownloadButton(
-            "⬇️",
-            "ダウンロード",
-            downloadUrl,
-            decodedFileName,
-        );
+        const downloadBtn = createDownloadButton("⬇️", "ダウンロード", downloadUrl, decodedFileName);
         buttonContainer.appendChild(downloadBtn);
 
         // Create "save as" button
-        const saveAsBtn = createSaveAsButton(
-            "💾",
-            "名前を付けて保存",
-            downloadUrl,
-            decodedFileName,
-        );
+        const saveAsBtn = createSaveAsButton("💾", "名前を付けて保存", downloadUrl, decodedFileName);
         buttonContainer.appendChild(saveAsBtn);
 
         // Create preview button
-        const previewBtn = createPreviewButton(
-            "👁️",
-            "プレビュー",
-            downloadUrl,
-            decodedFileName,
-        );
+        const previewBtn = createPreviewButton("👁️", "プレビュー", downloadUrl, decodedFileName);
         buttonContainer.appendChild(previewBtn);
 
         // Insert button after the attachment link
@@ -503,11 +397,7 @@
 
     function addDownloadButtonForDirectLink(pdfLink, pdfUrl) {
         // Check if button already exists
-        if (
-            pdfLink.nextElementSibling?.classList.contains(
-                "betterEclass-download-btns",
-            )
-        ) {
+        if (pdfLink.nextElementSibling?.classList.contains("betterEclass-download-btns")) {
             return;
         }
 
@@ -519,34 +409,18 @@
         // Create button container
         const buttonContainer = document.createElement("div");
         buttonContainer.className = "betterEclass-download-btns";
-        buttonContainer.style.cssText =
-            "margin-top: 6px; display: flex; gap: 4px; flex-wrap: wrap;";
+        buttonContainer.style.cssText = "margin-top: 6px; display: flex; gap: 4px; flex-wrap: wrap;";
 
         // Create direct download button
-        const downloadBtn = createDownloadButton(
-            "⬇️",
-            "ダウンロード",
-            pdfUrl,
-            decodedFileName,
-        );
+        const downloadBtn = createDownloadButton("⬇️", "ダウンロード", pdfUrl, decodedFileName);
         buttonContainer.appendChild(downloadBtn);
 
         // Create "save as" button
-        const saveAsBtn = createSaveAsButton(
-            "💾",
-            "名前を付けて保存",
-            pdfUrl,
-            decodedFileName,
-        );
+        const saveAsBtn = createSaveAsButton("💾", "名前を付けて保存", pdfUrl, decodedFileName);
         buttonContainer.appendChild(saveAsBtn);
 
         // Create preview button (for direct PDF links, preview is just opening in new tab)
-        const previewBtn = createPreviewButton(
-            "👁️",
-            "プレビュー",
-            pdfUrl,
-            decodedFileName,
-        );
+        const previewBtn = createPreviewButton("👁️", "プレビュー", pdfUrl, decodedFileName);
         buttonContainer.appendChild(previewBtn);
 
         // Insert button container after the link
@@ -555,55 +429,45 @@
 
     function createDownloadButton(icon, text, downloadUrl, fileName) {
         // Use shared button factory from utils/button-factory.js
-        return window.BetterEclassUtils.createDownloadButton(
-            icon,
-            text,
-            async () => {
-                try {
-                    // Ensure we have an absolute URL
-                    let absoluteUrl;
-                    if (downloadUrl.startsWith("http")) {
-                        absoluteUrl = downloadUrl;
-                    } else if (downloadUrl.startsWith("/")) {
-                        absoluteUrl = `${window.location.origin}${downloadUrl}`;
-                    } else {
-                        absoluteUrl = `${window.location.origin}/webclass/${downloadUrl}`;
-                    }
-
-                    // Fetch the file with credentials to maintain session
-                    const response = await fetch(absoluteUrl, {
-                        credentials: "include",
-                    });
-                    if (!response.ok) {
-                        console.error(
-                            "[BetterE-class] Download failed:",
-                            response.status,
-                        );
-                        return;
-                    }
-
-                    const blob = await response.blob();
-                    const url = URL.createObjectURL(blob);
-
-                    // Create a temporary link and click it
-                    const link = document.createElement("a");
-                    link.href = url;
-                    link.download = fileName || "download";
-                    link.style.display = "none";
-                    document.body.appendChild(link);
-                    link.click();
-                    document.body.removeChild(link);
-
-                    // Clean up the URL object
-                    setTimeout(() => URL.revokeObjectURL(url), 100);
-                } catch (error) {
-                    console.error(
-                        "[BetterE-class] Error triggering download:",
-                        error,
-                    );
+        return window.BetterEclassUtils.createDownloadButton(icon, text, async () => {
+            try {
+                // Ensure we have an absolute URL
+                let absoluteUrl;
+                if (downloadUrl.startsWith("http")) {
+                    absoluteUrl = downloadUrl;
+                } else if (downloadUrl.startsWith("/")) {
+                    absoluteUrl = `${window.location.origin}${downloadUrl}`;
+                } else {
+                    absoluteUrl = `${window.location.origin}/webclass/${downloadUrl}`;
                 }
-            },
-        );
+
+                // Fetch the file with credentials to maintain session
+                const response = await fetch(absoluteUrl, {
+                    credentials: "include",
+                });
+                if (!response.ok) {
+                    console.error("[BetterE-class] Download failed:", response.status);
+                    return;
+                }
+
+                const blob = await response.blob();
+                const url = URL.createObjectURL(blob);
+
+                // Create a temporary link and click it
+                const link = document.createElement("a");
+                link.href = url;
+                link.download = fileName || "download";
+                link.style.display = "none";
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+
+                // Clean up the URL object
+                setTimeout(() => URL.revokeObjectURL(url), 100);
+            } catch (error) {
+                console.error("[BetterE-class] Error triggering download:", error);
+            }
+        });
     }
 
     function createSaveAsButton(icon, text, downloadUrl, fileName) {
@@ -629,25 +493,16 @@
                     },
                     (response) => {
                         if (chrome.runtime.lastError) {
-                            console.error(
-                                "[BetterE-class] Runtime error:",
-                                chrome.runtime.lastError,
-                            );
+                            console.error("[BetterE-class] Runtime error:", chrome.runtime.lastError);
                         }
 
                         if (response && response.error) {
-                            console.error(
-                                "[BetterE-class] Download error:",
-                                response.error,
-                            );
+                            console.error("[BetterE-class] Download error:", response.error);
                         }
                     },
                 );
             } catch (error) {
-                console.error(
-                    "[BetterE-class] Error triggering save as:",
-                    error,
-                );
+                console.error("[BetterE-class] Error triggering save as:", error);
             }
         });
     }
@@ -670,10 +525,7 @@
                 // The browser will handle the preview
                 window.open(absoluteUrl, "_blank", "noopener,noreferrer");
             } catch (error) {
-                console.error(
-                    "[BetterE-class] Error triggering preview:",
-                    error,
-                );
+                console.error("[BetterE-class] Error triggering preview:", error);
             }
         });
     }
@@ -685,12 +537,8 @@
 
             // Re-process attachments with new settings
             // Remove existing download buttons
-            document
-                .querySelectorAll(".betterEclass-download-btns")
-                .forEach((btn) => btn.remove());
-            document
-                .querySelectorAll(".betterEclass-frame-download")
-                .forEach((btn) => btn.remove());
+            document.querySelectorAll(".betterEclass-download-btns").forEach((btn) => btn.remove());
+            document.querySelectorAll(".betterEclass-frame-download").forEach((btn) => btn.remove());
 
             processAttachments();
         }

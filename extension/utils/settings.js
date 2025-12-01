@@ -45,10 +45,7 @@
             });
             return result[storageKey];
         } catch (error) {
-            console.error(
-                `[BetterE-class] Failed to get setting ${key}:`,
-                error,
-            );
+            console.error(`[BetterE-class] Failed to get setting ${key}:`, error);
             return DEFAULT_SETTINGS[key];
         }
     }
@@ -80,25 +77,19 @@
             });
 
             // Backward compatibility: check old sync storage for keys that still have default values
-            const keysToCheckOld = keysToGet.filter(
-                (key) => settings[key] === DEFAULT_SETTINGS[key],
-            );
+            const keysToCheckOld = keysToGet.filter((key) => settings[key] === DEFAULT_SETTINGS[key]);
             if (keysToCheckOld.length > 0) {
                 try {
                     const oldDefaults = {};
                     keysToCheckOld.forEach((key) => {
                         oldDefaults[key] = DEFAULT_SETTINGS[key];
                     });
-                    const oldResult =
-                        await chrome.storage.sync.get(oldDefaults);
+                    const oldResult = await chrome.storage.sync.get(oldDefaults);
 
                     // Merge old values and migrate them
                     const toMigrate = {};
                     keysToCheckOld.forEach((key) => {
-                        if (
-                            oldResult[key] !== undefined &&
-                            oldResult[key] !== DEFAULT_SETTINGS[key]
-                        ) {
+                        if (oldResult[key] !== undefined && oldResult[key] !== DEFAULT_SETTINGS[key]) {
                             settings[key] = oldResult[key];
                             toMigrate[key] = oldResult[key];
                         }
@@ -109,10 +100,7 @@
                         await setSettings(toMigrate);
                     }
                 } catch (error) {
-                    console.warn(
-                        "[BetterE-class] Could not check old sync storage:",
-                        error,
-                    );
+                    console.warn("[BetterE-class] Could not check old sync storage:", error);
                 }
             }
 
@@ -141,10 +129,7 @@
             await chrome.storage.local.set({ [storageKey]: value });
             return true;
         } catch (error) {
-            console.error(
-                `[BetterE-class] Failed to set setting ${key}:`,
-                error,
-            );
+            console.error(`[BetterE-class] Failed to set setting ${key}:`, error);
             return false;
         }
     }
@@ -247,18 +232,11 @@
      * @param {string} newKey - New storage key (without prefix)
      * @param {any} defaultValue - Default value if migration fails
      */
-    async function migrateFromLocalStorage(
-        oldKey,
-        newKey,
-        defaultValue = null,
-    ) {
+    async function migrateFromLocalStorage(oldKey, newKey, defaultValue = null) {
         try {
             // Check if already migrated
             const existing = await getSetting(newKey);
-            if (
-                existing !== DEFAULT_SETTINGS[newKey] &&
-                existing !== defaultValue
-            ) {
+            if (existing !== DEFAULT_SETTINGS[newKey] && existing !== defaultValue) {
                 return true; // Already migrated
             }
 
@@ -276,10 +254,7 @@
 
             return false;
         } catch (error) {
-            console.error(
-                `[BetterE-class] Failed to migrate ${oldKey}:`,
-                error,
-            );
+            console.error(`[BetterE-class] Failed to migrate ${oldKey}:`, error);
             return false;
         }
     }

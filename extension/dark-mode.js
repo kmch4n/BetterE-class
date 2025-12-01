@@ -1058,114 +1058,39 @@
             if (!style) return;
 
             // Skip navbar bar itself but allow dropdown menus to be styled
-            if (
-                element.closest(".navbar-header, .navbar-brand, .navbar-toggle")
-            )
-                return;
+            if (element.closest(".navbar-header, .navbar-brand, .navbar-toggle")) return;
             // Allow navbar dropdown menus and user icon to be processed
             const isNavbarDropdown = element.closest(".navbar .dropdown-menu");
-            const isNavbarImage =
-                element.tagName === "IMG" && element.closest(".navbar");
-            if (
-                !isNavbarDropdown &&
-                !isNavbarImage &&
-                element.closest(".navbar-nav > li > a")
-            )
-                return;
+            const isNavbarImage = element.tagName === "IMG" && element.closest(".navbar");
+            if (!isNavbarDropdown && !isNavbarImage && element.closest(".navbar-nav > li > a")) return;
 
             let newStyle = style
                 // Background colors
-                .replace(
-                    /background:\s*#ffffff(?![0-9a-fA-F])/gi,
-                    `background: ${DARK_COLORS.bg.secondary}`,
-                )
-                .replace(
-                    /background:\s*#fff(?![0-9a-fA-F])/gi,
-                    `background: ${DARK_COLORS.bg.secondary}`,
-                )
-                .replace(
-                    /background:\s*white(?![;])/gi,
-                    `background: ${DARK_COLORS.bg.secondary}`,
-                )
-                .replace(
-                    /background-color:\s*#ffffff(?![0-9a-fA-F])/gi,
-                    `background-color: ${DARK_COLORS.bg.secondary}`,
-                )
-                .replace(
-                    /background-color:\s*#fff(?![0-9a-fA-F])/gi,
-                    `background-color: ${DARK_COLORS.bg.secondary}`,
-                )
-                .replace(
-                    /background-color:\s*white/gi,
-                    `background-color: ${DARK_COLORS.bg.secondary}`,
-                )
-                .replace(
-                    /background-color:\s*#eaf4fc/gi,
-                    `background-color: ${DARK_COLORS.bg.tertiary}`,
-                )
-                .replace(
-                    /background-color:\s*#f8f8f8/gi,
-                    `background-color: ${DARK_COLORS.bg.tertiary}`,
-                )
-                .replace(
-                    /background-color:\s*#f9f9f9/gi,
-                    `background-color: ${DARK_COLORS.bg.secondary}`,
-                )
-                .replace(
-                    /background-color:\s*#f7f7f7/gi,
-                    `background-color: ${DARK_COLORS.bg.secondary}`,
-                )
-                .replace(
-                    /background-color:\s*#f0f0f0/gi,
-                    `background-color: ${DARK_COLORS.bg.secondary}`,
-                )
+                .replace(/background:\s*#ffffff(?![0-9a-fA-F])/gi, `background: ${DARK_COLORS.bg.secondary}`)
+                .replace(/background:\s*#fff(?![0-9a-fA-F])/gi, `background: ${DARK_COLORS.bg.secondary}`)
+                .replace(/background:\s*white(?![;])/gi, `background: ${DARK_COLORS.bg.secondary}`)
+                .replace(/background-color:\s*#ffffff(?![0-9a-fA-F])/gi, `background-color: ${DARK_COLORS.bg.secondary}`)
+                .replace(/background-color:\s*#fff(?![0-9a-fA-F])/gi, `background-color: ${DARK_COLORS.bg.secondary}`)
+                .replace(/background-color:\s*white/gi, `background-color: ${DARK_COLORS.bg.secondary}`)
+                .replace(/background-color:\s*#eaf4fc/gi, `background-color: ${DARK_COLORS.bg.tertiary}`)
+                .replace(/background-color:\s*#f8f8f8/gi, `background-color: ${DARK_COLORS.bg.tertiary}`)
+                .replace(/background-color:\s*#f9f9f9/gi, `background-color: ${DARK_COLORS.bg.secondary}`)
+                .replace(/background-color:\s*#f7f7f7/gi, `background-color: ${DARK_COLORS.bg.secondary}`)
+                .replace(/background-color:\s*#f0f0f0/gi, `background-color: ${DARK_COLORS.bg.secondary}`)
                 // Scroll highlight animation - yellow background
-                .replace(
-                    /background-color:\s*#fff3cd/gi,
-                    `background-color: rgba(210, 153, 34, 0.3)`,
-                )
-                .replace(
-                    /background-color:\s*rgb\(255,\s*243,\s*205\)/gi,
-                    `background-color: rgba(210, 153, 34, 0.3)`,
-                )
+                .replace(/background-color:\s*#fff3cd/gi, `background-color: rgba(210, 153, 34, 0.3)`)
+                .replace(/background-color:\s*rgb\(255,\s*243,\s*205\)/gi, `background-color: rgba(210, 153, 34, 0.3)`)
                 // Border colors
-                .replace(
-                    /border:\s*(\d+px\s+)?solid\s+#ffffff/gi,
-                    `border: $1solid ${DARK_COLORS.border.primary}`,
-                )
-                .replace(
-                    /border:\s*(\d+px\s+)?solid\s+#fff(?![0-9a-fA-F])/gi,
-                    `border: $1solid ${DARK_COLORS.border.primary}`,
-                )
-                .replace(
-                    /border:\s*(\d+px\s+)?solid\s+white/gi,
-                    `border: $1solid ${DARK_COLORS.border.primary}`,
-                )
-                .replace(
-                    /border-color:\s*#ffffff/gi,
-                    `border-color: ${DARK_COLORS.border.primary}`,
-                )
-                .replace(
-                    /border-color:\s*#fff(?![0-9a-fA-F])/gi,
-                    `border-color: ${DARK_COLORS.border.primary}`,
-                )
-                .replace(
-                    /border-color:\s*white/gi,
-                    `border-color: ${DARK_COLORS.border.primary}`,
-                )
+                .replace(/border:\s*(\d+px\s+)?solid\s+#ffffff/gi, `border: $1solid ${DARK_COLORS.border.primary}`)
+                .replace(/border:\s*(\d+px\s+)?solid\s+#fff(?![0-9a-fA-F])/gi, `border: $1solid ${DARK_COLORS.border.primary}`)
+                .replace(/border:\s*(\d+px\s+)?solid\s+white/gi, `border: $1solid ${DARK_COLORS.border.primary}`)
+                .replace(/border-color:\s*#ffffff/gi, `border-color: ${DARK_COLORS.border.primary}`)
+                .replace(/border-color:\s*#fff(?![0-9a-fA-F])/gi, `border-color: ${DARK_COLORS.border.primary}`)
+                .replace(/border-color:\s*white/gi, `border-color: ${DARK_COLORS.border.primary}`)
                 // Text colors - only fix black text
-                .replace(
-                    /color:\s*#000000(?![0-9a-fA-F])/gi,
-                    `color: ${DARK_COLORS.text.primary}`,
-                )
-                .replace(
-                    /color:\s*#000(?![0-9a-fA-F])/gi,
-                    `color: ${DARK_COLORS.text.primary}`,
-                )
-                .replace(
-                    /color:\s*black/gi,
-                    `color: ${DARK_COLORS.text.primary}`,
-                );
+                .replace(/color:\s*#000000(?![0-9a-fA-F])/gi, `color: ${DARK_COLORS.text.primary}`)
+                .replace(/color:\s*#000(?![0-9a-fA-F])/gi, `color: ${DARK_COLORS.text.primary}`)
+                .replace(/color:\s*black/gi, `color: ${DARK_COLORS.text.primary}`);
 
             if (newStyle !== style) {
                 element.setAttribute("style", newStyle);
@@ -1173,16 +1098,10 @@
         });
 
         // Fix HTML attributes
-        const elementsWithBorderColorAttr =
-            document.querySelectorAll("[bordercolor]");
+        const elementsWithBorderColorAttr = document.querySelectorAll("[bordercolor]");
         elementsWithBorderColorAttr.forEach((element) => {
             const borderColor = element.getAttribute("bordercolor");
-            if (
-                borderColor &&
-                (borderColor.toLowerCase() === "#ffffff" ||
-                    borderColor.toLowerCase() === "#fff" ||
-                    borderColor.toLowerCase() === "white")
-            ) {
+            if (borderColor && (borderColor.toLowerCase() === "#ffffff" || borderColor.toLowerCase() === "#fff" || borderColor.toLowerCase() === "white")) {
                 element.setAttribute("bordercolor", DARK_COLORS.border.primary);
                 element.style.borderColor = DARK_COLORS.border.primary;
             }
@@ -1192,11 +1111,7 @@
         elementsWithBgColorAttr.forEach((element) => {
             const bgColor = element.getAttribute("bgcolor");
             const lowerBgColor = bgColor ? bgColor.toLowerCase() : "";
-            if (
-                lowerBgColor === "#ffffff" ||
-                lowerBgColor === "#fff" ||
-                lowerBgColor === "white"
-            ) {
+            if (lowerBgColor === "#ffffff" || lowerBgColor === "#fff" || lowerBgColor === "white") {
                 element.setAttribute("bgcolor", DARK_COLORS.bg.secondary);
                 element.style.backgroundColor = DARK_COLORS.bg.secondary;
             } else if (lowerBgColor === "#eeeeee" || lowerBgColor === "#eee") {
@@ -1232,10 +1147,7 @@
 
                 if (bgColor === "rgb(255, 255, 255)" || bgColor === "white") {
                     // Skip if it has bgc_main class or specific bgcolor attribute
-                    if (
-                        !el.classList.contains("bgc_main") &&
-                        !el.hasAttribute("bgcolor")
-                    ) {
+                    if (!el.classList.contains("bgc_main") && !el.hasAttribute("bgcolor")) {
                         el.style.backgroundColor = "transparent";
                     }
                 }
@@ -1251,19 +1163,14 @@
             });
             return result.enableDarkMode;
         } catch (error) {
-            console.error(
-                "[BetterE-class] Failed to load dark mode setting:",
-                error,
-            );
+            console.error("[BetterE-class] Failed to load dark mode setting:", error);
             return false;
         }
     }
 
     async function applyDarkMode() {
         // Check if this is a message page
-        const isMessagePage =
-            window.location.href.includes("msg_editor.php") ||
-            window.location.href.includes("msg_viewer.php");
+        const isMessagePage = window.location.href.includes("msg_editor.php") || window.location.href.includes("msg_viewer.php");
 
         if (isMessagePage) {
             // Show warning banner for message pages
@@ -1274,9 +1181,7 @@
         // Inject styles immediately to prevent white flash
         if (!document.getElementById("betterEclassDarkMode")) {
             const styleElement = createDarkModeStyles();
-            (document.head || document.documentElement).appendChild(
-                styleElement,
-            );
+            (document.head || document.documentElement).appendChild(styleElement);
         }
 
         // Fix inline styles immediately and on delay
@@ -1287,26 +1192,16 @@
 
         // Watch for dynamic changes
         if (!window.betterEclassDarkModeObserver) {
-            window.betterEclassDarkModeObserver = new MutationObserver(
-                (mutations) => {
-                    requestAnimationFrame(() => fixInlineStyles());
-                },
-            );
+            window.betterEclassDarkModeObserver = new MutationObserver((mutations) => {
+                requestAnimationFrame(() => fixInlineStyles());
+            });
 
-            window.betterEclassDarkModeObserver.observe(
-                document.documentElement,
-                {
-                    childList: true,
-                    subtree: true,
-                    attributes: true,
-                    attributeFilter: [
-                        "style",
-                        "border",
-                        "bordercolor",
-                        "bgcolor",
-                    ],
-                },
-            );
+            window.betterEclassDarkModeObserver.observe(document.documentElement, {
+                childList: true,
+                subtree: true,
+                attributes: true,
+                attributeFilter: ["style", "border", "bordercolor", "bgcolor"],
+            });
         }
     }
 
@@ -1330,8 +1225,7 @@
       z-index: 10000;
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     `;
-        banner.textContent =
-            "⚠️ ダークモードはメッセージページに対応していません";
+        banner.textContent = "⚠️ ダークモードはメッセージページに対応していません";
 
         document.body.appendChild(banner);
 

@@ -15,13 +15,7 @@
      * @returns {HTMLButtonElement} Styled button element
      */
     function createStyledButton(options) {
-        const {
-            icon,
-            text,
-            backgroundColor = "#4a90e2",
-            hoverBackgroundColor = "#357abd",
-            onClick,
-        } = options;
+        const { icon, text, backgroundColor = "#4a90e2", hoverBackgroundColor = "#357abd", onClick } = options;
 
         // Create button element
         const button = document.createElement("button");

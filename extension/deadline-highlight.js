@@ -64,17 +64,13 @@
 
     // Remove deadline styles
     function removeDeadlineStyles() {
-        const styleElement = document.getElementById(
-            "betterEclassDeadlineStyles",
-        );
+        const styleElement = document.getElementById("betterEclassDeadlineStyles");
         if (styleElement) {
             styleElement.remove();
         }
 
         // Remove inline styles
-        const deadlineWarnings = document.querySelectorAll(
-            ".course-contents-info",
-        );
+        const deadlineWarnings = document.querySelectorAll(".course-contents-info");
         deadlineWarnings.forEach((warning) => {
             warning.style.color = "";
             warning.style.fontWeight = "";
@@ -95,9 +91,7 @@
             return;
         }
 
-        const deadlineWarnings = document.querySelectorAll(
-            ".course-contents-info",
-        );
+        const deadlineWarnings = document.querySelectorAll(".course-contents-info");
 
         deadlineWarnings.forEach((warning) => {
             warning.style.color = "#ff4444";

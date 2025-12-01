@@ -2,17 +2,11 @@
 
 // Handle download and preview requests
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-    if (
-        message.type === "downloadDirect" ||
-        message.type === "downloadWithDialog"
-    ) {
+    if (message.type === "downloadDirect" || message.type === "downloadWithDialog") {
         const saveAs = message.type === "downloadWithDialog";
 
         // Check if this is a file_down.php or loadit.php URL that needs HTML extraction
-        if (
-            message.url.includes("file_down.php") ||
-            message.url.includes("loadit.php")
-        ) {
+        if (message.url.includes("file_down.php") || message.url.includes("loadit.php")) {
             // Fetch the page to extract actual file URL (include credentials for session-protected pages)
             fetch(message.url, { credentials: "include" })
                 .then((response) => response.text())
@@ -20,9 +14,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
                     // Extract URL from the download link
                     // Pattern 1: <a href='/webclass/download.php/filename.pdf?...'>
                     // Pattern 2: <a href='https://eclass.doshisha.ac.jp/webclass/data/course/.../filename.pdf' target="_blank">
-                    let linkMatch = html.match(
-                        /<a\s+href=['"]([^'"]+(?:download\.php|\.pdf)[^'"]*)['"]/,
-                    );
+                    let linkMatch = html.match(/<a\s+href=['"]([^'"]+(?:download\.php|\.pdf)[^'"]*)['"]/);
 
                     if (linkMatch && linkMatch[1]) {
                         let actualFileUrl = linkMatch[1];
@@ -50,10 +42,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
                             },
                             (downloadId) => {
                                 if (chrome.runtime.lastError) {
-                                    console.error(
-                                        "[BetterE-class] Download error:",
-                                        chrome.runtime.lastError,
-                                    );
+                                    console.error("[BetterE-class] Download error:", chrome.runtime.lastError);
                                     sendResponse({
                                         error: chrome.runtime.lastError.message,
                                     });
@@ -66,9 +55,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
                             },
                         );
                     } else {
-                        console.error(
-                            "[BetterE-class] Could not find file link in HTML",
-                        );
+                        console.error("[BetterE-class] Could not find file link in HTML");
                         sendResponse({ error: "Could not find file URL" });
                     }
                 })
@@ -88,10 +75,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
                 },
                 (downloadId) => {
                     if (chrome.runtime.lastError) {
-                        console.error(
-                            "[BetterE-class] Download error:",
-                            chrome.runtime.lastError,
-                        );
+                        console.error("[BetterE-class] Download error:", chrome.runtime.lastError);
                         sendResponse({
                             error: chrome.runtime.lastError.message,
                         });
@@ -113,9 +97,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
             .then((html) => {
                 // Extract URL from the download link
                 // Pattern: <a href='/webclass/download.php/filename.pdf?...'>
-                let linkMatch = html.match(
-                    /<a\s+href=['"]([^'"]+download\.php[^'"]+)['"]/,
-                );
+                let linkMatch = html.match(/<a\s+href=['"]([^'"]+download\.php[^'"]+)['"]/);
 
                 if (linkMatch && linkMatch[1]) {
                     let actualFileUrl = linkMatch[1];
@@ -144,10 +126,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
                         },
                         (downloadId) => {
                             if (chrome.runtime.lastError) {
-                                console.error(
-                                    "[BetterE-class] Download error:",
-                                    chrome.runtime.lastError,
-                                );
+                                console.error("[BetterE-class] Download error:", chrome.runtime.lastError);
                                 sendResponse({
                                     error: chrome.runtime.lastError.message,
                                 });
@@ -160,9 +139,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
                         },
                     );
                 } else {
-                    console.error(
-                        "[BetterE-class] Could not find file link in HTML",
-                    );
+                    console.error("[BetterE-class] Could not find file link in HTML");
                     sendResponse({ error: "Could not find file URL" });
                 }
             })
@@ -177,10 +154,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
     if (message.type === "previewFile") {
         // Check if this is a file_down.php or loadit.php URL that needs HTML extraction
-        if (
-            message.url.includes("file_down.php") ||
-            message.url.includes("loadit.php")
-        ) {
+        if (message.url.includes("file_down.php") || message.url.includes("loadit.php")) {
             // Fetch the page to extract actual file URL (include credentials for session-protected pages)
             fetch(message.url, { credentials: "include" })
                 .then((response) => response.text())
@@ -188,9 +162,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
                     // Extract URL from the download link
                     // Pattern 1: <a href='/webclass/download.php/filename.pdf?...'>
                     // Pattern 2: <a href='https://eclass.doshisha.ac.jp/webclass/data/course/.../filename.pdf' target="_blank">
-                    let linkMatch = html.match(
-                        /<a\s+href=['"]([^'"]+(?:download\.php|\.pdf)[^'"]*)['"]/,
-                    );
+                    let linkMatch = html.match(/<a\s+href=['"]([^'"]+(?:download\.php|\.pdf)[^'"]*)['"]/);
 
                     if (linkMatch && linkMatch[1]) {
                         let actualFileUrl = linkMatch[1];
@@ -210,10 +182,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
                         }
 
                         // Add preview parameter to URL to trigger header removal
-                        const previewUrl =
-                            actualFileUrl +
-                            (actualFileUrl.includes("?") ? "&" : "?") +
-                            "_preview=1";
+                        const previewUrl = actualFileUrl + (actualFileUrl.includes("?") ? "&" : "?") + "_preview=1";
 
                         // Open the file in a new tab for preview (next to current tab)
                         const tabOptions = {
@@ -227,10 +196,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
                         chrome.tabs.create(tabOptions, (tab) => {
                             if (chrome.runtime.lastError) {
-                                console.error(
-                                    "[BetterE-class] Tab creation error:",
-                                    chrome.runtime.lastError,
-                                );
+                                console.error("[BetterE-class] Tab creation error:", chrome.runtime.lastError);
                                 sendResponse({
                                     error: chrome.runtime.lastError.message,
                                 });
@@ -239,17 +205,12 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
                             }
                         });
                     } else {
-                        console.error(
-                            "[BetterE-class] Could not find file link in HTML for preview",
-                        );
+                        console.error("[BetterE-class] Could not find file link in HTML for preview");
                         sendResponse({ error: "Could not find file URL" });
                     }
                 })
                 .catch((error) => {
-                    console.error(
-                        "[BetterE-class] Fetch error for preview:",
-                        error,
-                    );
+                    console.error("[BetterE-class] Fetch error for preview:", error);
                     sendResponse({ error: error.message });
                 });
 
@@ -267,10 +228,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
             chrome.tabs.create(tabOptions, (tab) => {
                 if (chrome.runtime.lastError) {
-                    console.error(
-                        "[BetterE-class] Tab creation error:",
-                        chrome.runtime.lastError,
-                    );
+                    console.error("[BetterE-class] Tab creation error:", chrome.runtime.lastError);
                     sendResponse({ error: chrome.runtime.lastError.message });
                 } else {
                     sendResponse({ success: true, tabId: tab.id });
@@ -289,9 +247,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
             .then((html) => {
                 // Extract URL from the download link
                 // Pattern: <a href='/webclass/download.php/filename.pdf?...'>
-                let linkMatch = html.match(
-                    /<a\s+href=['"]([^'"]+download\.php[^'"]+)['"]/,
-                );
+                let linkMatch = html.match(/<a\s+href=['"]([^'"]+download\.php[^'"]+)['"]/);
 
                 if (linkMatch && linkMatch[1]) {
                     let actualFileUrl = linkMatch[1];
@@ -312,10 +268,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
                     }
 
                     // Add preview parameter to URL to trigger header removal
-                    const previewUrl =
-                        actualFileUrl +
-                        (actualFileUrl.includes("?") ? "&" : "?") +
-                        "_preview=1";
+                    const previewUrl = actualFileUrl + (actualFileUrl.includes("?") ? "&" : "?") + "_preview=1";
 
                     // Open the file in a new tab for preview (next to current tab)
                     const tabOptions = {
@@ -330,10 +283,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
                     chrome.tabs.create(tabOptions, (tab) => {
                         if (chrome.runtime.lastError) {
-                            console.error(
-                                "[BetterE-class] Tab creation error:",
-                                chrome.runtime.lastError,
-                            );
+                            console.error("[BetterE-class] Tab creation error:", chrome.runtime.lastError);
                             sendResponse({
                                 error: chrome.runtime.lastError.message,
                             });
@@ -342,17 +292,12 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
                         }
                     });
                 } else {
-                    console.error(
-                        "[BetterE-class] Could not find file link in HTML for preview",
-                    );
+                    console.error("[BetterE-class] Could not find file link in HTML for preview");
                     sendResponse({ error: "Could not find file URL" });
                 }
             })
             .catch((error) => {
-                console.error(
-                    "[BetterE-class] Fetch error for preview:",
-                    error,
-                );
+                console.error("[BetterE-class] Fetch error for preview:", error);
                 sendResponse({ error: error.message });
             });
 

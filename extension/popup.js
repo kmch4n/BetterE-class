@@ -4,13 +4,7 @@ const settingsAPI = window.BetterEclassUtils.settings;
 // Load settings
 async function loadSettings() {
     try {
-        const result = await settingsAPI.getSettings([
-            "enableDarkMode",
-            "hideSaturday",
-            "hide67thPeriod",
-            "enableTocSidebar",
-            "enableAvailableMaterials",
-        ]);
+        const result = await settingsAPI.getSettings(["enableDarkMode", "hideSaturday", "hide67thPeriod", "enableTocSidebar", "enableAvailableMaterials"]);
         return result;
     } catch (error) {
         console.error("Failed to load settings:", error);
@@ -59,10 +53,8 @@ async function initializeUI() {
     document.getElementById("enableDarkMode").checked = settings.enableDarkMode;
     document.getElementById("hideSaturday").checked = settings.hideSaturday;
     document.getElementById("hide67thPeriod").checked = settings.hide67thPeriod;
-    document.getElementById("enableTocSidebar").checked =
-        settings.enableTocSidebar;
-    document.getElementById("enableAvailableMaterials").checked =
-        settings.enableAvailableMaterials;
+    document.getElementById("enableTocSidebar").checked = settings.enableTocSidebar;
+    document.getElementById("enableAvailableMaterials").checked = settings.enableAvailableMaterials;
 }
 
 // Setup event listeners
@@ -71,19 +63,14 @@ function setupEventListeners() {
     const hideSaturdayEl = document.getElementById("hideSaturday");
     const hide67thPeriodEl = document.getElementById("hide67thPeriod");
     const enableTocSidebarEl = document.getElementById("enableTocSidebar");
-    const enableAvailableMaterialsEl = document.getElementById(
-        "enableAvailableMaterials",
-    );
+    const enableAvailableMaterialsEl = document.getElementById("enableAvailableMaterials");
 
     enableDarkModeEl.addEventListener("change", async (e) => {
         const settings = await loadSettings();
         settings.enableDarkMode = e.target.checked;
 
         const success = await saveSettings(settings);
-        showStatus(
-            success ? "設定を保存しました" : "設定の保存に失敗しました",
-            success,
-        );
+        showStatus(success ? "設定を保存しました" : "設定の保存に失敗しました", success);
 
         // Notify dark mode script
         notifyDarkMode(settings);
@@ -94,10 +81,7 @@ function setupEventListeners() {
         settings.hideSaturday = e.target.checked;
 
         const success = await saveSettings(settings);
-        showStatus(
-            success ? "Settings saved" : "Failed to save settings",
-            success,
-        );
+        showStatus(success ? "Settings saved" : "Failed to save settings", success);
 
         // Notify schedule customizer
         notifyScheduleCustomizer(settings);
@@ -108,10 +92,7 @@ function setupEventListeners() {
         settings.hide67thPeriod = e.target.checked;
 
         const success = await saveSettings(settings);
-        showStatus(
-            success ? "Settings saved" : "Failed to save settings",
-            success,
-        );
+        showStatus(success ? "Settings saved" : "Failed to save settings", success);
 
         // Notify schedule customizer
         notifyScheduleCustomizer(settings);
@@ -122,10 +103,7 @@ function setupEventListeners() {
         settings.enableTocSidebar = e.target.checked;
 
         const success = await saveSettings(settings);
-        showStatus(
-            success ? "設定を保存しました" : "設定の保存に失敗しました",
-            success,
-        );
+        showStatus(success ? "設定を保存しました" : "設定の保存に失敗しました", success);
 
         // Reload course pages to apply the change
         if (success) {
@@ -138,10 +116,7 @@ function setupEventListeners() {
         settings.enableAvailableMaterials = e.target.checked;
 
         const success = await saveSettings(settings);
-        showStatus(
-            success ? "設定を保存しました" : "設定の保存に失敗しました",
-            success,
-        );
+        showStatus(success ? "設定を保存しました" : "設定の保存に失敗しました", success);
 
         // Reload course pages to apply the change
         if (success) {
