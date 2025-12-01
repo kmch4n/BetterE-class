@@ -22,7 +22,7 @@
             }
         ]
     },
-    "host_permissions": ["*://eclass.doshisha.ac.jp/"],
+    "host_permissions": ["*://eclass.doshisha.ac.jp/*"],
     "permissions": ["declarativeNetRequest", "storage", "tabs", "downloads"],
     "background": {
         "service_worker": "background.js"
