@@ -11,6 +11,9 @@
 BetterE-classは、同志社大学のe-class（WebClass）をより快適に使うための非公式Chrome拡張機能です。
 
 > **⚠️ 注意**: この拡張機能は同志社大学および公式e-classシステムとは無関係の個人開発ツールです。
+![image](Documents\images\image1.jpg)
+![image](Documents\images\image2.png)
+![image](Documents\images\image3.png)
 
 ## 📦 インストール
 
