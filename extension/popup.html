@@ -1,76 +1,109 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="ja">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>BetterE-class 設定</title>
-  <link rel="stylesheet" href="popup.css">
-</head>
-<body>
-  <div class="container">
-    <h1>BetterE-class <span class="version" id="version"></span></h1>
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>BetterE-class 設定</title>
+        <link rel="stylesheet" href="popup.css" />
+    </head>
+    <body>
+        <div class="container">
+            <h1>BetterE-class <span class="version" id="version"></span></h1>
 
-    <div class="settings-section">
-      <h2 class="section-title">時間割表示オプション</h2>
+            <div class="settings-section">
+                <h2 class="section-title">時間割表示オプション</h2>
 
-      <div class="setting-item">
-        <label class="toggle-label">
-          <input type="checkbox" id="hideSaturday" class="toggle-checkbox">
-          <span class="toggle-slider"></span>
-          <span class="toggle-text">土曜日を非表示</span>
-        </label>
-        <p class="description">時間割表の土曜日列を非表示にします</p>
-      </div>
+                <div class="setting-item">
+                    <label class="toggle-label">
+                        <input
+                            type="checkbox"
+                            id="hideSaturday"
+                            class="toggle-checkbox"
+                        />
+                        <span class="toggle-slider"></span>
+                        <span class="toggle-text">土曜日を非表示</span>
+                    </label>
+                    <p class="description">
+                        時間割表の土曜日列を非表示にします
+                    </p>
+                </div>
 
-      <div class="setting-item">
-        <label class="toggle-label">
-          <input type="checkbox" id="hide67thPeriod" class="toggle-checkbox">
-          <span class="toggle-slider"></span>
-          <span class="toggle-text">6・7限を非表示</span>
-        </label>
-        <p class="description">時間割表の6限と7限の行を非表示にします</p>
-      </div>
-    </div>
+                <div class="setting-item">
+                    <label class="toggle-label">
+                        <input
+                            type="checkbox"
+                            id="hide67thPeriod"
+                            class="toggle-checkbox"
+                        />
+                        <span class="toggle-slider"></span>
+                        <span class="toggle-text">6・7限を非表示</span>
+                    </label>
+                    <p class="description">
+                        時間割表の6限と7限の行を非表示にします
+                    </p>
+                </div>
+            </div>
 
-    <div class="settings-section">
-      <h2 class="section-title">コース表示オプション</h2>
+            <div class="settings-section">
+                <h2 class="section-title">コース表示オプション</h2>
 
-      <div class="setting-item">
-        <label class="toggle-label">
-          <input type="checkbox" id="enableTocSidebar" class="toggle-checkbox">
-          <span class="toggle-slider"></span>
-          <span class="toggle-text">目次サイドバーを表示</span>
-        </label>
-        <p class="description">コースページに固定の目次サイドバーを表示します</p>
-      </div>
+                <div class="setting-item">
+                    <label class="toggle-label">
+                        <input
+                            type="checkbox"
+                            id="enableTocSidebar"
+                            class="toggle-checkbox"
+                        />
+                        <span class="toggle-slider"></span>
+                        <span class="toggle-text">目次サイドバーを表示</span>
+                    </label>
+                    <p class="description">
+                        コースページに固定の目次サイドバーを表示します
+                    </p>
+                </div>
 
-      <div class="setting-item">
-        <label class="toggle-label">
-          <input type="checkbox" id="enableAvailableMaterials" class="toggle-checkbox">
-          <span class="toggle-slider"></span>
-          <span class="toggle-text">利用可能な教材リストを表示</span>
-        </label>
-        <p class="description">タイムライン上部に利用可能な教材の一覧を表示します</p>
-      </div>
-    </div>
+                <div class="setting-item">
+                    <label class="toggle-label">
+                        <input
+                            type="checkbox"
+                            id="enableAvailableMaterials"
+                            class="toggle-checkbox"
+                        />
+                        <span class="toggle-slider"></span>
+                        <span class="toggle-text"
+                            >利用可能な教材リストを表示</span
+                        >
+                    </label>
+                    <p class="description">
+                        タイムライン上部に利用可能な教材の一覧を表示します
+                    </p>
+                </div>
+            </div>
 
-    <div class="settings-section">
-      <h2 class="section-title">外観設定</h2>
+            <div class="settings-section">
+                <h2 class="section-title">外観設定</h2>
 
-      <div class="setting-item">
-        <label class="toggle-label">
-          <input type="checkbox" id="enableDarkMode" class="toggle-checkbox">
-          <span class="toggle-slider"></span>
-          <span class="toggle-text">ダークモード <span class="beta-badge">Beta</span></span>
-        </label>
-        <p class="description">e-classをダークテーマで表示します</p>
-      </div>
-    </div>
+                <div class="setting-item">
+                    <label class="toggle-label">
+                        <input
+                            type="checkbox"
+                            id="enableDarkMode"
+                            class="toggle-checkbox"
+                        />
+                        <span class="toggle-slider"></span>
+                        <span class="toggle-text"
+                            >ダークモード
+                            <span class="beta-badge">Beta</span></span
+                        >
+                    </label>
+                    <p class="description">e-classをダークテーマで表示します</p>
+                </div>
+            </div>
 
-    <div class="status" id="status"></div>
-  </div>
+            <div class="status" id="status"></div>
+        </div>
 
-  <script src="utils/settings.js"></script>
-  <script src="popup.js"></script>
-</body>
+        <script src="utils/settings.js"></script>
+        <script src="popup.js"></script>
+    </body>
 </html>

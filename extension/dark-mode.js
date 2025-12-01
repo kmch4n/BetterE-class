@@ -1,36 +1,36 @@
-(function() {
-  'use strict';
+(function () {
+    "use strict";
 
-  const DARK_COLORS = {
-    bg: {
-      primary: '#0d1117',
-      secondary: '#161b22',
-      tertiary: '#21262d',
-      hover: '#30363d'
-    },
-    text: {
-      primary: '#c9d1d9',
-      secondary: '#8b949e',
-      link: '#58a6ff',
-      linkVisited: '#a371f7'
-    },
-    border: {
-      primary: '#30363d',
-      secondary: '#21262d'
-    },
-    accent: {
-      blue: '#58a6ff',
-      red: '#ff7b72',
-      green: '#7ee787',
-      yellow: '#d29922',
-      orange: '#ffa657'
-    }
-  };
+    const DARK_COLORS = {
+        bg: {
+            primary: "#0d1117",
+            secondary: "#161b22",
+            tertiary: "#21262d",
+            hover: "#30363d",
+        },
+        text: {
+            primary: "#c9d1d9",
+            secondary: "#8b949e",
+            link: "#58a6ff",
+            linkVisited: "#a371f7",
+        },
+        border: {
+            primary: "#30363d",
+            secondary: "#21262d",
+        },
+        accent: {
+            blue: "#58a6ff",
+            red: "#ff7b72",
+            green: "#7ee787",
+            yellow: "#d29922",
+            orange: "#ffa657",
+        },
+    };
 
-  function createDarkModeStyles() {
-    const style = document.createElement('style');
-    style.id = 'betterEclassDarkMode';
-    style.textContent = `
+    function createDarkModeStyles() {
+        const style = document.createElement("style");
+        style.id = "betterEclassDarkMode";
+        style.textContent = `
       /* Base elements */
       html, body {
         background-color: ${DARK_COLORS.bg.primary} !important;
@@ -1047,161 +1047,277 @@
         background-color: transparent !important;
       }
     `;
-    return style;
-  }
+        return style;
+    }
 
-  function fixInlineStyles() {
-    const allElements = document.querySelectorAll('*[style]');
+    function fixInlineStyles() {
+        const allElements = document.querySelectorAll("*[style]");
 
-    allElements.forEach(element => {
-      const style = element.getAttribute('style');
-      if (!style) return;
+        allElements.forEach((element) => {
+            const style = element.getAttribute("style");
+            if (!style) return;
 
-      // Skip navbar bar itself but allow dropdown menus to be styled
-      if (element.closest('.navbar-header, .navbar-brand, .navbar-toggle')) return;
-      // Allow navbar dropdown menus and user icon to be processed
-      const isNavbarDropdown = element.closest('.navbar .dropdown-menu');
-      const isNavbarImage = element.tagName === 'IMG' && element.closest('.navbar');
-      if (!isNavbarDropdown && !isNavbarImage && element.closest('.navbar-nav > li > a')) return;
+            // Skip navbar bar itself but allow dropdown menus to be styled
+            if (
+                element.closest(".navbar-header, .navbar-brand, .navbar-toggle")
+            )
+                return;
+            // Allow navbar dropdown menus and user icon to be processed
+            const isNavbarDropdown = element.closest(".navbar .dropdown-menu");
+            const isNavbarImage =
+                element.tagName === "IMG" && element.closest(".navbar");
+            if (
+                !isNavbarDropdown &&
+                !isNavbarImage &&
+                element.closest(".navbar-nav > li > a")
+            )
+                return;
 
-      let newStyle = style
-        // Background colors
-        .replace(/background:\s*#ffffff(?![0-9a-fA-F])/gi, `background: ${DARK_COLORS.bg.secondary}`)
-        .replace(/background:\s*#fff(?![0-9a-fA-F])/gi, `background: ${DARK_COLORS.bg.secondary}`)
-        .replace(/background:\s*white(?![;])/gi, `background: ${DARK_COLORS.bg.secondary}`)
-        .replace(/background-color:\s*#ffffff(?![0-9a-fA-F])/gi, `background-color: ${DARK_COLORS.bg.secondary}`)
-        .replace(/background-color:\s*#fff(?![0-9a-fA-F])/gi, `background-color: ${DARK_COLORS.bg.secondary}`)
-        .replace(/background-color:\s*white/gi, `background-color: ${DARK_COLORS.bg.secondary}`)
-        .replace(/background-color:\s*#eaf4fc/gi, `background-color: ${DARK_COLORS.bg.tertiary}`)
-        .replace(/background-color:\s*#f8f8f8/gi, `background-color: ${DARK_COLORS.bg.tertiary}`)
-        .replace(/background-color:\s*#f9f9f9/gi, `background-color: ${DARK_COLORS.bg.secondary}`)
-        .replace(/background-color:\s*#f7f7f7/gi, `background-color: ${DARK_COLORS.bg.secondary}`)
-        .replace(/background-color:\s*#f0f0f0/gi, `background-color: ${DARK_COLORS.bg.secondary}`)
-        // Scroll highlight animation - yellow background
-        .replace(/background-color:\s*#fff3cd/gi, `background-color: rgba(210, 153, 34, 0.3)`)
-        .replace(/background-color:\s*rgb\(255,\s*243,\s*205\)/gi, `background-color: rgba(210, 153, 34, 0.3)`)
-        // Border colors
-        .replace(/border:\s*(\d+px\s+)?solid\s+#ffffff/gi, `border: $1solid ${DARK_COLORS.border.primary}`)
-        .replace(/border:\s*(\d+px\s+)?solid\s+#fff(?![0-9a-fA-F])/gi, `border: $1solid ${DARK_COLORS.border.primary}`)
-        .replace(/border:\s*(\d+px\s+)?solid\s+white/gi, `border: $1solid ${DARK_COLORS.border.primary}`)
-        .replace(/border-color:\s*#ffffff/gi, `border-color: ${DARK_COLORS.border.primary}`)
-        .replace(/border-color:\s*#fff(?![0-9a-fA-F])/gi, `border-color: ${DARK_COLORS.border.primary}`)
-        .replace(/border-color:\s*white/gi, `border-color: ${DARK_COLORS.border.primary}`)
-        // Text colors - only fix black text
-        .replace(/color:\s*#000000(?![0-9a-fA-F])/gi, `color: ${DARK_COLORS.text.primary}`)
-        .replace(/color:\s*#000(?![0-9a-fA-F])/gi, `color: ${DARK_COLORS.text.primary}`)
-        .replace(/color:\s*black/gi, `color: ${DARK_COLORS.text.primary}`);
+            let newStyle = style
+                // Background colors
+                .replace(
+                    /background:\s*#ffffff(?![0-9a-fA-F])/gi,
+                    `background: ${DARK_COLORS.bg.secondary}`,
+                )
+                .replace(
+                    /background:\s*#fff(?![0-9a-fA-F])/gi,
+                    `background: ${DARK_COLORS.bg.secondary}`,
+                )
+                .replace(
+                    /background:\s*white(?![;])/gi,
+                    `background: ${DARK_COLORS.bg.secondary}`,
+                )
+                .replace(
+                    /background-color:\s*#ffffff(?![0-9a-fA-F])/gi,
+                    `background-color: ${DARK_COLORS.bg.secondary}`,
+                )
+                .replace(
+                    /background-color:\s*#fff(?![0-9a-fA-F])/gi,
+                    `background-color: ${DARK_COLORS.bg.secondary}`,
+                )
+                .replace(
+                    /background-color:\s*white/gi,
+                    `background-color: ${DARK_COLORS.bg.secondary}`,
+                )
+                .replace(
+                    /background-color:\s*#eaf4fc/gi,
+                    `background-color: ${DARK_COLORS.bg.tertiary}`,
+                )
+                .replace(
+                    /background-color:\s*#f8f8f8/gi,
+                    `background-color: ${DARK_COLORS.bg.tertiary}`,
+                )
+                .replace(
+                    /background-color:\s*#f9f9f9/gi,
+                    `background-color: ${DARK_COLORS.bg.secondary}`,
+                )
+                .replace(
+                    /background-color:\s*#f7f7f7/gi,
+                    `background-color: ${DARK_COLORS.bg.secondary}`,
+                )
+                .replace(
+                    /background-color:\s*#f0f0f0/gi,
+                    `background-color: ${DARK_COLORS.bg.secondary}`,
+                )
+                // Scroll highlight animation - yellow background
+                .replace(
+                    /background-color:\s*#fff3cd/gi,
+                    `background-color: rgba(210, 153, 34, 0.3)`,
+                )
+                .replace(
+                    /background-color:\s*rgb\(255,\s*243,\s*205\)/gi,
+                    `background-color: rgba(210, 153, 34, 0.3)`,
+                )
+                // Border colors
+                .replace(
+                    /border:\s*(\d+px\s+)?solid\s+#ffffff/gi,
+                    `border: $1solid ${DARK_COLORS.border.primary}`,
+                )
+                .replace(
+                    /border:\s*(\d+px\s+)?solid\s+#fff(?![0-9a-fA-F])/gi,
+                    `border: $1solid ${DARK_COLORS.border.primary}`,
+                )
+                .replace(
+                    /border:\s*(\d+px\s+)?solid\s+white/gi,
+                    `border: $1solid ${DARK_COLORS.border.primary}`,
+                )
+                .replace(
+                    /border-color:\s*#ffffff/gi,
+                    `border-color: ${DARK_COLORS.border.primary}`,
+                )
+                .replace(
+                    /border-color:\s*#fff(?![0-9a-fA-F])/gi,
+                    `border-color: ${DARK_COLORS.border.primary}`,
+                )
+                .replace(
+                    /border-color:\s*white/gi,
+                    `border-color: ${DARK_COLORS.border.primary}`,
+                )
+                // Text colors - only fix black text
+                .replace(
+                    /color:\s*#000000(?![0-9a-fA-F])/gi,
+                    `color: ${DARK_COLORS.text.primary}`,
+                )
+                .replace(
+                    /color:\s*#000(?![0-9a-fA-F])/gi,
+                    `color: ${DARK_COLORS.text.primary}`,
+                )
+                .replace(
+                    /color:\s*black/gi,
+                    `color: ${DARK_COLORS.text.primary}`,
+                );
 
-      if (newStyle !== style) {
-        element.setAttribute('style', newStyle);
-      }
-    });
+            if (newStyle !== style) {
+                element.setAttribute("style", newStyle);
+            }
+        });
 
-    // Fix HTML attributes
-    const elementsWithBorderColorAttr = document.querySelectorAll('[bordercolor]');
-    elementsWithBorderColorAttr.forEach(element => {
-      const borderColor = element.getAttribute('bordercolor');
-      if (borderColor && (borderColor.toLowerCase() === '#ffffff' || borderColor.toLowerCase() === '#fff' || borderColor.toLowerCase() === 'white')) {
-        element.setAttribute('bordercolor', DARK_COLORS.border.primary);
-        element.style.borderColor = DARK_COLORS.border.primary;
-      }
-    });
+        // Fix HTML attributes
+        const elementsWithBorderColorAttr =
+            document.querySelectorAll("[bordercolor]");
+        elementsWithBorderColorAttr.forEach((element) => {
+            const borderColor = element.getAttribute("bordercolor");
+            if (
+                borderColor &&
+                (borderColor.toLowerCase() === "#ffffff" ||
+                    borderColor.toLowerCase() === "#fff" ||
+                    borderColor.toLowerCase() === "white")
+            ) {
+                element.setAttribute("bordercolor", DARK_COLORS.border.primary);
+                element.style.borderColor = DARK_COLORS.border.primary;
+            }
+        });
 
-    const elementsWithBgColorAttr = document.querySelectorAll('[bgcolor]');
-    elementsWithBgColorAttr.forEach(element => {
-      const bgColor = element.getAttribute('bgcolor');
-      const lowerBgColor = bgColor ? bgColor.toLowerCase() : '';
-      if (lowerBgColor === '#ffffff' || lowerBgColor === '#fff' || lowerBgColor === 'white') {
-        element.setAttribute('bgcolor', DARK_COLORS.bg.secondary);
-        element.style.backgroundColor = DARK_COLORS.bg.secondary;
-      } else if (lowerBgColor === '#eeeeee' || lowerBgColor === '#eee') {
-        element.setAttribute('bgcolor', DARK_COLORS.bg.secondary);
-        element.style.backgroundColor = DARK_COLORS.bg.secondary;
-      }
-    });
+        const elementsWithBgColorAttr = document.querySelectorAll("[bgcolor]");
+        elementsWithBgColorAttr.forEach((element) => {
+            const bgColor = element.getAttribute("bgcolor");
+            const lowerBgColor = bgColor ? bgColor.toLowerCase() : "";
+            if (
+                lowerBgColor === "#ffffff" ||
+                lowerBgColor === "#fff" ||
+                lowerBgColor === "white"
+            ) {
+                element.setAttribute("bgcolor", DARK_COLORS.bg.secondary);
+                element.style.backgroundColor = DARK_COLORS.bg.secondary;
+            } else if (lowerBgColor === "#eeeeee" || lowerBgColor === "#eee") {
+                element.setAttribute("bgcolor", DARK_COLORS.bg.secondary);
+                element.style.backgroundColor = DARK_COLORS.bg.secondary;
+            }
+        });
 
-    // Fix computed white backgrounds
-    const whiteBackgroundSelectors = [
-      '.infopkg', '.info-list li', '.schedule-table td',
-      '.courseTree li', '.courseLevelOne li', '.courseLevelTwo li',
-      '.panel', '.panel-body', '.list-group-item', '.well',
-      // Message page specific
-      'table', 'tbody', 'tr', 'td'
-    ];
+        // Fix computed white backgrounds
+        const whiteBackgroundSelectors = [
+            ".infopkg",
+            ".info-list li",
+            ".schedule-table td",
+            ".courseTree li",
+            ".courseLevelOne li",
+            ".courseLevelTwo li",
+            ".panel",
+            ".panel-body",
+            ".list-group-item",
+            ".well",
+            // Message page specific
+            "table",
+            "tbody",
+            "tr",
+            "td",
+        ];
 
-    whiteBackgroundSelectors.forEach(selector => {
-      const elements = document.querySelectorAll(selector);
-      elements.forEach(el => {
-        const computedStyle = window.getComputedStyle(el);
-        const bgColor = computedStyle.backgroundColor;
+        whiteBackgroundSelectors.forEach((selector) => {
+            const elements = document.querySelectorAll(selector);
+            elements.forEach((el) => {
+                const computedStyle = window.getComputedStyle(el);
+                const bgColor = computedStyle.backgroundColor;
 
-        if (bgColor === 'rgb(255, 255, 255)' || bgColor === 'white') {
-          // Skip if it has bgc_main class or specific bgcolor attribute
-          if (!el.classList.contains('bgc_main') && !el.hasAttribute('bgcolor')) {
-            el.style.backgroundColor = 'transparent';
-          }
+                if (bgColor === "rgb(255, 255, 255)" || bgColor === "white") {
+                    // Skip if it has bgc_main class or specific bgcolor attribute
+                    if (
+                        !el.classList.contains("bgc_main") &&
+                        !el.hasAttribute("bgcolor")
+                    ) {
+                        el.style.backgroundColor = "transparent";
+                    }
+                }
+            });
+        });
+    }
+
+    async function checkDarkModeEnabled() {
+        try {
+            // Use storage.local for faster access to prevent white flash
+            const result = await chrome.storage.local.get({
+                enableDarkMode: false,
+            });
+            return result.enableDarkMode;
+        } catch (error) {
+            console.error(
+                "[BetterE-class] Failed to load dark mode setting:",
+                error,
+            );
+            return false;
         }
-      });
-    });
-  }
-
-  async function checkDarkModeEnabled() {
-    try {
-      // Use storage.local for faster access to prevent white flash
-      const result = await chrome.storage.local.get({ enableDarkMode: false });
-      return result.enableDarkMode;
-    } catch (error) {
-      console.error('[BetterE-class] Failed to load dark mode setting:', error);
-      return false;
-    }
-  }
-
-  async function applyDarkMode() {
-    console.log('[BetterE-class] Applying dark mode');
-
-    // Check if this is a message page
-    const isMessagePage = window.location.href.includes('msg_editor.php') ||
-                          window.location.href.includes('msg_viewer.php');
-
-    if (isMessagePage) {
-      // Show warning banner for message pages
-      showMessagePageWarning();
-      return;
     }
 
-    // Inject styles immediately to prevent white flash
-    if (!document.getElementById('betterEclassDarkMode')) {
-      const styleElement = createDarkModeStyles();
-      (document.head || document.documentElement).appendChild(styleElement);
+    async function applyDarkMode() {
+        console.log("[BetterE-class] Applying dark mode");
+
+        // Check if this is a message page
+        const isMessagePage =
+            window.location.href.includes("msg_editor.php") ||
+            window.location.href.includes("msg_viewer.php");
+
+        if (isMessagePage) {
+            // Show warning banner for message pages
+            showMessagePageWarning();
+            return;
+        }
+
+        // Inject styles immediately to prevent white flash
+        if (!document.getElementById("betterEclassDarkMode")) {
+            const styleElement = createDarkModeStyles();
+            (document.head || document.documentElement).appendChild(
+                styleElement,
+            );
+        }
+
+        // Fix inline styles immediately and on delay
+        fixInlineStyles();
+        setTimeout(() => fixInlineStyles(), 100);
+        setTimeout(() => fixInlineStyles(), 500);
+        setTimeout(() => fixInlineStyles(), 1000);
+
+        // Watch for dynamic changes
+        if (!window.betterEclassDarkModeObserver) {
+            window.betterEclassDarkModeObserver = new MutationObserver(
+                (mutations) => {
+                    requestAnimationFrame(() => fixInlineStyles());
+                },
+            );
+
+            window.betterEclassDarkModeObserver.observe(
+                document.documentElement,
+                {
+                    childList: true,
+                    subtree: true,
+                    attributes: true,
+                    attributeFilter: [
+                        "style",
+                        "border",
+                        "bordercolor",
+                        "bgcolor",
+                    ],
+                },
+            );
+        }
     }
 
-    // Fix inline styles immediately and on delay
-    fixInlineStyles();
-    setTimeout(() => fixInlineStyles(), 100);
-    setTimeout(() => fixInlineStyles(), 500);
-    setTimeout(() => fixInlineStyles(), 1000);
+    function showMessagePageWarning() {
+        if (document.getElementById("betterEclassDarkModeWarning")) return;
 
-    // Watch for dynamic changes
-    if (!window.betterEclassDarkModeObserver) {
-      window.betterEclassDarkModeObserver = new MutationObserver((mutations) => {
-        requestAnimationFrame(() => fixInlineStyles());
-      });
-
-      window.betterEclassDarkModeObserver.observe(document.documentElement, {
-        childList: true,
-        subtree: true,
-        attributes: true,
-        attributeFilter: ['style', 'border', 'bordercolor', 'bgcolor']
-      });
-    }
-  }
-
-  function showMessagePageWarning() {
-    if (document.getElementById('betterEclassDarkModeWarning')) return;
-
-    const banner = document.createElement('div');
-    banner.id = 'betterEclassDarkModeWarning';
-    banner.style.cssText = `
+        const banner = document.createElement("div");
+        banner.id = "betterEclassDarkModeWarning";
+        banner.style.cssText = `
       position: fixed;
       top: 10px;
       left: 50%;
@@ -1216,49 +1332,50 @@
       z-index: 10000;
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     `;
-    banner.textContent = '⚠️ ダークモードはメッセージページに対応していません';
+        banner.textContent =
+            "⚠️ ダークモードはメッセージページに対応していません";
 
-    document.body.appendChild(banner);
+        document.body.appendChild(banner);
 
-    // Auto-hide after 5 seconds
-    setTimeout(() => {
-      banner.style.transition = 'opacity 0.5s';
-      banner.style.opacity = '0';
-      setTimeout(() => banner.remove(), 500);
-    }, 5000);
-  }
-
-  function removeDarkMode() {
-    const styleElement = document.getElementById('betterEclassDarkMode');
-    if (styleElement) {
-      styleElement.remove();
+        // Auto-hide after 5 seconds
+        setTimeout(() => {
+            banner.style.transition = "opacity 0.5s";
+            banner.style.opacity = "0";
+            setTimeout(() => banner.remove(), 500);
+        }, 5000);
     }
 
-    if (window.betterEclassDarkModeObserver) {
-      window.betterEclassDarkModeObserver.disconnect();
-      window.betterEclassDarkModeObserver = null;
-    }
-  }
-
-  // Listen for settings changes
-  chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-    if (message.type === 'darkModeSettingChanged') {
-      checkDarkModeEnabled().then(enabled => {
-        if (enabled) {
-          applyDarkMode();
-        } else {
-          removeDarkMode();
+    function removeDarkMode() {
+        const styleElement = document.getElementById("betterEclassDarkMode");
+        if (styleElement) {
+            styleElement.remove();
         }
-      });
-    }
-  });
 
-  // Initialize: Apply CSS immediately if enabled, to prevent white flash
-  (async function initDarkMode() {
-    const enabled = await checkDarkModeEnabled();
-    if (enabled) {
-      // Apply dark mode immediately
-      applyDarkMode();
+        if (window.betterEclassDarkModeObserver) {
+            window.betterEclassDarkModeObserver.disconnect();
+            window.betterEclassDarkModeObserver = null;
+        }
     }
-  })();
+
+    // Listen for settings changes
+    chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+        if (message.type === "darkModeSettingChanged") {
+            checkDarkModeEnabled().then((enabled) => {
+                if (enabled) {
+                    applyDarkMode();
+                } else {
+                    removeDarkMode();
+                }
+            });
+        }
+    });
+
+    // Initialize: Apply CSS immediately if enabled, to prevent white flash
+    (async function initDarkMode() {
+        const enabled = await checkDarkModeEnabled();
+        if (enabled) {
+            // Apply dark mode immediately
+            applyDarkMode();
+        }
+    })();
 })();

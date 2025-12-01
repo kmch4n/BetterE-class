@@ -1,310 +1,349 @@
 // course-available-materials.js
 // Displays a list of all available materials above the timeline
 
-(function() {
-  'use strict';
+(function () {
+    "use strict";
 
-  console.log('[BetterE-class] Course available materials initialized');
+    console.log("[BetterE-class] Course available materials initialized");
 
-  let settings = {
-    enableAvailableMaterials: true
-  };
+    let settings = {
+        enableAvailableMaterials: true,
+    };
 
-  // Load settings
-  chrome.storage.sync.get({
-    enableAvailableMaterials: true
-  }, (items) => {
-    settings = items;
-    console.log('[BetterE-class] Available materials settings loaded:', settings);
+    // Load settings
+    chrome.storage.sync.get(
+        {
+            enableAvailableMaterials: true,
+        },
+        (items) => {
+            settings = items;
+            console.log(
+                "[BetterE-class] Available materials settings loaded:",
+                settings,
+            );
 
-    if (settings.enableAvailableMaterials) {
-      if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', init);
-      } else {
-        init();
-      }
-    } else {
-      console.log('[BetterE-class] Available materials is disabled in settings');
-    }
-  });
+            if (settings.enableAvailableMaterials) {
+                if (document.readyState === "loading") {
+                    document.addEventListener("DOMContentLoaded", init);
+                } else {
+                    init();
+                }
+            } else {
+                console.log(
+                    "[BetterE-class] Available materials is disabled in settings",
+                );
+            }
+        },
+    );
 
-  // Listen for settings changes
-  chrome.storage.onChanged.addListener((changes, namespace) => {
-    if (namespace === 'sync' && changes.enableAvailableMaterials) {
-      settings.enableAvailableMaterials = changes.enableAvailableMaterials.newValue;
-      console.log('[BetterE-class] Available materials setting changed:', settings.enableAvailableMaterials);
+    // Listen for settings changes
+    chrome.storage.onChanged.addListener((changes, namespace) => {
+        if (namespace === "sync" && changes.enableAvailableMaterials) {
+            settings.enableAvailableMaterials =
+                changes.enableAvailableMaterials.newValue;
+            console.log(
+                "[BetterE-class] Available materials setting changed:",
+                settings.enableAvailableMaterials,
+            );
 
-      if (settings.enableAvailableMaterials) {
-        location.reload();
-      } else {
-        const widget = document.getElementById('betterEclass-available-materials');
-        const styles = document.getElementById('betterEclass-available-materials-styles');
-        if (widget) widget.remove();
-        if (styles) styles.remove();
-      }
-    }
-  });
-
-  function init() {
-    // Find the timeline section
-    const timelineSection = document.querySelector('.col-sm-4.col-md-3');
-    if (!timelineSection) {
-      console.log('[BetterE-class] Timeline section not found');
-      return;
-    }
-
-    console.log('[BetterE-class] Found timeline section, collecting available materials');
-
-    // Collect all available materials
-    const materials = collectAvailableMaterials();
-
-    if (materials.length === 0) {
-      console.log('[BetterE-class] No available materials found');
-      return;
-    }
-
-    console.log('[BetterE-class] Found', materials.length, 'available materials');
-
-    // Create the widget
-    const widget = createWidget(materials);
-
-    // Insert before the timeline
-    timelineSection.insertBefore(widget, timelineSection.firstChild);
-
-    // Add styles
-    addStyles();
-
-    console.log('[BetterE-class] Available materials widget created successfully');
-  }
-
-  // Use shared utility function from utils/material-icons.js
-  const getMaterialTypeIcon = window.BetterEclassUtils.getMaterialTypeIcon;
-
-  function collectAvailableMaterials() {
-    const materials = [];
-
-    // Find all sections
-    const sections = document.querySelectorAll('section.panel-default');
-
-    sections.forEach((section) => {
-      const sectionTitle = section.querySelector('.panel-title');
-      if (!sectionTitle) return;
-
-      const sectionName = sectionTitle.textContent.trim();
-
-      // Find all materials within this section
-      const items = section.querySelectorAll('.list-group-item');
-
-      items.forEach((item) => {
-        const titleElement = item.querySelector('h4');
-        if (!titleElement) return;
-
-        // Check if there's a link (available item)
-        const linkElement = titleElement.querySelector('a');
-        if (!linkElement) return; // Skip if no link
-
-        // Check for New badge
-        const newBadge = titleElement.querySelector('.cl-contentsList_new');
-        const isNew = !!newBadge;
-
-        // Check if unread (no "利用回数" text)
-        const itemText = item.textContent;
-        const isUnread = !itemText.includes('利用回数');
-
-        // Get material type
-        const categoryLabel = item.querySelector('.cl-contentsList_categoryLabel');
-        const materialType = categoryLabel ? categoryLabel.textContent.trim() : '';
-
-        // Get title
-        let title = titleElement.textContent.trim();
-        if (isNew && title.startsWith('New')) {
-          title = title.replace(/^New\s*/, '').trim();
+            if (settings.enableAvailableMaterials) {
+                location.reload();
+            } else {
+                const widget = document.getElementById(
+                    "betterEclass-available-materials",
+                );
+                const styles = document.getElementById(
+                    "betterEclass-available-materials-styles",
+                );
+                if (widget) widget.remove();
+                if (styles) styles.remove();
+            }
         }
-
-        // Get link URL
-        const url = linkElement.getAttribute('href');
-
-        // Check for deadline info
-        const deadlineInfo = item.querySelector('.course-contents-info');
-        let deadline = null;
-        if (deadlineInfo) {
-          deadline = deadlineInfo.textContent.trim();
-        }
-
-        materials.push({
-          section: sectionName,
-          title: title,
-          url: url,
-          isNew: isNew,
-          isUnread: isUnread,
-          materialType: materialType,
-          deadline: deadline,
-          element: item
-        });
-      });
     });
 
-    return materials;
-  }
+    function init() {
+        // Find the timeline section
+        const timelineSection = document.querySelector(".col-sm-4.col-md-3");
+        if (!timelineSection) {
+            console.log("[BetterE-class] Timeline section not found");
+            return;
+        }
 
-  function createWidget(materials) {
-    const widget = document.createElement('div');
-    widget.id = 'betterEclass-available-materials';
-    widget.className = 'betterEclass-widget';
+        console.log(
+            "[BetterE-class] Found timeline section, collecting available materials",
+        );
 
-    const header = document.createElement('div');
-    header.className = 'widget-header';
-    header.innerHTML = `
+        // Collect all available materials
+        const materials = collectAvailableMaterials();
+
+        if (materials.length === 0) {
+            console.log("[BetterE-class] No available materials found");
+            return;
+        }
+
+        console.log(
+            "[BetterE-class] Found",
+            materials.length,
+            "available materials",
+        );
+
+        // Create the widget
+        const widget = createWidget(materials);
+
+        // Insert before the timeline
+        timelineSection.insertBefore(widget, timelineSection.firstChild);
+
+        // Add styles
+        addStyles();
+
+        console.log(
+            "[BetterE-class] Available materials widget created successfully",
+        );
+    }
+
+    // Use shared utility function from utils/material-icons.js
+    const getMaterialTypeIcon = window.BetterEclassUtils.getMaterialTypeIcon;
+
+    function collectAvailableMaterials() {
+        const materials = [];
+
+        // Find all sections
+        const sections = document.querySelectorAll("section.panel-default");
+
+        sections.forEach((section) => {
+            const sectionTitle = section.querySelector(".panel-title");
+            if (!sectionTitle) return;
+
+            const sectionName = sectionTitle.textContent.trim();
+
+            // Find all materials within this section
+            const items = section.querySelectorAll(".list-group-item");
+
+            items.forEach((item) => {
+                const titleElement = item.querySelector("h4");
+                if (!titleElement) return;
+
+                // Check if there's a link (available item)
+                const linkElement = titleElement.querySelector("a");
+                if (!linkElement) return; // Skip if no link
+
+                // Check for New badge
+                const newBadge = titleElement.querySelector(
+                    ".cl-contentsList_new",
+                );
+                const isNew = !!newBadge;
+
+                // Check if unread (no "利用回数" text)
+                const itemText = item.textContent;
+                const isUnread = !itemText.includes("利用回数");
+
+                // Get material type
+                const categoryLabel = item.querySelector(
+                    ".cl-contentsList_categoryLabel",
+                );
+                const materialType = categoryLabel
+                    ? categoryLabel.textContent.trim()
+                    : "";
+
+                // Get title
+                let title = titleElement.textContent.trim();
+                if (isNew && title.startsWith("New")) {
+                    title = title.replace(/^New\s*/, "").trim();
+                }
+
+                // Get link URL
+                const url = linkElement.getAttribute("href");
+
+                // Check for deadline info
+                const deadlineInfo = item.querySelector(
+                    ".course-contents-info",
+                );
+                let deadline = null;
+                if (deadlineInfo) {
+                    deadline = deadlineInfo.textContent.trim();
+                }
+
+                materials.push({
+                    section: sectionName,
+                    title: title,
+                    url: url,
+                    isNew: isNew,
+                    isUnread: isUnread,
+                    materialType: materialType,
+                    deadline: deadline,
+                    element: item,
+                });
+            });
+        });
+
+        return materials;
+    }
+
+    function createWidget(materials) {
+        const widget = document.createElement("div");
+        widget.id = "betterEclass-available-materials";
+        widget.className = "betterEclass-widget";
+
+        const header = document.createElement("div");
+        header.className = "widget-header";
+        header.innerHTML = `
       <h3 class="page-header">利用可能な教材</h3>
       <span class="material-count">${materials.length}件</span>
     `;
 
-    const list = document.createElement('div');
-    list.className = 'materials-list';
+        const list = document.createElement("div");
+        list.className = "materials-list";
 
-    // Group materials by section
-    const groupedMaterials = {};
-    materials.forEach((material) => {
-      if (!groupedMaterials[material.section]) {
-        groupedMaterials[material.section] = [];
-      }
-      groupedMaterials[material.section].push(material);
-    });
-
-    // Create sections
-    Object.keys(groupedMaterials).forEach((sectionName) => {
-      const sectionMaterials = groupedMaterials[sectionName];
-
-      const sectionGroup = document.createElement('div');
-      sectionGroup.className = 'material-section';
-
-      // Section header
-      const sectionHeader = document.createElement('div');
-      sectionHeader.className = 'section-header';
-
-      const toggleIcon = document.createElement('span');
-      toggleIcon.className = 'section-toggle';
-      toggleIcon.textContent = '▶';
-
-      const sectionTitle = document.createElement('span');
-      sectionTitle.className = 'section-title';
-      sectionTitle.textContent = sectionName;
-
-      const sectionCount = document.createElement('span');
-      sectionCount.className = 'section-count';
-      sectionCount.textContent = `${sectionMaterials.length}件`;
-
-      sectionHeader.appendChild(toggleIcon);
-      sectionHeader.appendChild(sectionTitle);
-      sectionHeader.appendChild(sectionCount);
-
-      // Section content
-      const sectionContent = document.createElement('div');
-      sectionContent.className = 'section-content';
-
-      sectionMaterials.forEach((material) => {
-        const item = document.createElement('div');
-        item.className = 'material-item';
-
-        const link = document.createElement('a');
-        link.href = material.url;
-        link.className = 'material-link';
-
-        // Title container
-        const titleContainer = document.createElement('div');
-        titleContainer.style.display = 'flex';
-        titleContainer.style.alignItems = 'center';
-        titleContainer.style.gap = '6px';
-
-        // Material type icon
-        const typeIcon = getMaterialTypeIcon(material.materialType);
-        if (typeIcon) {
-          const iconSpan = document.createElement('span');
-          iconSpan.className = 'material-type-icon';
-          iconSpan.textContent = typeIcon;
-          iconSpan.title = material.materialType;
-          iconSpan.style.fontSize = '14px';
-          iconSpan.style.opacity = '0.8';
-          titleContainer.appendChild(iconSpan);
-        }
-
-        // New badge (at the beginning)
-        if (material.isNew) {
-          const newBadge = document.createElement('span');
-          newBadge.className = 'new-badge-prefix';
-          newBadge.textContent = 'New';
-          newBadge.style.background = '#ff9800';
-          newBadge.style.color = 'white';
-          newBadge.style.fontSize = '10px';
-          newBadge.style.padding = '2px 6px';
-          newBadge.style.borderRadius = '4px';
-          newBadge.style.marginRight = '6px';
-          newBadge.style.fontWeight = '700';
-          titleContainer.appendChild(newBadge);
-        }
-
-        // Unread indicator
-        if (material.isUnread) {
-          const unreadDot = document.createElement('span');
-          unreadDot.className = 'unread-dot';
-          unreadDot.title = '未読';
-          titleContainer.appendChild(unreadDot);
-        }
-
-        // Title
-        const titleSpan = document.createElement('span');
-        titleSpan.className = 'material-title';
-        titleSpan.textContent = material.title;
-
-        titleContainer.appendChild(titleSpan);
-        link.appendChild(titleContainer);
-
-        // Deadline if exists
-        if (material.deadline) {
-          const deadlineSpan = document.createElement('div');
-          deadlineSpan.className = 'material-deadline';
-          deadlineSpan.textContent = material.deadline;
-          link.appendChild(deadlineSpan);
-        }
-
-        // Click handler to scroll to material
-        link.addEventListener('click', (e) => {
-          e.preventDefault();
-          material.element.scrollIntoView({ behavior: 'smooth', block: 'center' });
-
-          // Highlight the material briefly
-          material.element.style.transition = 'background-color 0.5s';
-          material.element.style.backgroundColor = '#fff3cd';
-          setTimeout(() => {
-            material.element.style.backgroundColor = '';
-          }, 2000);
+        // Group materials by section
+        const groupedMaterials = {};
+        materials.forEach((material) => {
+            if (!groupedMaterials[material.section]) {
+                groupedMaterials[material.section] = [];
+            }
+            groupedMaterials[material.section].push(material);
         });
 
-        item.appendChild(link);
-        sectionContent.appendChild(item);
-      });
+        // Create sections
+        Object.keys(groupedMaterials).forEach((sectionName) => {
+            const sectionMaterials = groupedMaterials[sectionName];
 
-      // Toggle functionality
-      sectionHeader.addEventListener('click', () => {
-        sectionGroup.classList.toggle('expanded');
-        toggleIcon.textContent = sectionGroup.classList.contains('expanded') ? '▼' : '▶';
-      });
+            const sectionGroup = document.createElement("div");
+            sectionGroup.className = "material-section";
 
-      sectionGroup.appendChild(sectionHeader);
-      sectionGroup.appendChild(sectionContent);
-      list.appendChild(sectionGroup);
-    });
+            // Section header
+            const sectionHeader = document.createElement("div");
+            sectionHeader.className = "section-header";
 
-    widget.appendChild(header);
-    widget.appendChild(list);
+            const toggleIcon = document.createElement("span");
+            toggleIcon.className = "section-toggle";
+            toggleIcon.textContent = "▶";
 
-    return widget;
-  }
+            const sectionTitle = document.createElement("span");
+            sectionTitle.className = "section-title";
+            sectionTitle.textContent = sectionName;
 
-  function addStyles() {
-    const style = document.createElement('style');
-    style.id = 'betterEclass-available-materials-styles';
-    style.textContent = `
+            const sectionCount = document.createElement("span");
+            sectionCount.className = "section-count";
+            sectionCount.textContent = `${sectionMaterials.length}件`;
+
+            sectionHeader.appendChild(toggleIcon);
+            sectionHeader.appendChild(sectionTitle);
+            sectionHeader.appendChild(sectionCount);
+
+            // Section content
+            const sectionContent = document.createElement("div");
+            sectionContent.className = "section-content";
+
+            sectionMaterials.forEach((material) => {
+                const item = document.createElement("div");
+                item.className = "material-item";
+
+                const link = document.createElement("a");
+                link.href = material.url;
+                link.className = "material-link";
+
+                // Title container
+                const titleContainer = document.createElement("div");
+                titleContainer.style.display = "flex";
+                titleContainer.style.alignItems = "center";
+                titleContainer.style.gap = "6px";
+
+                // Material type icon
+                const typeIcon = getMaterialTypeIcon(material.materialType);
+                if (typeIcon) {
+                    const iconSpan = document.createElement("span");
+                    iconSpan.className = "material-type-icon";
+                    iconSpan.textContent = typeIcon;
+                    iconSpan.title = material.materialType;
+                    iconSpan.style.fontSize = "14px";
+                    iconSpan.style.opacity = "0.8";
+                    titleContainer.appendChild(iconSpan);
+                }
+
+                // New badge (at the beginning)
+                if (material.isNew) {
+                    const newBadge = document.createElement("span");
+                    newBadge.className = "new-badge-prefix";
+                    newBadge.textContent = "New";
+                    newBadge.style.background = "#ff9800";
+                    newBadge.style.color = "white";
+                    newBadge.style.fontSize = "10px";
+                    newBadge.style.padding = "2px 6px";
+                    newBadge.style.borderRadius = "4px";
+                    newBadge.style.marginRight = "6px";
+                    newBadge.style.fontWeight = "700";
+                    titleContainer.appendChild(newBadge);
+                }
+
+                // Unread indicator
+                if (material.isUnread) {
+                    const unreadDot = document.createElement("span");
+                    unreadDot.className = "unread-dot";
+                    unreadDot.title = "未読";
+                    titleContainer.appendChild(unreadDot);
+                }
+
+                // Title
+                const titleSpan = document.createElement("span");
+                titleSpan.className = "material-title";
+                titleSpan.textContent = material.title;
+
+                titleContainer.appendChild(titleSpan);
+                link.appendChild(titleContainer);
+
+                // Deadline if exists
+                if (material.deadline) {
+                    const deadlineSpan = document.createElement("div");
+                    deadlineSpan.className = "material-deadline";
+                    deadlineSpan.textContent = material.deadline;
+                    link.appendChild(deadlineSpan);
+                }
+
+                // Click handler to scroll to material
+                link.addEventListener("click", (e) => {
+                    e.preventDefault();
+                    material.element.scrollIntoView({
+                        behavior: "smooth",
+                        block: "center",
+                    });
+
+                    // Highlight the material briefly
+                    material.element.style.transition = "background-color 0.5s";
+                    material.element.style.backgroundColor = "#fff3cd";
+                    setTimeout(() => {
+                        material.element.style.backgroundColor = "";
+                    }, 2000);
+                });
+
+                item.appendChild(link);
+                sectionContent.appendChild(item);
+            });
+
+            // Toggle functionality
+            sectionHeader.addEventListener("click", () => {
+                sectionGroup.classList.toggle("expanded");
+                toggleIcon.textContent = sectionGroup.classList.contains(
+                    "expanded",
+                )
+                    ? "▼"
+                    : "▶";
+            });
+
+            sectionGroup.appendChild(sectionHeader);
+            sectionGroup.appendChild(sectionContent);
+            list.appendChild(sectionGroup);
+        });
+
+        widget.appendChild(header);
+        widget.appendChild(list);
+
+        return widget;
+    }
+
+    function addStyles() {
+        const style = document.createElement("style");
+        style.id = "betterEclass-available-materials-styles";
+        style.textContent = `
       #betterEclass-available-materials {
         margin-bottom: 24px;
       }
@@ -472,6 +511,6 @@
         }
       }
     `;
-    document.head.appendChild(style);
-  }
+        document.head.appendChild(style);
+    }
 })();
