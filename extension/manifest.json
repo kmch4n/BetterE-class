@@ -163,7 +163,7 @@
         "*://eclass.doshisha.ac.jp/webclass/dqstn_button.php*",
         "*://eclass.doshisha.ac.jp/webclass/dqstn_question.php*"
       ],
-      "js": ["utils/button-factory.js", "attachment-opener.js", "quiz-copy-button.js"],
+      "js": ["utils/button-factory.js", "attachment-opener.js", "quiz-copy-button.js", "quiz-export-all.js"],
       "run_at": "document_end",
       "all_frames": true
     }
