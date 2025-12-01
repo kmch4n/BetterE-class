@@ -17,10 +17,6 @@
         },
         (items) => {
             settings = items;
-            console.log(
-                "[BetterE-class] Available materials settings loaded:",
-                settings,
-            );
 
             if (settings.enableAvailableMaterials) {
                 if (document.readyState === "loading") {
@@ -28,10 +24,6 @@
                 } else {
                     init();
                 }
-            } else {
-                console.log(
-                    "[BetterE-class] Available materials is disabled in settings",
-                );
             }
         },
     );
@@ -41,10 +33,6 @@
         if (namespace === "sync" && changes.enableAvailableMaterials) {
             settings.enableAvailableMaterials =
                 changes.enableAvailableMaterials.newValue;
-            console.log(
-                "[BetterE-class] Available materials setting changed:",
-                settings.enableAvailableMaterials,
-            );
 
             if (settings.enableAvailableMaterials) {
                 location.reload();
@@ -65,27 +53,15 @@
         // Find the timeline section
         const timelineSection = document.querySelector(".col-sm-4.col-md-3");
         if (!timelineSection) {
-            console.log("[BetterE-class] Timeline section not found");
             return;
         }
-
-        console.log(
-            "[BetterE-class] Found timeline section, collecting available materials",
-        );
 
         // Collect all available materials
         const materials = collectAvailableMaterials();
 
         if (materials.length === 0) {
-            console.log("[BetterE-class] No available materials found");
             return;
         }
-
-        console.log(
-            "[BetterE-class] Found",
-            materials.length,
-            "available materials",
-        );
 
         // Create the widget
         const widget = createWidget(materials);
@@ -95,10 +71,6 @@
 
         // Add styles
         addStyles();
-
-        console.log(
-            "[BetterE-class] Available materials widget created successfully",
-        );
     }
 
     // Use shared utility function from utils/material-icons.js

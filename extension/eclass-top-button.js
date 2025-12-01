@@ -10,11 +10,8 @@
     const topButton = document.querySelector('button[onclick="scrollGoTop()"]');
 
     if (!topButton) {
-        console.log("[BetterE-class] Scroll Top button not found");
         return;
     }
-
-    console.log("[BetterE-class] Found scroll Top button");
 
     // Get the parent container
     const container = topButton.parentElement;
@@ -38,8 +35,6 @@
     // Move buttons slightly to the left to account for the Bootstrap grid offset
     container.style.transform = "translateX(-60px)";
 
-    console.log("[BetterE-class] Container styles applied");
-
     // Create e-class top button
     const eclassTopButton = document.createElement("button");
     eclassTopButton.type = "button";
@@ -47,12 +42,9 @@
     eclassTopButton.textContent = "E-class Top";
 
     eclassTopButton.addEventListener("click", () => {
-        console.log("[BetterE-class] E-class Top button clicked");
         window.location.href = "https://eclass.doshisha.ac.jp/webclass/";
     });
 
     // Insert the e-class top button after the scroll Top button
     topButton.parentNode.insertBefore(eclassTopButton, topButton.nextSibling);
-
-    console.log("[BetterE-class] E-class Top button added successfully");
 })();

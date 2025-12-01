@@ -19,8 +19,6 @@
     }
 
     function init() {
-        console.log("[BetterE-class] Initializing quiz copy button");
-
         // Try to add button immediately
         if (addCopyButton()) {
             return;
@@ -99,7 +97,6 @@
 
         // Insert button above the question
         questionElement.parentElement.insertBefore(button, questionElement);
-        console.log("[BetterE-class] Quiz copy button added successfully");
 
         return true;
     }
@@ -173,11 +170,6 @@
             // Copy to clipboard
             await navigator.clipboard.writeText(formattedText);
             showNotification("問題をコピーしました！", "success");
-
-            console.log(
-                "[BetterE-class] Copied quiz to clipboard:",
-                formattedText,
-            );
         } catch (error) {
             console.error("[BetterE-class] Error copying quiz:", error);
             showNotification("コピーに失敗しました", "error");

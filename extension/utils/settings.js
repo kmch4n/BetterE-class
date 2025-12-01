@@ -107,10 +107,6 @@
                     // Migrate old values to new location
                     if (Object.keys(toMigrate).length > 0) {
                         await setSettings(toMigrate);
-                        console.log(
-                            "[BetterE-class] Auto-migrated settings from sync:",
-                            Object.keys(toMigrate),
-                        );
                     }
                 } catch (error) {
                     console.warn(
@@ -221,10 +217,6 @@
      */
     async function migrateFromSync() {
         try {
-            console.log(
-                "[BetterE-class] Migrating settings from sync to local...",
-            );
-
             // Get all old settings from sync storage
             const oldSettings = await chrome.storage.sync.get(null);
 
@@ -239,10 +231,6 @@
 
                 if (Object.keys(newSettings).length > 0) {
                     await setSettings(newSettings);
-                    console.log(
-                        "[BetterE-class] Migrated settings:",
-                        newSettings,
-                    );
                 }
             }
 
@@ -279,9 +267,6 @@
             if (oldData) {
                 const parsed = JSON.parse(oldData);
                 await setSetting(newKey, parsed);
-                console.log(
-                    `[BetterE-class] Migrated ${oldKey} from localStorage to chrome.storage.local`,
-                );
 
                 // Optionally remove from localStorage after successful migration
                 // localStorage.removeItem(oldKey);

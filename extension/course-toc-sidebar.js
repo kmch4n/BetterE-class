@@ -17,10 +17,6 @@
         },
         (items) => {
             settings = items;
-            console.log(
-                "[BetterE-class] TOC sidebar settings loaded:",
-                settings,
-            );
 
             if (settings.enableTocSidebar) {
                 // Wait for the page to load
@@ -29,10 +25,6 @@
                 } else {
                     init();
                 }
-            } else {
-                console.log(
-                    "[BetterE-class] TOC sidebar is disabled in settings",
-                );
             }
         },
     );
@@ -41,10 +33,6 @@
     chrome.storage.onChanged.addListener((changes, namespace) => {
         if (namespace === "sync" && changes.enableTocSidebar) {
             settings.enableTocSidebar = changes.enableTocSidebar.newValue;
-            console.log(
-                "[BetterE-class] TOC sidebar setting changed:",
-                settings.enableTocSidebar,
-            );
 
             // Reload the page to apply changes
             if (settings.enableTocSidebar) {
@@ -72,21 +60,15 @@
         const tocList = document.querySelector("ul.cm-sideNav_folders");
 
         if (!tocList) {
-            console.log("[BetterE-class] TOC list not found");
             return;
         }
 
         // Check if TOC is empty
         const tocItems = tocList.querySelectorAll("li");
         if (tocItems.length === 0) {
-            console.log(
-                "[BetterE-class] TOC list is empty, creating flat structure",
-            );
             createFlatSidebar();
             return;
         }
-
-        console.log("[BetterE-class] Found TOC list, creating sidebar");
 
         // Create sidebar container
         const sidebar = document.createElement("div");
@@ -283,8 +265,6 @@
 
         // Hide the original TOC modal button
         hideOriginalToc();
-
-        console.log("[BetterE-class] TOC sidebar created successfully");
     }
 
     function setupScrollSpy(sidebar) {
@@ -409,13 +389,8 @@
         );
 
         if (allMaterials.length === 0) {
-            console.log("[BetterE-class] No materials found for flat sidebar");
             return;
         }
-
-        console.log(
-            `[BetterE-class] Creating flat sidebar with ${allMaterials.length} materials`,
-        );
 
         // Create sidebar container
         const sidebar = document.createElement("div");
@@ -563,8 +538,6 @@
 
         // Hide the original TOC modal button
         hideOriginalToc();
-
-        console.log("[BetterE-class] Flat TOC sidebar created successfully");
     }
 
     function createSubItems(sectionId) {
@@ -735,7 +708,6 @@
       }
     `;
         document.head.appendChild(hideStyle);
-        console.log("[BetterE-class] Original TOC hidden");
     }
 
     function addStyles() {

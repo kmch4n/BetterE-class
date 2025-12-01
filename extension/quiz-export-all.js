@@ -22,8 +22,6 @@
     }
 
     function init() {
-        console.log("[BetterE-class] Checking for quiz navigation buttons...");
-
         // Try to add button immediately
         if (addExportButton()) {
             return;
@@ -53,14 +51,12 @@
 
         // Check if button already exists
         if (document.querySelector(".betterEclass-quiz-export-all-btn")) {
-            console.log("[BetterE-class] Export button already exists");
             return true;
         }
 
         // Find the table containing the question buttons
         const table = document.querySelector("table");
         if (!table) {
-            console.log("[BetterE-class] Table not found");
             return false;
         }
 
@@ -151,9 +147,6 @@
 
         // Insert container at the top of the body (before the table)
         document.body.insertBefore(container, document.body.firstChild);
-        console.log(
-            "[BetterE-class] Quiz export all button added successfully",
-        );
     }
 
     // Get quiz title from URL parameters
@@ -199,10 +192,6 @@
 
             // Resume if exporting and on a question
             if (state.isExporting && state.currentQuestion > 0) {
-                console.log(
-                    "[BetterE-class] Resuming export from question",
-                    state.currentQuestion + 1,
-                );
                 resumeChecked = true;
                 resumeExport();
                 return true;
@@ -256,7 +245,6 @@
     }
 
     async function resumeExport() {
-        console.log("[BetterE-class] Resuming export...");
         // Continue collecting from current question
         collectNextQuestion();
     }
@@ -333,10 +321,6 @@
         copyButton.textContent = `${icon} 収集中... (${state.currentQuestion}/${state.totalQuestions})`;
         exportButton.textContent = `${icon} 収集中... (${state.currentQuestion}/${state.totalQuestions})`;
 
-        console.log(
-            `[BetterE-class] Collecting question ${state.currentQuestion}...`,
-        );
-
         // Wait for frames to be ready
         const framesReady = await waitForFrames();
         if (!framesReady) {
@@ -367,18 +351,8 @@
                         item.question.trim() === questionData.question.trim(),
                 );
 
-                if (isDuplicate) {
-                    console.log(
-                        `[BetterE-class] Skipping duplicate question ${state.currentQuestion}:`,
-                        questionData.question.substring(0, 50) + "...",
-                    );
-                    // Don't add to exportData, but continue to next question
-                } else {
+                if (!isDuplicate) {
                     state.exportData.push(questionData);
-                    console.log(
-                        `[BetterE-class] Collected question ${state.currentQuestion}:`,
-                        questionData.question.substring(0, 50) + "...",
-                    );
                 }
             }
         } catch (error) {
@@ -391,10 +365,6 @@
         // Navigate to next question
         if (state.currentQuestion < state.totalQuestions) {
             const nextQuestionNumber = state.currentQuestion + 1;
-
-            console.log(
-                `[BetterE-class] Navigating to question ${nextQuestionNumber}...`,
-            );
 
             try {
                 // Find the navigation button for the next question
@@ -409,19 +379,11 @@
                 if (buttonIndex < navigationButtons.length) {
                     const nextButton = navigationButtons[buttonIndex];
 
-                    console.log(
-                        `[BetterE-class] Clicking navigation button at index ${buttonIndex} (Q${nextQuestionNumber})`,
-                    );
-
                     // Add a small delay before navigation
                     await sleep(300);
 
                     // Trigger click event - this will execute the onclick="setpage(X)"
                     nextButton.click();
-
-                    console.log(
-                        `[BetterE-class] Clicked button for Q${nextQuestionNumber}`,
-                    );
                     // The frame will reload and resumeExport will be called
                 } else {
                     throw new Error(
@@ -443,8 +405,6 @@
 
     // Wait for question and answer frames to be ready
     async function waitForFrames(maxAttempts = 20) {
-        console.log("[BetterE-class] Starting to wait for frames...");
-
         for (let i = 0; i < maxAttempts; i++) {
             try {
                 const questionFrame =
@@ -466,10 +426,7 @@
                         answerDoc = answerFrame.document;
                         docsAccessible = !!questionDoc && !!answerDoc;
                     } catch (e) {
-                        console.log(
-                            `[BetterE-class] Frame ${i + 1}: Document access error:`,
-                            e.message,
-                        );
+                        // Silently retry
                     }
                 }
 
@@ -482,10 +439,6 @@
                         answerDoc.querySelector(".seloptions");
 
                     if (questionElement && answerElement) {
-                        console.log(
-                            "[BetterE-class] ✓ Frames ready! Question:",
-                            questionElement.textContent.trim().substring(0, 30),
-                        );
                         return true;
                     }
                 }
@@ -497,7 +450,7 @@
         }
 
         console.error(
-            "[BetterE-class] ✗ Timeout: Frames never became ready after",
+            "[BetterE-class] Timeout: Frames never became ready after",
             maxAttempts,
             "attempts",
         );
@@ -624,15 +577,9 @@
             try {
                 await navigator.clipboard.writeText(content);
                 successful = true;
-                console.log("[BetterE-class] Copied using modern API");
             } catch (e) {
-                console.log(
-                    "[BetterE-class] Modern API failed, trying execCommand:",
-                    e.message,
-                );
                 // Fallback to execCommand
                 successful = document.execCommand("copy");
-                console.log("[BetterE-class] execCommand result:", successful);
             }
 
             document.body.removeChild(textarea);
@@ -640,12 +587,6 @@
             if (!successful) {
                 throw new Error("Copy command failed");
             }
-
-            console.log(
-                "[BetterE-class] Copied to clipboard:",
-                state.exportData.length,
-                "questions",
-            );
         } catch (error) {
             console.error(
                 "[BetterE-class] Failed to copy to clipboard:",
@@ -674,12 +615,6 @@
         a.click();
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
-
-        console.log(
-            "[BetterE-class] Export completed:",
-            state.exportData.length,
-            "questions",
-        );
     }
 
     function sleep(ms) {

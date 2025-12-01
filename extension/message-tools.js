@@ -66,8 +66,6 @@
     // Mark all messages as read
     function markAllMessagesAsRead() {
         try {
-            console.log("[BetterE-class] Marking all messages as read...");
-
             // 1. Click the "select all" checkbox
             const selectAllCheckbox = document.querySelector(
                 'input[type="checkbox"][name="autochecker"]',
@@ -96,7 +94,6 @@
                 }
 
                 markAsReadButton.click();
-                console.log("[BetterE-class] Mark all as read action executed");
             });
         } catch (error) {
             console.error(
@@ -113,17 +110,11 @@
             'input[type="submit"][name="downloadmsg"][value="ダウンロード"]',
         );
         if (!downloadButton) {
-            console.log(
-                "[BetterE-class] Download button not found, retrying...",
-            );
             return;
         }
 
         // Check if button already exists
         if (document.getElementById("betterEclassMarkAllAsRead")) {
-            console.log(
-                "[BetterE-class] Mark all as read button already exists",
-            );
             return;
         }
 
@@ -134,9 +125,6 @@
         downloadButton.parentNode.insertBefore(
             newButton,
             downloadButton.nextSibling,
-        );
-        console.log(
-            "[BetterE-class] Mark all as read button added successfully",
         );
     }
 

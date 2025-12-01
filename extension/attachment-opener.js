@@ -102,10 +102,6 @@
 
             if (buttonFrame) {
                 buttonFrame.postMessage(message, "*");
-                console.log(
-                    "[BetterE-class] Sent PDF URL to button frame:",
-                    pdfUrl,
-                );
             }
             // Note: If button frame not found, isQuizPage check should prevent this from being called
         } catch (error) {

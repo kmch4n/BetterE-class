@@ -1260,8 +1260,6 @@
     }
 
     async function applyDarkMode() {
-        console.log("[BetterE-class] Applying dark mode");
-
         // Check if this is a message page
         const isMessagePage =
             window.location.href.includes("msg_editor.php") ||
