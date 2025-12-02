@@ -6,9 +6,35 @@
 
     console.log("[BetterE-class] Quiz export all script initialized, frame name:", window.name);
 
-    // Check if this page has quiz navigation buttons
+    // Check if this page has quiz navigation buttons AND answer options
     const hasQuizButtons = () => {
-        return document.querySelector('input[name="page_num"]') !== null;
+        // First check if page has navigation buttons
+        const hasNavButtons = document.querySelector('input[name="page_num"]') !== null;
+        if (!hasNavButtons) {
+            return false;
+        }
+
+        // Check if answer frame has .seloptions (answer options table)
+        // This distinguishes quiz pages from file submission/PDF pages
+        try {
+            const answerFrame = parent.frames["answer"] || parent.parent.frames["answer"];
+            if (!answerFrame) {
+                return false;
+            }
+
+            const answerDoc = answerFrame.document;
+            if (!answerDoc) {
+                return false;
+            }
+
+            // Check for .seloptions in answer frame
+            const hasAnswerOptions = answerDoc.querySelector(".seloptions") !== null;
+            return hasAnswerOptions;
+        } catch (error) {
+            // If we can't access the answer frame, assume it's not a quiz page
+            console.log("[BetterE-class] Cannot access answer frame:", error);
+            return false;
+        }
     };
 
     // Wait for DOM to be ready
@@ -404,7 +430,11 @@
 
                 // If frames and documents are accessible, check for content elements
                 if (docsAccessible && questionDoc.body && answerDoc.body) {
-                    const questionElement = questionDoc.querySelector(".question p, .question .content");
+                    // Try multiple selectors for question element
+                    let questionElement = questionDoc.querySelector(".question p, .question .content");
+                    if (!questionElement) {
+                        questionElement = questionDoc.querySelector(".question");
+                    }
                     const answerElement = answerDoc.querySelector(".seloptions");
 
                     if (questionElement && answerElement) {
@@ -437,7 +467,11 @@
             let questionText = "";
             try {
                 const questionDoc = questionFrame.document;
-                const questionElement = questionDoc.querySelector(".question p, .question .content");
+                // Try multiple selectors for question element
+                let questionElement = questionDoc.querySelector(".question p, .question .content");
+                if (!questionElement) {
+                    questionElement = questionDoc.querySelector(".question");
+                }
                 if (questionElement) {
                     questionText = questionElement.textContent.trim();
                 }
@@ -453,7 +487,15 @@
 
                 answerElements.forEach((row) => {
                     const prefixLabel = row.querySelector(".prefix label");
-                    const optionLabel = row.querySelector(".option-label p, .option-label .content");
+
+                    // Try multiple selectors for option label
+                    let optionLabel = row.querySelector(".option-label label");
+                    if (!optionLabel) {
+                        optionLabel = row.querySelector(".option-label p, .option-label .content");
+                    }
+                    if (!optionLabel) {
+                        optionLabel = row.querySelector(".option-label");
+                    }
 
                     if (prefixLabel && optionLabel) {
                         const number = prefixLabel.textContent.trim();

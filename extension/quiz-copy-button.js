@@ -110,7 +110,14 @@
             // Extract question text from current document
             let questionText = "";
             try {
-                const questionElement = document.querySelector(".question p, .question .content");
+                // First try to find p or .content inside .question
+                let questionElement = document.querySelector(".question p, .question .content");
+
+                // If not found, get text directly from .question element
+                if (!questionElement) {
+                    questionElement = document.querySelector(".question");
+                }
+
                 if (questionElement) {
                     questionText = questionElement.textContent.trim();
                 }
@@ -126,7 +133,15 @@
 
                 answerElements.forEach((row) => {
                     const prefixLabel = row.querySelector(".prefix label");
-                    const optionLabel = row.querySelector(".option-label p, .option-label .content");
+
+                    // Try multiple selectors for option label
+                    let optionLabel = row.querySelector(".option-label label");
+                    if (!optionLabel) {
+                        optionLabel = row.querySelector(".option-label p, .option-label .content");
+                    }
+                    if (!optionLabel) {
+                        optionLabel = row.querySelector(".option-label");
+                    }
 
                     if (prefixLabel && optionLabel) {
                         const number = prefixLabel.textContent.trim();
