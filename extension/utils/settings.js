@@ -27,6 +27,9 @@
 
         // UI features
         enableDarkMode: false,
+
+        // Developer options
+        debugMode: false,
     };
 
     // Storage key prefix to avoid conflicts

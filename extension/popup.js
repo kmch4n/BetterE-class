@@ -4,7 +4,7 @@ const settingsAPI = window.BetterEclassUtils.settings;
 // Load settings
 async function loadSettings() {
     try {
-        const result = await settingsAPI.getSettings(["enableDarkMode", "hideSaturday", "hide67thPeriod", "enableTocSidebar", "enableAvailableMaterials"]);
+        const result = await settingsAPI.getSettings(["enableDarkMode", "hideSaturday", "hide67thPeriod", "enableTocSidebar", "enableAvailableMaterials", "debugMode"]);
         return result;
     } catch (error) {
         console.error("Failed to load settings:", error);
@@ -14,6 +14,7 @@ async function loadSettings() {
             hide67thPeriod: false,
             enableTocSidebar: true,
             enableAvailableMaterials: true,
+            debugMode: false,
         };
     }
 }
@@ -55,6 +56,7 @@ async function initializeUI() {
     document.getElementById("hide67thPeriod").checked = settings.hide67thPeriod;
     document.getElementById("enableTocSidebar").checked = settings.enableTocSidebar;
     document.getElementById("enableAvailableMaterials").checked = settings.enableAvailableMaterials;
+    document.getElementById("debugMode").checked = settings.debugMode || false;
 }
 
 // Setup event listeners
@@ -64,6 +66,7 @@ function setupEventListeners() {
     const hide67thPeriodEl = document.getElementById("hide67thPeriod");
     const enableTocSidebarEl = document.getElementById("enableTocSidebar");
     const enableAvailableMaterialsEl = document.getElementById("enableAvailableMaterials");
+    const debugModeEl = document.getElementById("debugMode");
 
     enableDarkModeEl.addEventListener("change", async (e) => {
         const settings = await loadSettings();
@@ -121,6 +124,19 @@ function setupEventListeners() {
         // Reload course pages to apply the change
         if (success) {
             reloadCoursePages();
+        }
+    });
+
+    debugModeEl.addEventListener("change", async (e) => {
+        const settings = await loadSettings();
+        settings.debugMode = e.target.checked;
+
+        const success = await saveSettings(settings);
+        showStatus(success ? "設定を保存しました" : "設定の保存に失敗しました", success);
+
+        // Reload textbook pages to apply the change
+        if (success) {
+            reloadTextbookPages();
         }
     });
 }
@@ -189,6 +205,20 @@ async function reloadCoursePages() {
         }
     } catch (error) {
         console.error("Failed to reload course pages:", error);
+    }
+}
+
+// Reload textbook pages to apply debug mode changes
+async function reloadTextbookPages() {
+    try {
+        const tabs = await chrome.tabs.query({
+            url: "*://eclass.doshisha.ac.jp/webclass/txtbk_*.php*",
+        });
+        for (const tab of tabs) {
+            chrome.tabs.reload(tab.id);
+        }
+    } catch (error) {
+        console.error("Failed to reload textbook pages:", error);
     }
 }
 

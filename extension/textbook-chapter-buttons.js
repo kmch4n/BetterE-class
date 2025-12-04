@@ -5,8 +5,12 @@
 (function () {
     "use strict";
 
+    // Debug mode - loaded from settings
+    let DEBUG = false;
+
     let settings = {
         enableDirectDownload: true,
+        debugMode: false,
     };
 
     // Store current PDF URL and filename
@@ -20,9 +24,11 @@
     chrome.storage.sync.get(
         {
             enableDirectDownload: true,
+            debugMode: false,
         },
         (items) => {
             settings = items;
+            DEBUG = items.debugMode || false;
 
             // Parse JSON data to get page information
             parsePageInfo();
@@ -43,7 +49,7 @@
         try {
             const jsonScript = document.querySelector("script#json-data");
             if (!jsonScript) {
-                console.warn("[BetterE-class] JSON data not found");
+                if (DEBUG) console.warn("[BetterE-class] JSON data not found");
                 return;
             }
 
@@ -65,7 +71,7 @@
                 };
             }
 
-            console.log("[BetterE-class] Parsed page info:", pageInfo);
+            if (DEBUG) console.log("[BetterE-class] Parsed page info:", pageInfo);
         } catch (error) {
             console.error("[BetterE-class] Error parsing page info:", error);
         }
@@ -77,7 +83,7 @@
         const currentRow = document.querySelector("#TOCLayout tr.bkkhaki[data-page]");
         if (currentRow) {
             const pageNum = currentRow.getAttribute("data-page");
-            console.log(`[BetterE-class] Current page from highlighted row: ${pageNum}`);
+            if (DEBUG) console.log(`[BetterE-class] Current page from highlighted row: ${pageNum}`);
             return pageNum;
         }
 
@@ -87,7 +93,7 @@
             if (jsonScript) {
                 const data = JSON.parse(jsonScript.textContent);
                 if (data.page) {
-                    console.log(`[BetterE-class] Current page from JSON (fallback): ${data.page}`);
+                    if (DEBUG) console.log(`[BetterE-class] Current page from JSON (fallback): ${data.page}`);
                     return String(data.page);
                 }
             }
@@ -105,13 +111,13 @@
 
         const currentPage = getCurrentPageNumber();
         if (!currentPage) {
-            console.warn("[BetterE-class] Could not determine current page");
+            if (DEBUG) console.warn("[BetterE-class] Could not determine current page");
             return;
         }
 
         const pageData = pageInfo[currentPage];
         if (!pageData || !pageData.hasFile) {
-            console.log(`[BetterE-class] Current page ${currentPage} has no file, removing buttons`);
+            if (DEBUG) console.log(`[BetterE-class] Current page ${currentPage} has no file, removing buttons`);
             // Remove all buttons if current page has no file
             document.querySelectorAll(".betterEclass-chapter-download-btns").forEach((btn) => btn.remove());
             return;
@@ -123,7 +129,7 @@
         // Find the row for the current page
         const currentRow = document.querySelector(`#TOCLayout tr[data-page="${currentPage}"]`);
         if (!currentRow) {
-            console.warn(`[BetterE-class] Could not find row for page ${currentPage}`);
+            if (DEBUG) console.warn(`[BetterE-class] Could not find row for page ${currentPage}`);
             return;
         }
 
@@ -147,14 +153,14 @@
 
         titleCell.appendChild(buttonContainer);
 
-        console.log(`[BetterE-class] Added buttons for page ${currentPage}`);
+        if (DEBUG) console.log(`[BetterE-class] Added buttons for page ${currentPage}`);
     }
 
     // Observe page changes using MutationObserver
     function observePageChanges() {
         const tocTable = document.querySelector("#TOCLayout");
         if (!tocTable) {
-            console.warn("[BetterE-class] TOC table not found");
+            if (DEBUG) console.warn("[BetterE-class] TOC table not found");
             return;
         }
 
@@ -164,7 +170,7 @@
                 if (mutation.type === "attributes" && mutation.attributeName === "class") {
                     const target = mutation.target;
                     if (target.tagName === "TR" && target.hasAttribute("data-page")) {
-                        console.log("[BetterE-class] Page change detected");
+                        if (DEBUG) console.log("[BetterE-class] Page change detected");
                         // Reset PDF URL when page changes
                         currentPdfUrl = null;
                         currentPdfFilename = null;
@@ -184,7 +190,7 @@
             subtree: true,
         });
 
-        console.log("[BetterE-class] Started observing page changes");
+        if (DEBUG) console.log("[BetterE-class] Started observing page changes");
     }
 
     // Listen for PDF URL from loadit.php frame
@@ -198,7 +204,7 @@
         if (event.data && event.data.type === "betterEclass_pdfUrl") {
             currentPdfUrl = event.data.url;
             currentPdfFilename = event.data.filename;
-            console.log(`[BetterE-class] Received PDF URL:`, currentPdfUrl);
+            if (DEBUG) console.log(`[BetterE-class] Received PDF URL:`, currentPdfUrl);
         }
     });
 
@@ -324,7 +330,7 @@
                 // Find the parent row
                 const row = link.closest("tr[data-page]");
                 if (!row) {
-                    console.warn("[BetterE-class] Could not find parent row for attachment");
+                    if (DEBUG) console.warn("[BetterE-class] Could not find parent row for attachment");
                     return;
                 }
 
@@ -430,6 +436,11 @@
         if (namespace === "sync") {
             if (changes.enableDirectDownload) {
                 settings.enableDirectDownload = changes.enableDirectDownload.newValue;
+            }
+            if (changes.debugMode) {
+                settings.debugMode = changes.debugMode.newValue;
+                DEBUG = changes.debugMode.newValue || false;
+                if (DEBUG) console.log("[BetterE-class] Debug mode enabled");
             }
         }
     });
