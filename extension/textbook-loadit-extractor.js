@@ -4,6 +4,14 @@
 (function () {
     "use strict";
 
+    // Debug mode - loaded from settings
+    let DEBUG = false;
+
+    // Load debug mode setting
+    chrome.storage.sync.get({ debugMode: false }, (items) => {
+        DEBUG = items.debugMode || false;
+    });
+
     function findAndSendPdfUrl() {
         // Check if this is a textbook page (has webclass_chapter frame)
         // If not, skip this script (it's probably a quiz/survey page)
@@ -70,7 +78,7 @@
                             }
                         }
                     } catch (e) {
-                        console.warn("[BetterE-class] Error accessing frames:", e);
+                        if (DEBUG) console.warn("[BetterE-class] Error accessing frames:", e);
                     }
 
                     if (chapterFrame) {

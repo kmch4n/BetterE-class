@@ -2,16 +2,20 @@
 (function () {
     "use strict";
 
+    // Debug mode - loaded from settings
+    let DEBUG = false;
+
     let settings = {
         enableAttachmentTab: true,
         enableDirectDownload: true,
     };
 
     // Load settings
-    chrome.storage.sync.get(["enableAttachmentTab", "enableDirectDownload"], (result) => {
+    chrome.storage.sync.get(["enableAttachmentTab", "enableDirectDownload", "debugMode"], (result) => {
         try {
             settings.enableAttachmentTab = result.enableAttachmentTab !== undefined ? result.enableAttachmentTab : true;
             settings.enableDirectDownload = result.enableDirectDownload !== undefined ? result.enableDirectDownload : true;
+            DEBUG = result.debugMode || false;
 
             init();
         } catch (error) {
@@ -76,7 +80,7 @@
                     }
                 }
             } catch (e) {
-                console.warn("[BetterE-class] Error accessing button frame:", e);
+                if (DEBUG) console.warn("[BetterE-class] Error accessing button frame:", e);
             }
 
             if (buttonFrame) {

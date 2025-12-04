@@ -103,7 +103,7 @@
                         await setSettings(toMigrate);
                     }
                 } catch (error) {
-                    console.warn("[BetterE-class] Could not check old sync storage:", error);
+                    // Silently ignore - old sync storage not available
                 }
             }
 

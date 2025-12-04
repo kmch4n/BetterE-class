@@ -4,6 +4,14 @@
 (function () {
     "use strict";
 
+    // Debug mode - loaded from settings
+    let DEBUG = false;
+
+    // Load debug mode setting
+    chrome.storage.sync.get({ debugMode: false }, (items) => {
+        DEBUG = items.debugMode || false;
+    });
+
     console.log("[BetterE-class] E-class top button script initialized");
 
     // Find the scroll Top button
@@ -17,7 +25,7 @@
     const container = topButton.parentElement;
 
     if (!container) {
-        console.warn("[BetterE-class] Parent container not found");
+        if (DEBUG) console.warn("[BetterE-class] Parent container not found");
         return;
     }
 

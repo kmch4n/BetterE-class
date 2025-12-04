@@ -4,6 +4,14 @@
 (function () {
     "use strict";
 
+    // Debug mode - loaded from settings
+    let DEBUG = false;
+
+    // Load debug mode setting
+    chrome.storage.sync.get({ debugMode: false }, (items) => {
+        DEBUG = items.debugMode || false;
+    });
+
     console.log("[BetterE-class] Quiz export all script initialized, frame name:", window.name);
 
     // Check if this page has quiz navigation buttons AND answer options
@@ -32,7 +40,7 @@
             return hasAnswerOptions;
         } catch (error) {
             // If we can't access the answer frame, assume it's not a quiz page
-            console.log("[BetterE-class] Cannot access answer frame:", error);
+            if (DEBUG) console.log("[BetterE-class] Cannot access answer frame:", error);
             return false;
         }
     };
