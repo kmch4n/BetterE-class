@@ -204,68 +204,83 @@
 
     // Create download button
     function createDownloadButton() {
-        return window.BetterEclassUtils.createDownloadButton("⬇️", "ダウンロード", () => {
-            if (!currentPdfUrl) {
-                alert("PDF URLがまだ読み込まれていません。少し待ってから再度お試しください。");
-                return;
-            }
-            chrome.runtime.sendMessage(
-                {
-                    type: "downloadDirect",
-                    url: currentPdfUrl,
-                    filename: currentPdfFilename || "document.pdf",
-                },
-                (response) => {
-                    if (response && response.error) {
-                        console.error("[BetterE-class] Download error:", response.error);
-                    }
-                },
-            );
-        });
+        return window.BetterEclassUtils.createDownloadButton(
+            "⬇️",
+            "ダウンロード",
+            () => {
+                if (!currentPdfUrl) {
+                    alert("PDF URLがまだ読み込まれていません。少し待ってから再度お試しください。");
+                    return;
+                }
+                chrome.runtime.sendMessage(
+                    {
+                        type: "downloadDirect",
+                        url: currentPdfUrl,
+                        filename: currentPdfFilename || "document.pdf",
+                    },
+                    (response) => {
+                        if (response && response.error) {
+                            console.error("[BetterE-class] Download error:", response.error);
+                        }
+                    },
+                );
+            },
+            true, // iconOnly mode
+        );
     }
 
     // Create save as button
     function createSaveAsButton() {
-        return window.BetterEclassUtils.createSaveAsButton("💾", "名前を付けて保存", () => {
-            if (!currentPdfUrl) {
-                alert("PDF URLがまだ読み込まれていません。少し待ってから再度お試しください。");
-                return;
-            }
-            chrome.runtime.sendMessage(
-                {
-                    type: "downloadWithDialog",
-                    url: currentPdfUrl,
-                    filename: currentPdfFilename || "document.pdf",
-                },
-                (response) => {
-                    if (response && response.error) {
-                        console.error("[BetterE-class] Download error:", response.error);
-                    }
-                },
-            );
-        });
+        return window.BetterEclassUtils.createSaveAsButton(
+            "💾",
+            "名前を付けて保存",
+            () => {
+                if (!currentPdfUrl) {
+                    alert("PDF URLがまだ読み込まれていません。少し待ってから再度お試しください。");
+                    return;
+                }
+                chrome.runtime.sendMessage(
+                    {
+                        type: "downloadWithDialog",
+                        url: currentPdfUrl,
+                        filename: currentPdfFilename || "document.pdf",
+                    },
+                    (response) => {
+                        if (response && response.error) {
+                            console.error("[BetterE-class] Download error:", response.error);
+                        }
+                    },
+                );
+            },
+            true, // iconOnly mode
+        );
     }
 
     // Create preview button
     function createPreviewButton() {
-        return window.BetterEclassUtils.createPreviewButton("👁️", "プレビュー", () => {
-            if (!currentPdfUrl) {
-                alert("PDF URLがまだ読み込まれていません。少し待ってから再度お試しください。");
-                return;
-            }
-            chrome.runtime.sendMessage(
-                {
-                    type: "previewFile",
-                    url: currentPdfUrl,
-                    filename: currentPdfFilename || "document.pdf",
-                },
-                (response) => {
-                    if (response && response.error) {
-                        console.error("[BetterE-class] Preview error:", response.error);
-                    }
-                },
-            );
-        });
+        return window.BetterEclassUtils.createPreviewButton(
+            "👁️",
+            "プレビュー",
+            () => {
+                if (!currentPdfUrl) {
+                    alert("PDF URLがまだ読み込まれていません。少し待ってから再度お試しください。");
+                    return;
+                }
+                chrome.runtime.sendMessage(
+                    {
+                        type: "previewFile",
+                        url: currentPdfUrl,
+                        filename: currentPdfFilename || "document.pdf",
+                    },
+                    (response) => {
+                        if (response && response.error) {
+                            console.error("[BetterE-class] Preview error:", response.error);
+                        }
+                    },
+                );
+            },
+            true, // iconOnly mode
+        );
     }
 
     // Process file_down.php attachments (direct attachment links in chapter list)
@@ -343,56 +358,71 @@
 
     function createDownloadButtonForAttachment(url, filename) {
         // Use shared button factory from utils/button-factory.js
-        return window.BetterEclassUtils.createDownloadButton("⬇️", "ダウンロード", () => {
-            chrome.runtime.sendMessage(
-                {
-                    type: "downloadDirect",
-                    url: url,
-                    filename: filename || "document.pdf",
-                },
-                (response) => {
-                    if (response && response.error) {
-                        console.error("[BetterE-class] Download error:", response.error);
-                    }
-                },
-            );
-        });
+        return window.BetterEclassUtils.createDownloadButton(
+            "⬇️",
+            "ダウンロード",
+            () => {
+                chrome.runtime.sendMessage(
+                    {
+                        type: "downloadDirect",
+                        url: url,
+                        filename: filename || "document.pdf",
+                    },
+                    (response) => {
+                        if (response && response.error) {
+                            console.error("[BetterE-class] Download error:", response.error);
+                        }
+                    },
+                );
+            },
+            true, // iconOnly mode
+        );
     }
 
     function createSaveAsButtonForAttachment(url, filename) {
         // Use shared button factory from utils/button-factory.js
-        return window.BetterEclassUtils.createSaveAsButton("💾", "名前を付けて保存", () => {
-            chrome.runtime.sendMessage(
-                {
-                    type: "downloadWithDialog",
-                    url: url,
-                    filename: filename || "document.pdf",
-                },
-                (response) => {
-                    if (response && response.error) {
-                        console.error("[BetterE-class] Download error:", response.error);
-                    }
-                },
-            );
-        });
+        return window.BetterEclassUtils.createSaveAsButton(
+            "💾",
+            "名前を付けて保存",
+            () => {
+                chrome.runtime.sendMessage(
+                    {
+                        type: "downloadWithDialog",
+                        url: url,
+                        filename: filename || "document.pdf",
+                    },
+                    (response) => {
+                        if (response && response.error) {
+                            console.error("[BetterE-class] Download error:", response.error);
+                        }
+                    },
+                );
+            },
+            true, // iconOnly mode
+        );
     }
 
     function createPreviewButtonForAttachment(url, filename) {
         // Use shared button factory from utils/button-factory.js
-        return window.BetterEclassUtils.createPreviewButton("👁️", "プレビュー", () => {
-            chrome.runtime.sendMessage(
-                {
-                    type: "previewFile",
-                    url: url,
-                    filename: filename || "document.pdf",
-                },
-                (response) => {
-                    if (response && response.error) {
-                        console.error("[BetterE-class] Preview error:", response.error);
-                    }
-                },
-            );
-        });
+        return window.BetterEclassUtils.createPreviewButton(
+            "👁️",
+            "プレビュー",
+            () => {
+                chrome.runtime.sendMessage(
+                    {
+                        type: "previewFile",
+                        url: url,
+                        filename: filename || "document.pdf",
+                    },
+                    (response) => {
+                        if (response && response.error) {
+                            console.error("[BetterE-class] Preview error:", response.error);
+                        }
+                    },
+                );
+            },
+            true, // iconOnly mode
+        );
     }
 
     // Monitor for changes in settings

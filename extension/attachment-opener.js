@@ -429,7 +429,10 @@
 
     function createDownloadButton(icon, text, downloadUrl, fileName) {
         // Use shared button factory from utils/button-factory.js
-        return window.BetterEclassUtils.createDownloadButton(icon, text, async () => {
+        return window.BetterEclassUtils.createDownloadButton(
+            icon,
+            text,
+            async () => {
             try {
                 // Ensure we have an absolute URL
                 let absoluteUrl;
@@ -467,67 +470,79 @@
             } catch (error) {
                 console.error("[BetterE-class] Error triggering download:", error);
             }
-        });
+            },
+            true, // iconOnly mode
+        );
     }
 
     function createSaveAsButton(icon, text, downloadUrl, fileName) {
         // Use shared button factory from utils/button-factory.js
-        return window.BetterEclassUtils.createSaveAsButton(icon, text, () => {
-            try {
-                // Ensure we have an absolute URL
-                let absoluteUrl;
-                if (downloadUrl.startsWith("http")) {
-                    absoluteUrl = downloadUrl;
-                } else if (downloadUrl.startsWith("/")) {
-                    absoluteUrl = `${window.location.origin}${downloadUrl}`;
-                } else {
-                    absoluteUrl = `${window.location.origin}/webclass/${downloadUrl}`;
+        return window.BetterEclassUtils.createSaveAsButton(
+            icon,
+            text,
+            () => {
+                try {
+                    // Ensure we have an absolute URL
+                    let absoluteUrl;
+                    if (downloadUrl.startsWith("http")) {
+                        absoluteUrl = downloadUrl;
+                    } else if (downloadUrl.startsWith("/")) {
+                        absoluteUrl = `${window.location.origin}${downloadUrl}`;
+                    } else {
+                        absoluteUrl = `${window.location.origin}/webclass/${downloadUrl}`;
+                    }
+
+                    // Use Chrome downloads API to prompt save dialog
+                    chrome.runtime.sendMessage(
+                        {
+                            type: "downloadWithDialog",
+                            url: absoluteUrl,
+                            filename: fileName,
+                        },
+                        (response) => {
+                            if (chrome.runtime.lastError) {
+                                console.error("[BetterE-class] Runtime error:", chrome.runtime.lastError);
+                            }
+
+                            if (response && response.error) {
+                                console.error("[BetterE-class] Download error:", response.error);
+                            }
+                        },
+                    );
+                } catch (error) {
+                    console.error("[BetterE-class] Error triggering save as:", error);
                 }
-
-                // Use Chrome downloads API to prompt save dialog
-                chrome.runtime.sendMessage(
-                    {
-                        type: "downloadWithDialog",
-                        url: absoluteUrl,
-                        filename: fileName,
-                    },
-                    (response) => {
-                        if (chrome.runtime.lastError) {
-                            console.error("[BetterE-class] Runtime error:", chrome.runtime.lastError);
-                        }
-
-                        if (response && response.error) {
-                            console.error("[BetterE-class] Download error:", response.error);
-                        }
-                    },
-                );
-            } catch (error) {
-                console.error("[BetterE-class] Error triggering save as:", error);
-            }
-        });
+            },
+            true, // iconOnly mode
+        );
     }
 
     function createPreviewButton(icon, text, downloadUrl, fileName) {
         // Use shared button factory from utils/button-factory.js
-        return window.BetterEclassUtils.createPreviewButton(icon, text, () => {
-            try {
-                // Ensure we have an absolute URL
-                let absoluteUrl;
-                if (downloadUrl.startsWith("http")) {
-                    absoluteUrl = downloadUrl;
-                } else if (downloadUrl.startsWith("/")) {
-                    absoluteUrl = `${window.location.origin}${downloadUrl}`;
-                } else {
-                    absoluteUrl = `${window.location.origin}/webclass/${downloadUrl}`;
-                }
+        return window.BetterEclassUtils.createPreviewButton(
+            icon,
+            text,
+            () => {
+                try {
+                    // Ensure we have an absolute URL
+                    let absoluteUrl;
+                    if (downloadUrl.startsWith("http")) {
+                        absoluteUrl = downloadUrl;
+                    } else if (downloadUrl.startsWith("/")) {
+                        absoluteUrl = `${window.location.origin}${downloadUrl}`;
+                    } else {
+                        absoluteUrl = `${window.location.origin}/webclass/${downloadUrl}`;
+                    }
 
-                // For direct PDF URLs, just open in new tab
-                // The browser will handle the preview
-                window.open(absoluteUrl, "_blank", "noopener,noreferrer");
-            } catch (error) {
-                console.error("[BetterE-class] Error triggering preview:", error);
-            }
-        });
+                    // For direct PDF URLs, just open in new tab
+                    // The browser will handle the preview
+                    window.open(absoluteUrl, "_blank", "noopener,noreferrer");
+                } catch (error) {
+                    console.error("[BetterE-class] Error triggering preview:", error);
+                }
+            },
+            true, // iconOnly mode
+        );
     }
 
     // Listen for settings changes
