@@ -9,7 +9,14 @@
         enableDirectDownload: true,
     };
 
-    // Load settings
+    // Store current PDF URL and filename
+    let currentPdfUrl = null;
+    let currentPdfFilename = null;
+
+    // Store page information from JSON
+    let pageInfo = null;
+
+    // Load settings and initialize
     chrome.storage.sync.get(
         {
             enableDirectDownload: true,
@@ -17,13 +24,170 @@
         (items) => {
             settings = items;
 
-            // Process both types of attachments
-            processLoaditAttachments();
+            // Parse JSON data to get page information
+            parsePageInfo();
+
+            // Add buttons to current page
+            updateButtonsForCurrentPage();
+
+            // Watch for page changes
+            observePageChanges();
+
+            // Process file_down.php attachments
             processFileDownAttachments();
         },
     );
 
-    // Listen for PDF URL from loadit.php frame (for PDF preview pages)
+    // Parse JSON data from the page
+    function parsePageInfo() {
+        try {
+            const jsonScript = document.querySelector("script#json-data");
+            if (!jsonScript) {
+                console.warn("[BetterE-class] JSON data not found");
+                return;
+            }
+
+            const data = JSON.parse(jsonScript.textContent);
+            if (!data.text_urls) {
+                return;
+            }
+
+            pageInfo = {};
+            for (const [pageNum, url] of Object.entries(data.text_urls)) {
+                // Parse URL to check if it has a file parameter
+                const urlParams = new URLSearchParams(url.split("?")[1]);
+                const file = urlParams.get("file");
+
+                pageInfo[pageNum] = {
+                    url: url,
+                    hasFile: file && file.length > 0,
+                    file: file || "",
+                };
+            }
+
+            console.log("[BetterE-class] Parsed page info:", pageInfo);
+        } catch (error) {
+            console.error("[BetterE-class] Error parsing page info:", error);
+        }
+    }
+
+    // Get current page number from highlighted row
+    function getCurrentPageNumber() {
+        // Find the row with class "bkkhaki" (current page indicator)
+        const currentRow = document.querySelector("#TOCLayout tr.bkkhaki[data-page]");
+        if (currentRow) {
+            const pageNum = currentRow.getAttribute("data-page");
+            console.log(`[BetterE-class] Current page from highlighted row: ${pageNum}`);
+            return pageNum;
+        }
+
+        // Fallback to JSON data
+        try {
+            const jsonScript = document.querySelector("script#json-data");
+            if (jsonScript) {
+                const data = JSON.parse(jsonScript.textContent);
+                if (data.page) {
+                    console.log(`[BetterE-class] Current page from JSON (fallback): ${data.page}`);
+                    return String(data.page);
+                }
+            }
+        } catch (error) {
+            console.error("[BetterE-class] Error getting current page number:", error);
+        }
+        return null;
+    }
+
+    // Update buttons for the current page
+    function updateButtonsForCurrentPage() {
+        if (!pageInfo || !settings.enableDirectDownload) {
+            return;
+        }
+
+        const currentPage = getCurrentPageNumber();
+        if (!currentPage) {
+            console.warn("[BetterE-class] Could not determine current page");
+            return;
+        }
+
+        const pageData = pageInfo[currentPage];
+        if (!pageData || !pageData.hasFile) {
+            console.log(`[BetterE-class] Current page ${currentPage} has no file, removing buttons`);
+            // Remove all buttons if current page has no file
+            document.querySelectorAll(".betterEclass-chapter-download-btns").forEach((btn) => btn.remove());
+            return;
+        }
+
+        // Remove all existing buttons
+        document.querySelectorAll(".betterEclass-chapter-download-btns").forEach((btn) => btn.remove());
+
+        // Find the row for the current page
+        const currentRow = document.querySelector(`#TOCLayout tr[data-page="${currentPage}"]`);
+        if (!currentRow) {
+            console.warn(`[BetterE-class] Could not find row for page ${currentPage}`);
+            return;
+        }
+
+        // Find the title cell
+        const cells = currentRow.querySelectorAll("td");
+        if (cells.length < 3) {
+            return;
+        }
+
+        const titleCell = cells[2];
+
+        // Create button container
+        const buttonContainer = document.createElement("div");
+        buttonContainer.className = "betterEclass-chapter-download-btns";
+        buttonContainer.style.cssText = "margin-top: 6px; display: flex; gap: 4px; flex-wrap: wrap; justify-content: flex-end;";
+
+        // Add buttons
+        buttonContainer.appendChild(createDownloadButton());
+        buttonContainer.appendChild(createSaveAsButton());
+        buttonContainer.appendChild(createPreviewButton());
+
+        titleCell.appendChild(buttonContainer);
+
+        console.log(`[BetterE-class] Added buttons for page ${currentPage}`);
+    }
+
+    // Observe page changes using MutationObserver
+    function observePageChanges() {
+        const tocTable = document.querySelector("#TOCLayout");
+        if (!tocTable) {
+            console.warn("[BetterE-class] TOC table not found");
+            return;
+        }
+
+        const observer = new MutationObserver((mutations) => {
+            for (const mutation of mutations) {
+                // Check if a row's class changed (page navigation)
+                if (mutation.type === "attributes" && mutation.attributeName === "class") {
+                    const target = mutation.target;
+                    if (target.tagName === "TR" && target.hasAttribute("data-page")) {
+                        console.log("[BetterE-class] Page change detected");
+                        // Reset PDF URL when page changes
+                        currentPdfUrl = null;
+                        currentPdfFilename = null;
+                        // Update buttons after a short delay to ensure DOM is updated
+                        setTimeout(() => {
+                            updateButtonsForCurrentPage();
+                        }, 100);
+                        break;
+                    }
+                }
+            }
+        });
+
+        observer.observe(tocTable, {
+            attributes: true,
+            attributeFilter: ["class"],
+            subtree: true,
+        });
+
+        console.log("[BetterE-class] Started observing page changes");
+    }
+
+    // Listen for PDF URL from loadit.php frame
     window.addEventListener("message", (event) => {
         const isValidOrigin = event.origin === window.location.origin || event.origin === "https://eclass.doshisha.ac.jp";
 
@@ -32,13 +196,77 @@
         }
 
         if (event.data && event.data.type === "betterEclass_pdfUrl") {
-            const pdfUrl = event.data.url;
-            const filename = event.data.filename;
-
-            // Add download buttons to the row with loadit-style PDF
-            addDownloadButtonsForLoadit(pdfUrl, filename);
+            currentPdfUrl = event.data.url;
+            currentPdfFilename = event.data.filename;
+            console.log(`[BetterE-class] Received PDF URL:`, currentPdfUrl);
         }
     });
+
+    // Create download button
+    function createDownloadButton() {
+        return window.BetterEclassUtils.createDownloadButton("⬇️", "ダウンロード", () => {
+            if (!currentPdfUrl) {
+                alert("PDF URLがまだ読み込まれていません。少し待ってから再度お試しください。");
+                return;
+            }
+            chrome.runtime.sendMessage(
+                {
+                    type: "downloadDirect",
+                    url: currentPdfUrl,
+                    filename: currentPdfFilename || "document.pdf",
+                },
+                (response) => {
+                    if (response && response.error) {
+                        console.error("[BetterE-class] Download error:", response.error);
+                    }
+                },
+            );
+        });
+    }
+
+    // Create save as button
+    function createSaveAsButton() {
+        return window.BetterEclassUtils.createSaveAsButton("💾", "名前を付けて保存", () => {
+            if (!currentPdfUrl) {
+                alert("PDF URLがまだ読み込まれていません。少し待ってから再度お試しください。");
+                return;
+            }
+            chrome.runtime.sendMessage(
+                {
+                    type: "downloadWithDialog",
+                    url: currentPdfUrl,
+                    filename: currentPdfFilename || "document.pdf",
+                },
+                (response) => {
+                    if (response && response.error) {
+                        console.error("[BetterE-class] Download error:", response.error);
+                    }
+                },
+            );
+        });
+    }
+
+    // Create preview button
+    function createPreviewButton() {
+        return window.BetterEclassUtils.createPreviewButton("👁️", "プレビュー", () => {
+            if (!currentPdfUrl) {
+                alert("PDF URLがまだ読み込まれていません。少し待ってから再度お試しください。");
+                return;
+            }
+            chrome.runtime.sendMessage(
+                {
+                    type: "previewFile",
+                    url: currentPdfUrl,
+                    filename: currentPdfFilename || "document.pdf",
+                },
+                (response) => {
+                    if (response && response.error) {
+                        console.error("[BetterE-class] Preview error:", response.error);
+                    }
+                },
+            );
+        });
+    }
 
     // Process file_down.php attachments (direct attachment links in chapter list)
     function processFileDownAttachments() {
@@ -49,7 +277,7 @@
         // Find all file_down.php links (attachment links in chapter list)
         const attachmentLinks = document.querySelectorAll('a[href*="file_down.php"]');
 
-        attachmentLinks.forEach((link, index) => {
+        attachmentLinks.forEach((link) => {
             try {
                 // Prevent popup window - open in new tab instead
                 link.setAttribute("target", "_blank");
@@ -102,9 +330,9 @@
                 buttonContainer.style.cssText = "margin-top: 6px; display: flex; gap: 4px; flex-wrap: wrap; justify-content: flex-end;";
 
                 // Add buttons (use absolute URL for save/preview)
-                buttonContainer.appendChild(createDownloadButton(absoluteUrl, decodedFilename));
-                buttonContainer.appendChild(createSaveAsButton(absoluteUrl, decodedFilename));
-                buttonContainer.appendChild(createPreviewButton(absoluteUrl, decodedFilename));
+                buttonContainer.appendChild(createDownloadButtonForAttachment(absoluteUrl, decodedFilename));
+                buttonContainer.appendChild(createSaveAsButtonForAttachment(absoluteUrl, decodedFilename));
+                buttonContainer.appendChild(createPreviewButtonForAttachment(absoluteUrl, decodedFilename));
 
                 attachmentCell.appendChild(buttonContainer);
             } catch (error) {
@@ -113,54 +341,9 @@
         });
     }
 
-    // Process loadit.php style (receives PDF URL via postMessage)
-    function processLoaditAttachments() {
-        // This is handled by the message listener above
-    }
-
-    // Add download buttons for loadit-style PDF (from postMessage)
-    function addDownloadButtonsForLoadit(pdfUrl, filename) {
-        if (!settings.enableDirectDownload || !pdfUrl) {
-            return;
-        }
-
-        // Find all chapter rows in the table
-        const chapterRows = document.querySelectorAll("#TOCLayout tr[data-page]");
-
-        chapterRows.forEach((row, index) => {
-            // Check if buttons already exist
-            if (row.querySelector(".betterEclass-chapter-download-btns")) {
-                return;
-            }
-
-            // Find the cell with the chapter title (after "第1節" etc.)
-            const cells = row.querySelectorAll("td");
-            if (cells.length < 3) {
-                return;
-            }
-
-            // The third cell (index 2) contains the chapter title area
-            const titleCell = cells[2];
-
-            // Create button container
-            const buttonContainer = document.createElement("div");
-            buttonContainer.className = "betterEclass-chapter-download-btns";
-            buttonContainer.style.cssText = "margin-top: 6px; display: flex; gap: 4px; flex-wrap: wrap; justify-content: flex-end;";
-
-            // Add buttons
-            buttonContainer.appendChild(createDownloadButton(pdfUrl, filename));
-            buttonContainer.appendChild(createSaveAsButton(pdfUrl, filename));
-            buttonContainer.appendChild(createPreviewButton(pdfUrl, filename));
-
-            titleCell.appendChild(buttonContainer);
-        });
-    }
-
-    function createDownloadButton(url, filename) {
+    function createDownloadButtonForAttachment(url, filename) {
         // Use shared button factory from utils/button-factory.js
         return window.BetterEclassUtils.createDownloadButton("⬇️", "ダウンロード", () => {
-            // For file_down.php URLs, we need to use the background script
-            // to extract the actual file URL before downloading
             chrome.runtime.sendMessage(
                 {
                     type: "downloadDirect",
@@ -176,10 +359,9 @@
         });
     }
 
-    function createSaveAsButton(url, filename) {
+    function createSaveAsButtonForAttachment(url, filename) {
         // Use shared button factory from utils/button-factory.js
         return window.BetterEclassUtils.createSaveAsButton("💾", "名前を付けて保存", () => {
-            // Send message to background script to trigger download with dialog
             chrome.runtime.sendMessage(
                 {
                     type: "downloadWithDialog",
@@ -195,10 +377,9 @@
         });
     }
 
-    function createPreviewButton(url, filename) {
+    function createPreviewButtonForAttachment(url, filename) {
         // Use shared button factory from utils/button-factory.js
         return window.BetterEclassUtils.createPreviewButton("👁️", "プレビュー", () => {
-            // Send message to background script to open preview
             chrome.runtime.sendMessage(
                 {
                     type: "previewFile",
