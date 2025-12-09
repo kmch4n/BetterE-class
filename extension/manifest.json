@@ -150,6 +150,7 @@
             "js": [
                 "utils/button-factory.js",
                 "attachment-opener.js",
+                "quiz-attachment-buttons.js",
                 "quiz-copy-button.js",
                 "quiz-export-all.js"
             ],
