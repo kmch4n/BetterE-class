@@ -93,13 +93,83 @@
         return false;
     }
 
-    // Try immediately
-    if (!findAndSendPdfUrl()) {
-        // If not found, retry after delays (in case of late loading)
-        setTimeout(() => {
-            if (!findAndSendPdfUrl()) {
-                setTimeout(findAndSendPdfUrl, 1000);
+    /**
+     * Extract file URL from current page URL when "別ウィンドウ" link not found
+     * Fallback method for non-PDF files
+     */
+    function extractUrlFromLocation() {
+        try {
+            const urlParams = new URLSearchParams(window.location.search);
+            const fileParam = urlParams.get("file");
+
+            if (!fileParam) {
+                return false;
             }
-        }, 500);
+
+            // Extract filename and extension
+            const filename = decodeURIComponent(fileParam.split("/").pop());
+            const extension = getFileExtension(filename);
+
+            const message = {
+                type: "betterEclass_pdfUrl",
+                url: window.location.href,
+                filename: filename,
+                extension: extension,
+                isPdf: extension === "pdf",
+            };
+
+            // Send to chapter frame
+            let chapterFrame = null;
+            try {
+                if (window.top && window.top.frames) {
+                    if (window.top.frames["webclass_chapter"]) {
+                        chapterFrame = window.top.frames["webclass_chapter"];
+                    } else {
+                        for (let i = 0; i < window.top.frames.length; i++) {
+                            if (window.top.frames[i].name === "webclass_chapter") {
+                                chapterFrame = window.top.frames[i];
+                                break;
+                            }
+                        }
+                    }
+                }
+            } catch (e) {
+                if (DEBUG) console.warn("[BetterE-class] Error accessing frames:", e);
+            }
+
+            if (chapterFrame) {
+                chapterFrame.postMessage(message, "*");
+                if (DEBUG) console.log("[BetterE-class] Sent fallback URL:", filename);
+                return true;
+            }
+
+            return false;
+        } catch (error) {
+            console.error("[BetterE-class] Error extracting URL from location:", error);
+            return false;
+        }
+    }
+
+    /**
+     * Extract file extension from filename
+     */
+    function getFileExtension(filename) {
+        const match = filename.match(/\.([a-zA-Z0-9]+)$/);
+        return match ? match[1].toLowerCase() : "";
+    }
+
+    // Try "別ウィンドウ" link first
+    if (!findAndSendPdfUrl()) {
+        // Fallback: Try extracting from URL
+        if (!extractUrlFromLocation()) {
+            // Retry after delays
+            setTimeout(() => {
+                if (!findAndSendPdfUrl() && !extractUrlFromLocation()) {
+                    setTimeout(() => {
+                        findAndSendPdfUrl() || extractUrlFromLocation();
+                    }, 1000);
+                }
+            }, 500);
+        }
     }
 })();

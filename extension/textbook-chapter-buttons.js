@@ -33,6 +33,9 @@
             // Parse JSON data to get page information
             parsePageInfo();
 
+            // Detect file_down.php attachment links
+            detectAttachmentLinks();
+
             // Add buttons to current page
             updateButtonsForCurrentPage();
 
@@ -44,6 +47,26 @@
         },
     );
 
+    /**
+     * Extract file extension from file path
+     * @param {string} filePath - File path from JSON data
+     * @returns {string} File extension (lowercase, without dot)
+     */
+    function getFileExtension(filePath) {
+        if (!filePath) return "";
+        const match = filePath.match(/\.([a-zA-Z0-9]+)$/);
+        return match ? match[1].toLowerCase() : "";
+    }
+
+    /**
+     * Check if file type supports preview (PDF only)
+     * @param {string} extension - File extension
+     * @returns {boolean}
+     */
+    function isPreviewableFile(extension) {
+        return extension === "pdf";
+    }
+
     // Parse JSON data from the page
     function parsePageInfo() {
         try {
@@ -54,27 +77,110 @@
             }
 
             const data = JSON.parse(jsonScript.textContent);
-            if (!data.text_urls) {
-                return;
+            const textUrls = data.text_urls || {};
+
+            if (DEBUG) {
+                console.log("[BetterE-class] === parsePageInfo START (v1.7.8-fix) ===");
             }
 
             pageInfo = {};
-            for (const [pageNum, url] of Object.entries(data.text_urls)) {
-                // Parse URL to check if it has a file parameter
+            for (const pageNum in textUrls) {
+                const url = textUrls[pageNum];
                 const urlParams = new URLSearchParams(url.split("?")[1]);
-                const file = urlParams.get("file");
+                const file = urlParams.get("file") || "";
 
-                pageInfo[pageNum] = {
+                const pageData = {
                     url: url,
                     hasFile: file && file.length > 0,
-                    file: file || "",
+                    file: file,
+                    fileUrl: null,
+                    fileExtension: null,
+                    isPdf: false,
+                    fileDownloadUrl: null
                 };
+
+                // Construct loadit.php URL if file exists
+                if (file && file.length > 0) {
+                    const contentsUrl = urlParams.get("contents_url") || data.contents_url || "";
+
+                    // Build absolute file URL
+                    const fileUrl = window.location.origin + contentsUrl + file;
+
+                    // Detect file extension
+                    const extension = getFileExtension(file);
+
+                    pageData.fileUrl = fileUrl;
+                    pageData.fileExtension = extension;
+                    pageData.isPdf = extension === "pdf";
+
+                    if (DEBUG) {
+                        console.log(`[BetterE-class] Page ${pageNum}: ${file} (${extension})`);
+                    }
+                }
+
+                pageInfo[pageNum] = pageData;
             }
 
             if (DEBUG) console.log("[BetterE-class] Parsed page info:", pageInfo);
         } catch (error) {
             console.error("[BetterE-class] Error parsing page info:", error);
         }
+    }
+
+    /**
+     * Detect file_down.php attachment links in chapter list
+     * Updates pageInfo with file_down.php URLs
+     */
+    function detectAttachmentLinks() {
+        if (!pageInfo) return;
+
+        const rows = document.querySelectorAll("#TOCLayout tr[data-page]");
+        rows.forEach(row => {
+            const pageNum = row.getAttribute("data-page");
+            if (!pageInfo[pageNum]) return;
+
+            // Find file_down.php link in this row
+            const attachmentLink = row.querySelector('a[href*="file_down.php"]');
+            if (attachmentLink) {
+                let href = attachmentLink.getAttribute("href");
+
+                // Convert to absolute URL
+                if (!href.startsWith("http")) {
+                    if (href.startsWith("/")) {
+                        href = window.location.origin + href;
+                    } else {
+                        href = window.location.origin + "/webclass/" + href;
+                    }
+                }
+
+                // Extract filename from URL
+                const urlParams = new URLSearchParams(href.split("?")[1]);
+                const filename = urlParams.get("file_name") || "";
+
+                // Update pageInfo
+                pageInfo[pageNum].fileDownloadUrl = href;
+
+                // Always update extension from attachment filename (more reliable than file parameter)
+                if (filename) {
+                    const ext = getFileExtension(filename);
+
+                    if (DEBUG) {
+                        console.log(`[BetterE-class] Found attachment for page ${pageNum}:`);
+                        console.log(`  - Filename: ${filename}`);
+                        console.log(`  - Extension (before): ${pageInfo[pageNum].fileExtension}`);
+                        console.log(`  - Extension (extracted): ${ext}`);
+                    }
+
+                    pageInfo[pageNum].fileExtension = ext;
+                    pageInfo[pageNum].isPdf = ext === "pdf";
+
+                    if (DEBUG) {
+                        console.log(`  - Extension (after): ${pageInfo[pageNum].fileExtension}`);
+                        console.log(`  - isPdf: ${pageInfo[pageNum].isPdf}`);
+                    }
+                }
+            }
+        });
     }
 
     // Get current page number from highlighted row
@@ -214,19 +320,60 @@
             "⬇️",
             "ダウンロード",
             () => {
-                if (!currentPdfUrl) {
-                    alert("PDF URLがまだ読み込まれていません。少し待ってから再度お試しください。");
+                const currentPage = getCurrentPageNumber();
+                if (!currentPage || !pageInfo[currentPage]) {
+                    alert("ページ情報が取得できませんでした。");
                     return;
                 }
+
+                const pageData = pageInfo[currentPage];
+
+                // Priority 1: fileDownloadUrl (file_down.php link) - most reliable for all file types
+                // Priority 2: currentPdfUrl (from loadit.php frame message) - works for PDFs
+                // Priority 3: fileUrl (constructed URL from JSON) - fallback
+                const downloadUrl = pageData.fileDownloadUrl || currentPdfUrl || pageData.fileUrl;
+
+                if (DEBUG) {
+                    console.log("[BetterE-class] === Download URL Selection ===");
+                    console.log("  - fileDownloadUrl:", pageData.fileDownloadUrl || "(not set)");
+                    console.log("  - currentPdfUrl:", currentPdfUrl || "(not set)");
+                    console.log("  - fileUrl:", pageData.fileUrl || "(not set)");
+                    console.log("  - Selected URL:", downloadUrl);
+                }
+
+                if (!downloadUrl) {
+                    alert("ファイルURLが取得できませんでした。");
+                    if (DEBUG) console.error("[BetterE-class] No URL available for download");
+                    return;
+                }
+
+                // Determine filename
+                let filename = currentPdfFilename;
+                if (!filename) {
+                    // Extract from fileDownloadUrl or use generic name
+                    if (pageData.fileDownloadUrl) {
+                        const urlParams = new URLSearchParams(pageData.fileDownloadUrl.split("?")[1]);
+                        filename = decodeURIComponent(urlParams.get("file_name") || "");
+                    }
+                    if (!filename) {
+                        filename = `document.${pageData.fileExtension || "pdf"}`;
+                    }
+                }
+
+                if (DEBUG) {
+                    console.log(`[BetterE-class] Downloading: ${downloadUrl}`);
+                }
+
                 chrome.runtime.sendMessage(
                     {
                         type: "downloadDirect",
-                        url: currentPdfUrl,
-                        filename: currentPdfFilename || "document.pdf",
+                        url: downloadUrl,
+                        filename: filename,
                     },
                     (response) => {
                         if (response && response.error) {
                             console.error("[BetterE-class] Download error:", response.error);
+                            alert(`ダウンロードエラー: ${response.error}`);
                         }
                     },
                 );
@@ -241,19 +388,52 @@
             "💾",
             "名前を付けて保存",
             () => {
-                if (!currentPdfUrl) {
-                    alert("PDF URLがまだ読み込まれていません。少し待ってから再度お試しください。");
+                const currentPage = getCurrentPageNumber();
+                if (!currentPage || !pageInfo[currentPage]) {
+                    alert("ページ情報が取得できませんでした。");
                     return;
                 }
+
+                const pageData = pageInfo[currentPage];
+
+                // Priority 1: fileDownloadUrl (file_down.php link) - most reliable for all file types
+                // Priority 2: currentPdfUrl (from loadit.php frame message) - works for PDFs
+                // Priority 3: fileUrl (constructed URL from JSON) - fallback
+                const downloadUrl = pageData.fileDownloadUrl || currentPdfUrl || pageData.fileUrl;
+
+                if (!downloadUrl) {
+                    alert("ファイルURLが取得できませんでした。");
+                    if (DEBUG) console.error("[BetterE-class] No URL available for save");
+                    return;
+                }
+
+                // Determine filename
+                let filename = currentPdfFilename;
+                if (!filename) {
+                    // Extract from fileDownloadUrl or use generic name
+                    if (pageData.fileDownloadUrl) {
+                        const urlParams = new URLSearchParams(pageData.fileDownloadUrl.split("?")[1]);
+                        filename = decodeURIComponent(urlParams.get("file_name") || "");
+                    }
+                    if (!filename) {
+                        filename = `document.${pageData.fileExtension || "pdf"}`;
+                    }
+                }
+
+                if (DEBUG) {
+                    console.log(`[BetterE-class] Save as: ${downloadUrl}`);
+                }
+
                 chrome.runtime.sendMessage(
                     {
                         type: "downloadWithDialog",
-                        url: currentPdfUrl,
-                        filename: currentPdfFilename || "document.pdf",
+                        url: downloadUrl,
+                        filename: filename,
                     },
                     (response) => {
                         if (response && response.error) {
                             console.error("[BetterE-class] Download error:", response.error);
+                            alert(`保存エラー: ${response.error}`);
                         }
                     },
                 );
@@ -264,29 +444,80 @@
 
     // Create preview button
     function createPreviewButton() {
-        return window.BetterEclassUtils.createPreviewButton(
+        const currentPage = getCurrentPageNumber();
+        const pageData = currentPage && pageInfo ? pageInfo[currentPage] : null;
+
+        // Disable preview for non-PDF files
+        const isDisabled = pageData && !pageData.isPdf;
+
+        const button = window.BetterEclassUtils.createPreviewButton(
             "👁️",
-            "プレビュー",
+            isDisabled ? "プレビュー（PDFのみ）" : "プレビュー",
             () => {
-                if (!currentPdfUrl) {
-                    alert("PDF URLがまだ読み込まれていません。少し待ってから再度お試しください。");
+                if (isDisabled) {
+                    alert("プレビューはPDFファイルのみ対応しています。");
                     return;
                 }
+
+                if (!currentPage || !pageInfo[currentPage]) {
+                    alert("ページ情報が取得できませんでした。");
+                    return;
+                }
+
+                const pageData = pageInfo[currentPage];
+
+                // Priority 1: fileDownloadUrl (file_down.php link) - most reliable for all file types
+                // Priority 2: currentPdfUrl (from loadit.php frame message) - works for PDFs
+                // Priority 3: fileUrl (constructed URL from JSON) - fallback
+                const downloadUrl = pageData.fileDownloadUrl || currentPdfUrl || pageData.fileUrl;
+
+                if (!downloadUrl) {
+                    alert("ファイルURLが取得できませんでした。");
+                    if (DEBUG) console.error("[BetterE-class] No URL available for preview");
+                    return;
+                }
+
+                // Determine filename
+                let filename = currentPdfFilename;
+                if (!filename) {
+                    // Extract from fileDownloadUrl or use generic name
+                    if (pageData.fileDownloadUrl) {
+                        const urlParams = new URLSearchParams(pageData.fileDownloadUrl.split("?")[1]);
+                        filename = decodeURIComponent(urlParams.get("file_name") || "");
+                    }
+                    if (!filename) {
+                        filename = `document.${pageData.fileExtension || "pdf"}`;
+                    }
+                }
+
+                if (DEBUG) {
+                    console.log(`[BetterE-class] Preview: ${downloadUrl}`);
+                }
+
                 chrome.runtime.sendMessage(
                     {
                         type: "previewFile",
-                        url: currentPdfUrl,
-                        filename: currentPdfFilename || "document.pdf",
+                        url: downloadUrl,
+                        filename: filename,
                     },
                     (response) => {
                         if (response && response.error) {
                             console.error("[BetterE-class] Preview error:", response.error);
+                            alert(`プレビューエラー: ${response.error}`);
                         }
                     },
                 );
             },
             true, // iconOnly mode
         );
+
+        // Apply disabled styling
+        if (isDisabled) {
+            button.style.opacity = "0.5";
+            button.style.cursor = "not-allowed";
+        }
+
+        return button;
     }
 
     // Process file_down.php attachments (direct attachment links in chapter list)

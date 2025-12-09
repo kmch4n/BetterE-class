@@ -5,16 +5,17 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     if (message.type === "downloadDirect" || message.type === "downloadWithDialog") {
         const saveAs = message.type === "downloadWithDialog";
 
-        // Check if this is a file_down.php or loadit.php URL that needs HTML extraction
-        if (message.url.includes("file_down.php") || message.url.includes("loadit.php")) {
+        // Check if this is a loadit.php or file_down.php URL that needs HTML extraction
+        if (message.url.includes("loadit.php") || message.url.includes("file_down.php")) {
             // Fetch the page to extract actual file URL (include credentials for session-protected pages)
             fetch(message.url, { credentials: "include" })
                 .then((response) => response.text())
                 .then((html) => {
                     // Extract URL from the download link
-                    // Pattern 1: <a href='/webclass/download.php/filename.pdf?...'>
-                    // Pattern 2: <a href='https://eclass.doshisha.ac.jp/webclass/data/course/.../filename.pdf' target="_blank">
-                    let linkMatch = html.match(/<a\s+href=['"]([^'"]+(?:download\.php|\.pdf)[^'"]*)['"]/);
+                    // Pattern 1: <a href='/webclass/download.php/filename.ext?...'>
+                    // Pattern 2: <a href='https://eclass.doshisha.ac.jp/webclass/data/course/.../filename.ext' target="_blank">
+                    // Support multiple file types: pdf, xlsx, xls, docx, doc, pptx, ppt, zip, txt
+                    let linkMatch = html.match(/<a\s+href=['"]([^'"]+(?:download\.php|\.(?:pdf|xlsx?|docx?|pptx?|zip|txt))[^'"]*)['"]/);
 
                     if (linkMatch && linkMatch[1]) {
                         let actualFileUrl = linkMatch[1];
@@ -56,7 +57,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
                         );
                     } else {
                         console.error("[BetterE-class] Could not find file link in HTML");
-                        sendResponse({ error: "Could not find file URL" });
+                        sendResponse({ error: "ファイルのダウンロードリンクが見つかりませんでした。" });
                     }
                 })
                 .catch((error) => {
@@ -153,16 +154,17 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     }
 
     if (message.type === "previewFile") {
-        // Check if this is a file_down.php or loadit.php URL that needs HTML extraction
-        if (message.url.includes("file_down.php") || message.url.includes("loadit.php")) {
+        // Check if this is a loadit.php or file_down.php URL that needs HTML extraction
+        if (message.url.includes("loadit.php") || message.url.includes("file_down.php")) {
             // Fetch the page to extract actual file URL (include credentials for session-protected pages)
             fetch(message.url, { credentials: "include" })
                 .then((response) => response.text())
                 .then((html) => {
                     // Extract URL from the download link
-                    // Pattern 1: <a href='/webclass/download.php/filename.pdf?...'>
-                    // Pattern 2: <a href='https://eclass.doshisha.ac.jp/webclass/data/course/.../filename.pdf' target="_blank">
-                    let linkMatch = html.match(/<a\s+href=['"]([^'"]+(?:download\.php|\.pdf)[^'"]*)['"]/);
+                    // Pattern 1: <a href='/webclass/download.php/filename.ext?...'>
+                    // Pattern 2: <a href='https://eclass.doshisha.ac.jp/webclass/data/course/.../filename.ext' target="_blank">
+                    // Support multiple file types: pdf, xlsx, xls, docx, doc, pptx, ppt, zip, txt
+                    let linkMatch = html.match(/<a\s+href=['"]([^'"]+(?:download\.php|\.(?:pdf|xlsx?|docx?|pptx?|zip|txt))[^'"]*)['"]/);
 
                     if (linkMatch && linkMatch[1]) {
                         let actualFileUrl = linkMatch[1];
@@ -206,7 +208,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
                         });
                     } else {
                         console.error("[BetterE-class] Could not find file link in HTML for preview");
-                        sendResponse({ error: "Could not find file URL" });
+                        sendResponse({ error: "ファイルのプレビューリンクが見つかりませんでした。" });
                     }
                 })
                 .catch((error) => {
