@@ -1,7 +1,7 @@
 {
     "manifest_version": 3,
     "name": "BetterE-class",
-    "version": "1.7.8",
+    "version": "1.7.10",
     "description": "同志社大学のe-classをより快適に使うための非公式Chrome拡張機能。様々な便利機能を搭載し、日常での学習体験をより便利なものにします。",
     "author": "kmch4n",
     "icons": {

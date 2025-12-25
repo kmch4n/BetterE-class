@@ -8,7 +8,7 @@
     let DEBUG = false;
 
     // Load debug mode setting
-    chrome.storage.sync.get({ debugMode: false }, (items) => {
+    chrome.storage.local.get({ debugMode: false }, (items) => {
         DEBUG = items.debugMode || false;
     });
 
@@ -232,10 +232,10 @@
             return false;
         }
 
-        // Try with a single delay
+        // Try with a single delay (increased for stable loading)
         setTimeout(() => {
             checkAndResume();
-        }, 800);
+        }, 1500);
     }
 
     async function startExport(mode = "file") {
@@ -364,6 +364,9 @@
         }
 
         try {
+            // Wait a bit more to ensure content is fully loaded
+            await sleep(500);
+
             const questionData = await collectQuestionData(state.currentQuestion);
             if (questionData) {
                 // Check for duplicate questions (same question text already collected)
@@ -392,8 +395,8 @@
                 if (buttonIndex < navigationButtons.length) {
                     const nextButton = navigationButtons[buttonIndex];
 
-                    // Add a small delay before navigation
-                    await sleep(300);
+                    // Add a delay before navigation to ensure current question is fully processed
+                    await sleep(600);
 
                     // Trigger click event - this will execute the onclick="setpage(X)"
                     nextButton.click();
@@ -412,7 +415,7 @@
     }
 
     // Wait for question and answer frames to be ready
-    async function waitForFrames(maxAttempts = 20) {
+    async function waitForFrames(maxAttempts = 30) {
         for (let i = 0; i < maxAttempts; i++) {
             try {
                 const questionFrame = parent.parent.question || parent.parent.frames["question"];
@@ -453,7 +456,7 @@
                 console.error("[BetterE-class] Error in frame check:", error);
             }
 
-            await sleep(500);
+            await sleep(800);
         }
 
         console.error("[BetterE-class] Timeout: Frames never became ready after", maxAttempts, "attempts");
