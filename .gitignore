@@ -1,8 +1,18 @@
+# Data
 _metadata
-.claude/
-release/
 data/
+release/
 
+# AI Files
+.claude/
 CLAUDE.md
-idea.md
+
+# Prettier
 .prettierrc
+
+# Mac OS
+.DS_Store
+
+# Memos
+idea.md
+TODO.md
