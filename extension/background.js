@@ -218,9 +218,16 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
             return true; // Indicate async response
         } else {
-            // For direct file URLs, open directly in a new tab for preview
+            // For direct file URLs, add _preview=1 parameter to trigger DNR header removal
+            let previewUrl = message.url;
+
+            // Add _preview=1 for eclass.doshisha.ac.jp URLs
+            if (message.url.includes("eclass.doshisha.ac.jp")) {
+                previewUrl = message.url + (message.url.includes("?") ? "&" : "?") + "_preview=1";
+            }
+
             const tabOptions = {
-                url: message.url,
+                url: previewUrl,
                 active: true,
             };
 

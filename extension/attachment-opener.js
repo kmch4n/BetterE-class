@@ -85,6 +85,8 @@
 
             if (buttonFrame) {
                 buttonFrame.postMessage(message, "*");
+            } else {
+                if (DEBUG) console.warn("[BetterE-class] buttonFrame not found, skipping postMessage");
             }
             // Note: If button frame not found, isQuizPage check should prevent this from being called
         } catch (error) {
