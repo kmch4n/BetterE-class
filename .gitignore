@@ -5,7 +5,7 @@ release/
 
 # AI Files
 .claude/
-CLAUDE.md
+.codex/
 
 # Prettier
 .prettierrc
@@ -14,5 +14,6 @@ CLAUDE.md
 .DS_Store
 
 # Memos
+note/
 idea.md
 TODO.md
