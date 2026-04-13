@@ -12,9 +12,9 @@ BetterE-classは、同志社大学のe-class（WebClass）をより快適に使�
 
 > **⚠️ 注意**: この拡張機能は同志社大学および公式e-classシステムとは無関係の個人開発ツールです。
 
-![image](Documents/images/image1.jpg)
-![image](Documents/images/image2.png)
-![image](Documents/images/image3.png)
+![image](docs/images/image1.jpg)
+![image](docs/images/image2.png)
+![image](docs/images/image3.png)
 
 ## 📦 インストール
 
@@ -63,8 +63,8 @@ cd BetterE-class
 
 ## 📚 詳細情報
 
-- **📖 全機能の詳細**: [Documents/ABOUT.md](Documents/ABOUT.md)
-- **⚙️ 技術仕様**: [Documents/TechNote.md](Documents/TechNote.md)
+- **📖 全機能の詳細**: [docs/BetterE-class.md](docs/BetterE-class.md)
+- **⚙️ 技術仕様**: [docs/TechNote.md](docs/TechNote.md)
 
 ## 🖥️ 対応環境
 
