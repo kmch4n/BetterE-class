@@ -14,32 +14,158 @@
 
     console.log("[BetterE-class] Quiz export all script initialized, frame name:", window.name);
 
-    // Check if this page has quiz navigation buttons AND answer options
+    function getQuizFrames() {
+        const questionFrame = parent.parent.question || parent.parent.frames["question"];
+        const answerFrame = parent.parent.answer || parent.parent.frames["answer"];
+
+        return {
+            questionFrame,
+            answerFrame,
+        };
+    }
+
+    function getQuestionElement(questionDoc) {
+        let questionElement = questionDoc.querySelector(".question p, .question .content");
+        if (!questionElement) {
+            questionElement = questionDoc.querySelector(".question.previewPlace, .question, .previewPlace");
+        }
+
+        return questionElement;
+    }
+
+    function getQuestionText(questionDoc) {
+        const questionElement = getQuestionElement(questionDoc);
+        return questionElement ? questionElement.textContent.trim() : "";
+    }
+
+    function detectAnswerLayout(answerDoc) {
+        if (!answerDoc || !answerDoc.body) {
+            return "not-ready";
+        }
+
+        if (answerDoc.querySelector(".seloptions")) {
+            return "option-table";
+        }
+
+        if (answerDoc.querySelector("textarea")) {
+            return "textarea";
+        }
+
+        if (
+            answerDoc.querySelector(
+                'input[type="text"], input[type="search"], input[type="email"], input[type="number"], input[type="tel"], input[type="url"], input:not([type])',
+            )
+        ) {
+            return "text-input";
+        }
+
+        if (answerDoc.querySelector("select, input, button")) {
+            return "unsupported";
+        }
+
+        const bodyText = answerDoc.body.textContent.trim();
+        if (!bodyText) {
+            return "not-ready";
+        }
+
+        return "unsupported";
+    }
+
+    function createAnswerLayoutNotice(layoutType) {
+        if (layoutType === "text-input") {
+            return "[Text input answer field detected]";
+        }
+
+        if (layoutType === "textarea") {
+            return "[Text area answer field detected]";
+        }
+
+        return "[Unsupported answer layout detected]";
+    }
+
+    function collectAnswerData(answerDoc, questionNumber) {
+        const layoutType = detectAnswerLayout(answerDoc);
+        const answers = [];
+        const warnings = [];
+
+        if (layoutType === "option-table") {
+            const answerElements = answerDoc.querySelectorAll(".seloptions tr");
+
+            answerElements.forEach((row) => {
+                const prefixLabel = row.querySelector(".prefix label");
+
+                let optionLabel = row.querySelector(".option-label label");
+                if (!optionLabel) {
+                    optionLabel = row.querySelector(".option-label p, .option-label .content");
+                }
+                if (!optionLabel) {
+                    optionLabel = row.querySelector(".option-label");
+                }
+
+                if (prefixLabel && optionLabel) {
+                    const number = prefixLabel.textContent.trim();
+                    const text = optionLabel.textContent.trim();
+                    answers.push(`${number} ${text}`);
+                }
+            });
+
+            return {
+                answers,
+                layoutType,
+                warnings,
+            };
+        }
+
+        if (layoutType === "not-ready") {
+            warnings.push(`Question ${questionNumber}: answer frame was not ready for export.`);
+            return {
+                answers: ["[Answer frame was not ready]"],
+                layoutType,
+                warnings,
+            };
+        }
+
+        answers.push(createAnswerLayoutNotice(layoutType));
+        warnings.push(
+            `Question ${questionNumber}: exported the prompt only because answer layout '${layoutType}' is not option-based.`,
+        );
+
+        return {
+            answers,
+            layoutType,
+            warnings,
+        };
+    }
+
+    function getExportWarningsMessage(warnings) {
+        if (!warnings || warnings.length === 0) {
+            return "";
+        }
+
+        return ["Export completed with notes:", ...warnings.map((warning) => `- ${warning}`)].join("\n");
+    }
+
+    // Check if this page has quiz navigation buttons
     const hasQuizButtons = () => {
-        // First check if page has navigation buttons
         const hasNavButtons = document.querySelector('input[name="page_num"]') !== null;
         if (!hasNavButtons) {
             return false;
         }
 
-        // Check if answer frame has .seloptions (answer options table)
-        // This distinguishes quiz pages from file submission/PDF pages
         try {
-            const answerFrame = parent.frames["answer"] || parent.parent.frames["answer"];
-            if (!answerFrame) {
+            const { questionFrame, answerFrame } = getQuizFrames();
+            if (!questionFrame || !answerFrame) {
                 return false;
             }
 
+            const questionDoc = questionFrame.document;
             const answerDoc = answerFrame.document;
-            if (!answerDoc) {
+            if (!questionDoc || !answerDoc) {
                 return false;
             }
 
-            // Check for .seloptions in answer frame
-            const hasAnswerOptions = answerDoc.querySelector(".seloptions") !== null;
-            return hasAnswerOptions;
+            return !!questionDoc.body && !!answerDoc.body;
         } catch (error) {
-            // If we can't access the answer frame, assume it's not a quiz page
             if (DEBUG) console.log("[BetterE-class] Cannot access answer frame:", error);
             return false;
         }
@@ -203,6 +329,7 @@
             stateHolder.__betterEclassExportState = {
                 isExporting: false,
                 exportData: [],
+                warnings: [],
                 totalQuestions: 0,
                 currentQuestion: 0,
                 exportMode: "file", // 'copy' or 'file'
@@ -264,6 +391,7 @@
         // Start collecting from current question
         state.isExporting = true;
         state.exportData = [];
+        state.warnings = [];
         state.currentQuestion = 0;
         state.exportMode = mode;
 
@@ -306,6 +434,11 @@
                     exportToFile();
                     exportButton.textContent = "✅ エクスポート完了!";
                     copyButton.textContent = "📋 全てコピー";
+                }
+
+                const warningsMessage = getExportWarningsMessage(state.warnings);
+                if (warningsMessage) {
+                    alert(warningsMessage);
                 }
 
                 setTimeout(() => {
@@ -374,6 +507,9 @@
 
                 if (!isDuplicate) {
                     state.exportData.push(questionData);
+                    if (questionData.warnings && questionData.warnings.length > 0) {
+                        state.warnings.push(...questionData.warnings);
+                    }
                 }
             }
         } catch (error) {
@@ -418,8 +554,7 @@
     async function waitForFrames(maxAttempts = 30) {
         for (let i = 0; i < maxAttempts; i++) {
             try {
-                const questionFrame = parent.parent.question || parent.parent.frames["question"];
-                const answerFrame = parent.parent.answer || parent.parent.frames["answer"];
+                const { questionFrame, answerFrame } = getQuizFrames();
 
                 // Basic frame existence check
                 const framesExist = !!questionFrame && !!answerFrame;
@@ -441,14 +576,10 @@
 
                 // If frames and documents are accessible, check for content elements
                 if (docsAccessible && questionDoc.body && answerDoc.body) {
-                    // Try multiple selectors for question element
-                    let questionElement = questionDoc.querySelector(".question p, .question .content");
-                    if (!questionElement) {
-                        questionElement = questionDoc.querySelector(".question");
-                    }
-                    const answerElement = answerDoc.querySelector(".seloptions");
+                    const questionText = getQuestionText(questionDoc);
+                    const answerLayout = detectAnswerLayout(answerDoc);
 
-                    if (questionElement && answerElement) {
+                    if (questionText && answerLayout !== "not-ready") {
                         return true;
                     }
                 }
@@ -465,9 +596,7 @@
 
     async function collectQuestionData(questionNumber) {
         try {
-            // Access the question and answer frames from buttons frame
-            const questionFrame = parent.parent.question || parent.parent.frames["question"];
-            const answerFrame = parent.parent.answer || parent.parent.frames["answer"];
+            const { questionFrame, answerFrame } = getQuizFrames();
 
             if (!questionFrame || !answerFrame) {
                 console.error("[BetterE-class] Frames not found for question", questionNumber);
@@ -478,50 +607,32 @@
             let questionText = "";
             try {
                 const questionDoc = questionFrame.document;
-                // Try multiple selectors for question element
-                let questionElement = questionDoc.querySelector(".question p, .question .content");
-                if (!questionElement) {
-                    questionElement = questionDoc.querySelector(".question");
-                }
-                if (questionElement) {
-                    questionText = questionElement.textContent.trim();
-                }
+                questionText = getQuestionText(questionDoc);
             } catch (error) {
                 console.error("[BetterE-class] Error accessing question text:", error);
             }
 
-            // Extract answer options
-            const answers = [];
+            let answers = [];
+            let answerType = "unsupported";
+            let warnings = [];
             try {
                 const answerDoc = answerFrame.document;
-                const answerElements = answerDoc.querySelectorAll(".seloptions tr");
-
-                answerElements.forEach((row) => {
-                    const prefixLabel = row.querySelector(".prefix label");
-
-                    // Try multiple selectors for option label
-                    let optionLabel = row.querySelector(".option-label label");
-                    if (!optionLabel) {
-                        optionLabel = row.querySelector(".option-label p, .option-label .content");
-                    }
-                    if (!optionLabel) {
-                        optionLabel = row.querySelector(".option-label");
-                    }
-
-                    if (prefixLabel && optionLabel) {
-                        const number = prefixLabel.textContent.trim();
-                        const text = optionLabel.textContent.trim();
-                        answers.push(`${number} ${text}`);
-                    }
-                });
+                const answerData = collectAnswerData(answerDoc, questionNumber);
+                answers = answerData.answers;
+                answerType = answerData.layoutType;
+                warnings = answerData.warnings;
             } catch (error) {
                 console.error("[BetterE-class] Error accessing answer options:", error);
+                warnings.push(`Question ${questionNumber}: failed to inspect answer layout.`);
+                answers = ["[Failed to inspect answer layout]"];
             }
 
             return {
                 number: questionNumber,
                 question: questionText,
                 answers: answers,
+                answerType: answerType,
+                warnings: warnings,
             };
         } catch (error) {
             console.error(`[BetterE-class] Error collecting question ${questionNumber}:`, error);
