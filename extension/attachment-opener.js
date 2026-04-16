@@ -550,18 +550,4 @@
             true, // iconOnly mode
         );
     }
-
-    // Listen for settings changes
-    chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-        if (message.type === "settingsChanged") {
-            settings = message.settings;
-
-            // Re-process attachments with new settings
-            // Remove existing download buttons
-            document.querySelectorAll(".betterEclass-download-btns").forEach((btn) => btn.remove());
-            document.querySelectorAll(".betterEclass-frame-download").forEach((btn) => btn.remove());
-
-            processAttachments();
-        }
-    });
 })();

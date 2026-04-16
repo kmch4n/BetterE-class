@@ -19,13 +19,6 @@
         }
     }
 
-    // Listen for settings changes
-    chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-        if (message.type === "settingsChanged") {
-            settings = message.settings;
-        }
-    });
-
     // Save original window.open
     const originalWindowOpen = window.open;
 
