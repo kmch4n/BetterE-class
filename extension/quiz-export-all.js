@@ -304,6 +304,8 @@
 
         // Insert container at the top of the body (before the table)
         document.body.insertBefore(container, document.body.firstChild);
+
+        return true;
     }
 
     // Get quiz title from URL parameters
