@@ -304,6 +304,8 @@
 
         // Insert container at the top of the body (before the table)
         document.body.insertBefore(container, document.body.firstChild);
+
+        return true;
     }
 
     // Get quiz title from URL parameters
@@ -333,6 +335,7 @@
                 totalQuestions: 0,
                 currentQuestion: 0,
                 exportMode: "file", // 'copy' or 'file'
+                lastFingerprint: null, // fingerprint of the last captured question
             };
         }
         return stateHolder.__betterEclassExportState;
@@ -394,6 +397,7 @@
         state.warnings = [];
         state.currentQuestion = 0;
         state.exportMode = mode;
+        state.lastFingerprint = null;
 
         // Start collecting from question 1
         collectNextQuestion();
@@ -477,12 +481,15 @@
         copyButton.textContent = `${icon} 収集中... (${state.currentQuestion}/${state.totalQuestions})`;
         exportButton.textContent = `${icon} 収集中... (${state.currentQuestion}/${state.totalQuestions})`;
 
-        // Wait for frames to be ready
-        const framesReady = await waitForFrames();
-        if (!framesReady) {
-            console.error("[BetterE-class] Timeout waiting for frames");
+        // Wait until the frames show FRESH content for this question. Right after
+        // navigation the previous question's DOM lingers for a moment; collecting
+        // it would capture the wrong question, so we wait for content that differs
+        // from the previously captured question instead of guessing with a delay.
+        const wait = await waitForFreshQuestion(state.lastFingerprint);
+        if (!wait.ok) {
+            console.error("[BetterE-class] Timeout waiting for fresh question content");
             state.isExporting = false;
-            alert("フレームの読み込みに失敗しました。");
+            alert("問題の読み込みに失敗しました。Q1から再度お試しください。");
 
             // Re-enable buttons on error
             copyButton.textContent = "📋 全てコピー";
@@ -497,16 +504,16 @@
         }
 
         try {
-            // Wait a bit more to ensure content is fully loaded
-            await sleep(500);
-
             const questionData = await collectQuestionData(state.currentQuestion);
             if (questionData) {
-                // Check for duplicate questions (same question text already collected)
-                const isDuplicate = state.exportData.some((item) => item.question.trim() === questionData.question.trim());
+                // Guard against accidental double-collection by question number.
+                // The fresh-content wait already prevents capturing stale duplicates,
+                // so distinct questions with similar text are no longer dropped.
+                const alreadyCollected = state.exportData.some((item) => item.number === questionData.number);
 
-                if (!isDuplicate) {
+                if (!alreadyCollected) {
                     state.exportData.push(questionData);
+                    state.lastFingerprint = wait.fingerprint;
                     if (questionData.warnings && questionData.warnings.length > 0) {
                         state.warnings.push(...questionData.warnings);
                     }
@@ -550,48 +557,63 @@
         }
     }
 
-    // Wait for question and answer frames to be ready
-    async function waitForFrames(maxAttempts = 30) {
+    // Build a fingerprint identifying the question currently shown in the frames.
+    // Uses innerHTML (not textContent) so layouts without visible answer text
+    // (textarea / text-input) still differ between questions, because their
+    // per-question input name/id attributes are part of the markup.
+    function getQuestionFingerprint(questionDoc, answerDoc) {
+        const questionPart = questionDoc && questionDoc.body ? questionDoc.body.innerHTML.trim() : "";
+        const answerPart = answerDoc && answerDoc.body ? answerDoc.body.innerHTML.trim() : "";
+        return `${questionPart}${answerPart}`;
+    }
+
+    // Wait until the frames show fresh, ready content for the question being
+    // collected. "Fresh" means the fingerprint differs from the previously
+    // captured question AND has stayed stable across two consecutive polls, so we
+    // never capture stale (previous) content or a transient mid-render state.
+    // Returns { ok, fingerprint }; ok is false on timeout (treated as an error).
+    async function waitForFreshQuestion(previousFingerprint, maxAttempts = 60, intervalMs = 200) {
+        let lastSeen = null;
+
         for (let i = 0; i < maxAttempts; i++) {
             try {
                 const { questionFrame, answerFrame } = getQuizFrames();
 
-                // Basic frame existence check
-                const framesExist = !!questionFrame && !!answerFrame;
-
-                // Document accessibility check
-                let docsAccessible = false;
                 let questionDoc = null;
                 let answerDoc = null;
-
-                if (framesExist) {
+                if (questionFrame && answerFrame) {
                     try {
                         questionDoc = questionFrame.document;
                         answerDoc = answerFrame.document;
-                        docsAccessible = !!questionDoc && !!answerDoc;
                     } catch (e) {
-                        // Silently retry
+                        // Frame not accessible yet, retry
                     }
                 }
 
-                // If frames and documents are accessible, check for content elements
-                if (docsAccessible && questionDoc.body && answerDoc.body) {
-                    const questionText = getQuestionText(questionDoc);
-                    const answerLayout = detectAnswerLayout(answerDoc);
+                if (questionDoc && answerDoc && questionDoc.body && answerDoc.body) {
+                    const ready = !!getQuestionText(questionDoc) && detectAnswerLayout(answerDoc) !== "not-ready";
 
-                    if (questionText && answerLayout !== "not-ready") {
-                        return true;
+                    if (ready) {
+                        const fingerprint = getQuestionFingerprint(questionDoc, answerDoc);
+                        const isFresh = previousFingerprint == null || fingerprint !== previousFingerprint;
+                        const isStable = fingerprint === lastSeen;
+
+                        if (isFresh && isStable) {
+                            return { ok: true, fingerprint };
+                        }
+
+                        lastSeen = fingerprint;
                     }
                 }
             } catch (error) {
-                console.error("[BetterE-class] Error in frame check:", error);
+                console.error("[BetterE-class] Error while waiting for fresh question:", error);
             }
 
-            await sleep(800);
+            await sleep(intervalMs);
         }
 
-        console.error("[BetterE-class] Timeout: Frames never became ready after", maxAttempts, "attempts");
-        return false;
+        console.error("[BetterE-class] Timeout: fresh question content never appeared after", maxAttempts, "attempts");
+        return { ok: false, fingerprint: lastSeen };
     }
 
     async function collectQuestionData(questionNumber) {
