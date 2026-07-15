@@ -51,11 +51,7 @@
             return "textarea";
         }
 
-        if (
-            answerDoc.querySelector(
-                'input[type="text"], input[type="search"], input[type="email"], input[type="number"], input[type="tel"], input[type="url"], input:not([type])',
-            )
-        ) {
+        if (answerDoc.querySelector('input[type="text"], input[type="search"], input[type="email"], input[type="number"], input[type="tel"], input[type="url"], input:not([type])')) {
             return "text-input";
         }
 
@@ -126,9 +122,7 @@
         }
 
         answers.push(createAnswerLayoutNotice(layoutType));
-        warnings.push(
-            `Question ${questionNumber}: exported the prompt only because answer layout '${layoutType}' is not option-based.`,
-        );
+        warnings.push(`Question ${questionNumber}: exported the prompt only because answer layout '${layoutType}' is not option-based.`);
 
         return {
             answers,
@@ -170,6 +164,54 @@
             return false;
         }
     };
+
+    function getQuestionNumber(button, fallbackNumber = null) {
+        const onclick = button.getAttribute("onclick") || "";
+        const onclickMatch = onclick.match(/setpage\s*\(\s*['"]?(\d+)/i);
+        if (onclickMatch) {
+            return Number.parseInt(onclickMatch[1], 10);
+        }
+
+        const candidates = [button.getAttribute("data-page"), button.getAttribute("data-page-num"), button.getAttribute("data-question-number"), button.value];
+
+        for (const candidate of candidates) {
+            const match = String(candidate || "").match(/\d+/);
+            if (match) {
+                return Number.parseInt(match[0], 10);
+            }
+        }
+
+        return fallbackNumber;
+    }
+
+    function getQuestionNavigationButtons() {
+        const buttons = Array.from(document.querySelectorAll('input[name="page_num"]'));
+        const uniqueButtons = new Map();
+
+        buttons.forEach((button, index) => {
+            const questionNumber = getQuestionNumber(button, index + 1);
+            const existingButton = uniqueButtons.get(questionNumber);
+            if (!existingButton || isQuestionButtonActive(button)) {
+                uniqueButtons.set(questionNumber, button);
+            }
+        });
+
+        return Array.from(uniqueButtons, ([questionNumber, button]) => ({
+            questionNumber,
+            button,
+        })).sort((a, b) => a.questionNumber - b.questionNumber);
+    }
+
+    function isQuestionButtonActive(button) {
+        const ariaCurrent = button.getAttribute("aria-current");
+        const className = typeof button.className === "string" ? button.className : "";
+
+        return button.disabled || ariaCurrent === "page" || ariaCurrent === "true" || button.getAttribute("aria-pressed") === "true" || /(^|\s)(active|current|selected)(\s|$)/i.test(className);
+    }
+
+    function isQuizButtonFrame() {
+        return window.name === "button" || window.location.href.includes("dqstn_button.php");
+    }
 
     // Wait for DOM to be ready
     if (document.readyState === "loading") {
@@ -334,38 +376,38 @@
                 warnings: [],
                 totalQuestions: 0,
                 currentQuestion: 0,
+                questionNumbers: [],
+                pendingQuestionNumber: null,
                 exportMode: "file", // 'copy' or 'file'
                 lastFingerprint: null, // fingerprint of the last captured question
+                previousQuestionDocument: null,
+                previousAnswerDocument: null,
             };
         }
         return stateHolder.__betterEclassExportState;
     }
 
-    // Initialize: check if export is in progress and resume if needed
-    // Only check in buttons frame to avoid unnecessary operations
-    if (hasQuizButtons()) {
-        let resumeChecked = false;
+    if (isQuizButtonFrame() && getExportState().isExporting) {
+        resumeExportWhenReady();
+    }
 
-        function checkAndResume() {
-            if (resumeChecked) return false; // Already checked, don't check again
+    function resumeExportWhenReady(attempt = 0) {
+        const state = getExportState();
+        if (!state.isExporting) return;
 
-            const state = getExportState();
-
-            // Resume if exporting and on a question
-            if (state.isExporting && state.currentQuestion > 0) {
-                resumeChecked = true;
-                resumeExport();
-                return true;
-            }
-
-            resumeChecked = true;
-            return false;
+        if (hasQuizButtons()) {
+            resumeExport();
+            return;
         }
 
-        // Try with a single delay (increased for stable loading)
-        setTimeout(() => {
-            checkAndResume();
-        }, 1500);
+        if (attempt >= 50) {
+            state.isExporting = false;
+            state.pendingQuestionNumber = null;
+            alert("クイズ画面の再読み込みを確認できませんでした。もう一度お試しください。");
+            return;
+        }
+
+        setTimeout(() => resumeExportWhenReady(attempt + 1), 200);
     }
 
     async function startExport(mode = "file") {
@@ -376,9 +418,8 @@
             return;
         }
 
-        // Get total number of questions
-        const questionButtons = document.querySelectorAll('input[name="page_num"]');
-        state.totalQuestions = questionButtons.length;
+        const navigationButtons = getQuestionNavigationButtons();
+        state.totalQuestions = navigationButtons.length;
 
         if (state.totalQuestions === 0) {
             alert("問題が見つかりませんでした。");
@@ -386,21 +427,35 @@
         }
 
         const modeText = mode === "copy" ? "コピー" : "エクスポート";
-        const confirmed = confirm(`${state.totalQuestions}問の問題を${modeText}します。\n\n※ Q1から実行してください。Q1以外から実行すると、途中の問題から収集されます。`);
+        const confirmed = confirm(`${state.totalQuestions}問の問題を${modeText}します。\n\n最初の問題から順番に収集します。`);
         if (!confirmed) {
             return;
         }
 
-        // Start collecting from current question
         state.isExporting = true;
         state.exportData = [];
         state.warnings = [];
         state.currentQuestion = 0;
+        state.questionNumbers = navigationButtons.map(({ questionNumber }) => questionNumber);
+        state.pendingQuestionNumber = state.questionNumbers[0];
         state.exportMode = mode;
         state.lastFingerprint = null;
+        state.previousQuestionDocument = null;
+        state.previousAnswerDocument = null;
 
-        // Start collecting from question 1
-        collectNextQuestion();
+        const firstNavigation = navigationButtons[0];
+        const activeNavigation = navigationButtons.find(({ button }) => isQuestionButtonActive(button));
+        if (activeNavigation?.questionNumber === firstNavigation.questionNumber) {
+            collectNextQuestion();
+            return;
+        }
+
+        const { questionFrame, answerFrame } = getQuizFrames();
+        state.previousQuestionDocument = questionFrame ? questionFrame.document : null;
+        state.previousAnswerDocument = answerFrame ? answerFrame.document : null;
+        state.lastFingerprint = getQuestionFingerprint(state.previousQuestionDocument, state.previousAnswerDocument);
+        firstNavigation.button.click();
+        setTimeout(collectNextQuestion, 500);
     }
 
     async function resumeExport() {
@@ -475,81 +530,71 @@
             return;
         }
 
-        // Collect current question
-        state.currentQuestion++;
+        const targetQuestionNumber = state.pendingQuestionNumber;
+        if (targetQuestionNumber == null) {
+            stopExportWithError(state, copyButton, exportButton, "次の問題番号を特定できませんでした。");
+            return;
+        }
+
+        const progressNumber = state.currentQuestion + 1;
         const icon = state.exportMode === "copy" ? "📋" : "💾";
-        copyButton.textContent = `${icon} 収集中... (${state.currentQuestion}/${state.totalQuestions})`;
-        exportButton.textContent = `${icon} 収集中... (${state.currentQuestion}/${state.totalQuestions})`;
+        copyButton.textContent = `${icon} 収集中... (${progressNumber}/${state.totalQuestions})`;
+        exportButton.textContent = `${icon} 収集中... (${progressNumber}/${state.totalQuestions})`;
 
         // Wait until the frames show FRESH content for this question. Right after
         // navigation the previous question's DOM lingers for a moment; collecting
         // it would capture the wrong question, so we wait for content that differs
         // from the previously captured question instead of guessing with a delay.
-        const wait = await waitForFreshQuestion(state.lastFingerprint);
+        const wait = await waitForFreshQuestion(state.lastFingerprint, state.previousQuestionDocument, state.previousAnswerDocument, targetQuestionNumber);
         if (!wait.ok) {
             console.error("[BetterE-class] Timeout waiting for fresh question content");
-            state.isExporting = false;
-            alert("問題の読み込みに失敗しました。Q1から再度お試しください。");
-
-            // Re-enable buttons on error
-            copyButton.textContent = "📋 全てコピー";
-            copyButton.disabled = false;
-            copyButton.style.opacity = "1";
-            copyButton.style.cursor = "pointer";
-            exportButton.textContent = "💾 全て出力";
-            exportButton.disabled = false;
-            exportButton.style.opacity = "1";
-            exportButton.style.cursor = "pointer";
+            stopExportWithError(state, copyButton, exportButton, "問題の読み込みに失敗しました。もう一度お試しください。");
             return;
         }
 
         try {
-            const questionData = await collectQuestionData(state.currentQuestion);
-            if (questionData) {
-                // Guard against accidental double-collection by question number.
-                // The fresh-content wait already prevents capturing stale duplicates,
-                // so distinct questions with similar text are no longer dropped.
-                const alreadyCollected = state.exportData.some((item) => item.number === questionData.number);
+            const questionData = collectQuestionData(targetQuestionNumber, wait.questionDocument, wait.answerDocument);
+            if (!questionData) {
+                throw new Error(`Question ${targetQuestionNumber} could not be collected`);
+            }
 
-                if (!alreadyCollected) {
-                    state.exportData.push(questionData);
-                    state.lastFingerprint = wait.fingerprint;
-                    if (questionData.warnings && questionData.warnings.length > 0) {
-                        state.warnings.push(...questionData.warnings);
-                    }
-                }
+            const alreadyCollected = state.exportData.some((item) => item.number === questionData.number);
+            if (alreadyCollected) {
+                throw new Error(`Question ${targetQuestionNumber} was collected more than once`);
+            }
+
+            state.exportData.push(questionData);
+            state.currentQuestion++;
+            state.pendingQuestionNumber = null;
+            state.lastFingerprint = wait.fingerprint;
+            state.previousQuestionDocument = wait.questionDocument;
+            state.previousAnswerDocument = wait.answerDocument;
+            if (questionData.warnings && questionData.warnings.length > 0) {
+                state.warnings.push(...questionData.warnings);
             }
         } catch (error) {
-            console.error(`[BetterE-class] Error collecting question ${state.currentQuestion}:`, error);
+            console.error(`[BetterE-class] Error collecting question ${targetQuestionNumber}:`, error);
+            stopExportWithError(state, copyButton, exportButton, "問題の収集に失敗しました。もう一度お試しください。");
+            return;
         }
 
         // Navigate to next question
         if (state.currentQuestion < state.totalQuestions) {
-            const nextQuestionNumber = state.currentQuestion + 1;
+            const nextQuestionNumber = state.questionNumbers[state.currentQuestion];
 
             try {
-                // Find the navigation button for the next question
-                const navigationButtons = document.querySelectorAll('input[name="page_num"]');
-
-                // Since we always start from Q1, use simple index-based navigation
-                // Q1 = index 0, Q2 = index 1, Q3 = index 2, etc.
-                const buttonIndex = nextQuestionNumber - 1;
-
-                if (buttonIndex < navigationButtons.length) {
-                    const nextButton = navigationButtons[buttonIndex];
-
-                    // Add a delay before navigation to ensure current question is fully processed
-                    await sleep(600);
-
-                    // Trigger click event - this will execute the onclick="setpage(X)"
-                    nextButton.click();
-                    // The frame will reload and resumeExport will be called
-                } else {
-                    throw new Error(`Navigation button not found at index ${buttonIndex}`);
+                const nextNavigation = getQuestionNavigationButtons().find(({ questionNumber }) => questionNumber === nextQuestionNumber);
+                if (!nextNavigation) {
+                    throw new Error(`Navigation button not found for question ${nextQuestionNumber}`);
                 }
+
+                state.pendingQuestionNumber = nextQuestionNumber;
+                await sleep(300);
+                nextNavigation.button.click();
+                setTimeout(collectNextQuestion, 500);
             } catch (error) {
                 console.error("[BetterE-class] Error navigating to next question:", error);
-                state.isExporting = false;
+                stopExportWithError(state, copyButton, exportButton, "次の問題への移動に失敗しました。");
             }
         } else {
             // This was the last question, export now
@@ -569,11 +614,12 @@
 
     // Wait until the frames show fresh, ready content for the question being
     // collected. "Fresh" means the fingerprint differs from the previously
-    // captured question AND has stayed stable across two consecutive polls, so we
+    // captured question AND has stayed stable across three consecutive polls, so we
     // never capture stale (previous) content or a transient mid-render state.
     // Returns { ok, fingerprint }; ok is false on timeout (treated as an error).
-    async function waitForFreshQuestion(previousFingerprint, maxAttempts = 60, intervalMs = 200) {
+    async function waitForFreshQuestion(previousFingerprint, previousQuestionDocument = null, previousAnswerDocument = null, expectedQuestionNumber = null, maxAttempts = 60, intervalMs = 200) {
         let lastSeen = null;
+        let stablePolls = 0;
 
         for (let i = 0; i < maxAttempts; i++) {
             try {
@@ -591,18 +637,31 @@
                 }
 
                 if (questionDoc && answerDoc && questionDoc.body && answerDoc.body) {
+                    const activeNavigation = getQuestionNavigationButtons().find(({ button }) => isQuestionButtonActive(button));
+                    const targetMatches = expectedQuestionNumber == null || activeNavigation?.questionNumber === expectedQuestionNumber;
+                    const documentsChanged = (!previousQuestionDocument || questionDoc !== previousQuestionDocument) && (!previousAnswerDocument || answerDoc !== previousAnswerDocument);
                     const ready = !!getQuestionText(questionDoc) && detectAnswerLayout(answerDoc) !== "not-ready";
 
-                    if (ready) {
+                    if (targetMatches && documentsChanged && ready) {
                         const fingerprint = getQuestionFingerprint(questionDoc, answerDoc);
-                        const isFresh = previousFingerprint == null || fingerprint !== previousFingerprint;
-                        const isStable = fingerprint === lastSeen;
+                        const hasPreviousDocuments = previousQuestionDocument !== null || previousAnswerDocument !== null;
+                        const isFresh = hasPreviousDocuments ? documentsChanged : previousFingerprint == null || fingerprint !== previousFingerprint;
+                        stablePolls = fingerprint === lastSeen ? stablePolls + 1 : 1;
+                        const isStable = stablePolls >= 3;
 
                         if (isFresh && isStable) {
-                            return { ok: true, fingerprint };
+                            return {
+                                ok: true,
+                                fingerprint,
+                                questionDocument: questionDoc,
+                                answerDocument: answerDoc,
+                            };
                         }
 
                         lastSeen = fingerprint;
+                    } else {
+                        lastSeen = null;
+                        stablePolls = 0;
                     }
                 }
             } catch (error) {
@@ -613,22 +672,24 @@
         }
 
         console.error("[BetterE-class] Timeout: fresh question content never appeared after", maxAttempts, "attempts");
-        return { ok: false, fingerprint: lastSeen };
+        return {
+            ok: false,
+            fingerprint: lastSeen,
+            questionDocument: null,
+            answerDocument: null,
+        };
     }
 
-    async function collectQuestionData(questionNumber) {
+    function collectQuestionData(questionNumber, questionDoc, answerDoc) {
         try {
-            const { questionFrame, answerFrame } = getQuizFrames();
-
-            if (!questionFrame || !answerFrame) {
-                console.error("[BetterE-class] Frames not found for question", questionNumber);
+            if (!questionDoc || !answerDoc) {
+                console.error("[BetterE-class] Frame documents not found for question", questionNumber);
                 return null;
             }
 
             // Extract question text
             let questionText = "";
             try {
-                const questionDoc = questionFrame.document;
                 questionText = getQuestionText(questionDoc);
             } catch (error) {
                 console.error("[BetterE-class] Error accessing question text:", error);
@@ -638,7 +699,6 @@
             let answerType = "unsupported";
             let warnings = [];
             try {
-                const answerDoc = answerFrame.document;
                 const answerData = collectAnswerData(answerDoc, questionNumber);
                 answers = answerData.answers;
                 answerType = answerData.layoutType;
@@ -660,6 +720,20 @@
             console.error(`[BetterE-class] Error collecting question ${questionNumber}:`, error);
             return null;
         }
+    }
+
+    function stopExportWithError(state, copyButton, exportButton, message) {
+        state.isExporting = false;
+        state.pendingQuestionNumber = null;
+        copyButton.textContent = "📋 全てコピー";
+        copyButton.disabled = false;
+        copyButton.style.opacity = "1";
+        copyButton.style.cursor = "pointer";
+        exportButton.textContent = "💾 全て出力";
+        exportButton.disabled = false;
+        exportButton.style.opacity = "1";
+        exportButton.style.cursor = "pointer";
+        alert(message);
     }
 
     // Format the collected data as text
