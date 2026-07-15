@@ -23,7 +23,7 @@
         ]
     },
     "host_permissions": ["*://eclass.doshisha.ac.jp/*"],
-    "permissions": ["declarativeNetRequest", "storage", "tabs", "downloads"],
+    "permissions": ["declarativeNetRequest", "storage", "tabs", "downloads", "clipboardWrite"],
     "background": {
         "service_worker": "background.js"
     },
@@ -152,6 +152,7 @@
                 "attachment-opener.js",
                 "quiz-attachment-buttons.js",
                 "quiz-copy-button.js",
+                "quiz-export-controller.js",
                 "quiz-export-all.js"
             ],
             "run_at": "document_end",
