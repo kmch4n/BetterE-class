@@ -3,9 +3,8 @@ _metadata
 data/
 release/
 
-# AI Files
-.claude/
-.codex/
+# Local AI state
+.claude/settings.local.json
 
 # Prettier
 .prettierrc
