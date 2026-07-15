@@ -43,13 +43,16 @@ function createButton(onclick, value, options = {}) {
 
 function loadHelpers(buttons, frames, options = {}) {
     const source = fs.readFileSync("extension/quiz-export-all.js", "utf8");
-    const instrumented = source.replace(/\}\)\(\);\s*$/, "globalThis.__testExports = { getQuestionNumber, getQuestionNavigationButtons, isQuestionButtonActive, getQuestionFingerprint, waitForFreshQuestion, startExport, getExportState, formatQuestionsText }; })();");
+    const instrumented = source.replace(/\}\)\(\);\s*$/, "globalThis.__testExports = { getQuestionNumber, getQuestionNavigationButtons, isQuestionButtonActive, getQuestionFingerprint, waitForFreshQuestion, collectAnswerData, startExport, getExportState, formatQuestionsText }; })();");
     const copyButton = options.copyButton || null;
     const exportButton = options.exportButton || null;
     const context = {
         URLSearchParams,
-        alert() {},
-        confirm() {
+        alert(message) {
+            if (options.onAlert) options.onAlert(message);
+        },
+        confirm(message) {
+            if (options.onConfirm) options.onConfirm(message);
             return options.confirm ?? false;
         },
         chrome: {
@@ -61,7 +64,7 @@ function loadHelpers(buttons, frames, options = {}) {
                 },
             },
         },
-        console,
+        console: options.console || console,
         document: {
             readyState: "loading",
             addEventListener() {},
@@ -142,6 +145,37 @@ test("an unmarked first button is not treated as an active mismatch", () => {
     );
 });
 
+test("unsupported answer layouts log a notice without producing an alert warning", () => {
+    const logs = [];
+    const answerDocument = {
+        body: {
+            innerHTML: '<select name="answer"></select>',
+            textContent: "Select an answer",
+        },
+        querySelector(selector) {
+            return selector === "select, input, button" ? {} : null;
+        },
+    };
+    const helpers = loadHelpers(
+        [],
+        { question: null, answer: null },
+        {
+            console: {
+                ...console,
+                info(message) {
+                    logs.push(message);
+                },
+            },
+        },
+    );
+    const result = helpers.collectAnswerData(answerDocument, 91);
+
+    assert.equal(result.layoutType, "unsupported");
+    assert.deepEqual(Array.from(result.warnings), []);
+    assert.deepEqual(Array.from(result.answers), ["[Unsupported answer layout detected]"]);
+    assert.match(logs[0], /Question 91.*without option extraction.*'unsupported'/);
+});
+
 test("freshness rejects a loaded question whose active number is not the target", async () => {
     const oldQuestion = createDocument("Q1");
     const oldAnswer = createDocument("");
@@ -178,6 +212,24 @@ test("freshness waits until both frame documents have changed and stabilized", a
     }, 50);
 
     const result = await helpers.waitForFreshQuestion(oldFingerprint, oldQuestion, oldAnswer, null, 30, 10);
+
+    assert.equal(result.ok, true);
+    assert.equal(result.questionDocument, newQuestion);
+    assert.equal(result.answerDocument, newAnswer);
+});
+
+test("freshness accepts a target without an active marker after both documents change", async () => {
+    const oldQuestion = createDocument("Q1");
+    const oldAnswer = createDocument("");
+    const newQuestion = createDocument("Q2");
+    const newAnswer = createDocument("");
+    const buttons = [createButton("setpage(1)", "Q1"), createButton("setpage(2)", "Q2")];
+    const frames = {
+        question: { document: newQuestion },
+        answer: { document: newAnswer },
+    };
+    const helpers = loadHelpers(buttons, frames);
+    const result = await helpers.waitForFreshQuestion(helpers.getQuestionFingerprint(oldQuestion, oldAnswer), oldQuestion, oldAnswer, 2, 10, 5);
 
     assert.equal(result.ok, true);
     assert.equal(result.questionDocument, newQuestion);
@@ -243,7 +295,7 @@ function createAnswerDocument(number) {
     };
 }
 
-test("full copy flow resets to Q1 and follows numeric order through frame updates", async () => {
+test("full copy flow resets from a known active Q2 and follows numeric order", async () => {
     const frames = {
         question: { document: createQuestionDocument(2) },
         answer: { document: createAnswerDocument(2) },
@@ -261,6 +313,7 @@ test("full copy flow resets to Q1 and follows numeric order through frame update
         }, 60);
     };
     buttons.push(createButton("setpage(3)", "Q3", { onClick: () => activate(3) }), createButton("setpage(1)", "Q1", { onClick: () => activate(1) }), createButton("setpage(2)", "Q2", { onClick: () => activate(2) }));
+    buttons[2].disabled = true;
     const copyButton = { disabled: false, style: {}, textContent: "" };
     const exportButton = { disabled: false, style: {}, textContent: "" };
     let clipboardContent = null;
@@ -283,6 +336,59 @@ test("full copy flow resets to Q1 and follows numeric order through frame update
         Array.from(helpers.getExportState().exportData, ({ number }) => number),
         [1, 2, 3],
     );
+    assert.ok(clipboardContent.includes("Q1. Question 1"));
     assert.ok(clipboardContent.indexOf("Q1. Question 1") < clipboardContent.indexOf("Q2. Question 2"));
     assert.ok(clipboardContent.indexOf("Q2. Question 2") < clipboardContent.indexOf("Q3. Question 3"));
+});
+
+test("full copy flow keeps an unmarked first question and navigates without active markers", async () => {
+    const frames = {
+        question: { document: createQuestionDocument(1) },
+        answer: { document: createAnswerDocument(1) },
+    };
+    const buttons = [];
+    const clickCounts = new Map();
+    const navigate = (number) => {
+        clickCounts.set(number, (clickCounts.get(number) || 0) + 1);
+        setTimeout(() => {
+            frames.question.document = createQuestionDocument(number);
+        }, 20);
+        setTimeout(() => {
+            frames.answer.document = createAnswerDocument(number);
+        }, 60);
+    };
+    buttons.push(createButton("setpage(3)", "Q3", { onClick: () => navigate(3) }), createButton("setpage(1)", "Q1", { onClick: () => navigate(1) }), createButton("setpage(2)", "Q2", { onClick: () => navigate(2) }));
+    const copyButton = { disabled: false, style: {}, textContent: "" };
+    const exportButton = { disabled: false, style: {}, textContent: "" };
+    let clipboardContent = null;
+    let confirmMessage = "";
+    const helpers = loadHelpers(buttons, frames, {
+        confirm: true,
+        copyButton,
+        exportButton,
+        onConfirm(message) {
+            confirmMessage = message;
+        },
+        onClipboardWrite(content) {
+            clipboardContent = content;
+        },
+    });
+
+    await helpers.startExport("copy");
+    for (let attempt = 0; attempt < 100 && clipboardContent === null; attempt++) {
+        await new Promise((resolve) => setTimeout(resolve, 100));
+    }
+
+    assert.notEqual(clipboardContent, null);
+    assert.match(confirmMessage, /1番の問題を表示してから実行/);
+    assert.equal(clickCounts.get(1), undefined);
+    assert.equal(clickCounts.get(2), 1);
+    assert.equal(clickCounts.get(3), 1);
+    assert.deepEqual(
+        Array.from(helpers.getExportState().exportData, ({ number }) => number),
+        [1, 2, 3],
+    );
+    assert.ok(clipboardContent.includes("Q1. Question 1"));
+    assert.ok(clipboardContent.includes("Q2. Question 2"));
+    assert.ok(clipboardContent.includes("Q3. Question 3"));
 });

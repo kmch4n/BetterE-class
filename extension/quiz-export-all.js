@@ -122,7 +122,7 @@
         }
 
         answers.push(createAnswerLayoutNotice(layoutType));
-        warnings.push(`Question ${questionNumber}: exported the prompt only because answer layout '${layoutType}' is not option-based.`);
+        console.info(`[BetterE-class] Question ${questionNumber}: exported the prompt without option extraction because answer layout '${layoutType}' is not option-based.`);
 
         return {
             answers,
@@ -426,8 +426,11 @@
             return;
         }
 
+        const firstNavigation = navigationButtons[0];
+        const activeNavigation = navigationButtons.find(({ button }) => isQuestionButtonActive(button));
         const modeText = mode === "copy" ? "コピー" : "エクスポート";
-        const confirmed = confirm(`${state.totalQuestions}問の問題を${modeText}します。\n\n最初の問題から順番に収集します。`);
+        const startNotice = activeNavigation ? "最初の問題から順番に収集します。" : `現在位置を判定できないため、${firstNavigation.questionNumber}番の問題を表示してから実行してください。`;
+        const confirmed = confirm(`${state.totalQuestions}問の問題を${modeText}します。\n\n${startNotice}`);
         if (!confirmed) {
             return;
         }
@@ -443,9 +446,11 @@
         state.previousQuestionDocument = null;
         state.previousAnswerDocument = null;
 
-        const firstNavigation = navigationButtons[0];
-        const activeNavigation = navigationButtons.find(({ button }) => isQuestionButtonActive(button));
-        if (activeNavigation?.questionNumber === firstNavigation.questionNumber) {
+        // Some WebClass versions do not mark the current navigation button. In
+        // that case, keep the displayed first question instead of clicking it
+        // again: clicking the already-current question can be a no-op and would
+        // make a document-replacement wait time out.
+        if (!activeNavigation || activeNavigation.questionNumber === firstNavigation.questionNumber) {
             collectNextQuestion();
             return;
         }
@@ -620,6 +625,13 @@
     async function waitForFreshQuestion(previousFingerprint, previousQuestionDocument = null, previousAnswerDocument = null, expectedQuestionNumber = null, maxAttempts = 60, intervalMs = 200) {
         let lastSeen = null;
         let stablePolls = 0;
+        let lastStatus = {
+            activeQuestionNumber: null,
+            targetMatches: false,
+            questionDocumentChanged: false,
+            answerDocumentChanged: false,
+            ready: false,
+        };
 
         for (let i = 0; i < maxAttempts; i++) {
             try {
@@ -638,9 +650,21 @@
 
                 if (questionDoc && answerDoc && questionDoc.body && answerDoc.body) {
                     const activeNavigation = getQuestionNavigationButtons().find(({ button }) => isQuestionButtonActive(button));
-                    const targetMatches = expectedQuestionNumber == null || activeNavigation?.questionNumber === expectedQuestionNumber;
-                    const documentsChanged = (!previousQuestionDocument || questionDoc !== previousQuestionDocument) && (!previousAnswerDocument || answerDoc !== previousAnswerDocument);
+                    // Treat an explicit current marker as authoritative, but do
+                    // not require one. WebClass installations that expose plain
+                    // page buttons have no active/disabled/ARIA marker at all.
+                    const targetMatches = expectedQuestionNumber == null || !activeNavigation || activeNavigation.questionNumber === expectedQuestionNumber;
+                    const questionDocumentChanged = !previousQuestionDocument || questionDoc !== previousQuestionDocument;
+                    const answerDocumentChanged = !previousAnswerDocument || answerDoc !== previousAnswerDocument;
+                    const documentsChanged = questionDocumentChanged && answerDocumentChanged;
                     const ready = !!getQuestionText(questionDoc) && detectAnswerLayout(answerDoc) !== "not-ready";
+                    lastStatus = {
+                        activeQuestionNumber: activeNavigation?.questionNumber ?? null,
+                        targetMatches,
+                        questionDocumentChanged,
+                        answerDocumentChanged,
+                        ready,
+                    };
 
                     if (targetMatches && documentsChanged && ready) {
                         const fingerprint = getQuestionFingerprint(questionDoc, answerDoc);
@@ -671,7 +695,7 @@
             await sleep(intervalMs);
         }
 
-        console.error("[BetterE-class] Timeout: fresh question content never appeared after", maxAttempts, "attempts");
+        console.error("[BetterE-class] Timeout: fresh question content never appeared after", maxAttempts, "attempts", lastStatus);
         return {
             ok: false,
             fingerprint: lastSeen,
