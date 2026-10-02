@@ -44,52 +44,58 @@
         void savePinnedCourses();
     }
 
-    // Create pinned courses UI
+    function createElement(tagName, className, text) {
+        const element = document.createElement(tagName);
+        if (className) element.className = className;
+        if (text !== undefined) element.textContent = text;
+        return element;
+    }
+
+    // Stored entries are only rendered as links when they are web URLs
+    function isWebUrl(url) {
+        try {
+            return ["http:", "https:"].includes(new URL(url).protocol);
+        } catch (_) {
+            return false;
+        }
+    }
+
+    // Create pinned courses UI. Stored names are set with textContent, never parsed as HTML.
     function createPinnedCoursesUI() {
         if (pinnedCourses.length === 0) return null;
 
-        const container = document.createElement("div");
+        const container = createElement("div", "side-block-outer");
         container.id = "betterEclassPinnedCourses";
-        container.className = "side-block-outer";
 
-        container.innerHTML = `
-      <div class="side-block">
-        <h4 class="side-block-title">
-          <span class="betterEclass-pin-icon">📌</span>
-          ピン留め科目
-          <span class="pinned-count">${pinnedCourses.length}件</span>
-        </h4>
-        <div class="side-block-content">
-          ${pinnedCourses
-              .map(
-                  (course, index) => `
-            <div class="pinned-item">
-              <a href="${course.url}" class="pinned-course-name" target="_top">
-                ${course.name}
-              </a>
-              <button class="unpin-button" data-index="${index}" title="ピン留めを解除">
-                ✕
-              </button>
-            </div>
-          `,
-              )
-              .join("")}
-        </div>
-      </div>
-    `;
+        const block = createElement("div", "side-block");
+        const title = createElement("h4", "side-block-title");
+        title.append(createElement("span", "betterEclass-pin-icon", "📌"), "ピン留め科目", createElement("span", "pinned-count", `${pinnedCourses.length}件`));
 
-        // Add event listeners for unpin buttons
-        container.querySelectorAll(".unpin-button").forEach((button) => {
-            button.addEventListener("click", (e) => {
+        const content = createElement("div", "side-block-content");
+        pinnedCourses.forEach((course, index) => {
+            const item = createElement("div", "pinned-item");
+
+            const link = createElement("a", "pinned-course-name", String(course.name ?? ""));
+            if (isWebUrl(course.url)) link.setAttribute("href", course.url);
+            link.setAttribute("target", "_top");
+
+            const unpinButton = createElement("button", "unpin-button", "✕");
+            unpinButton.setAttribute("data-index", String(index));
+            unpinButton.title = "ピン留めを解除";
+            unpinButton.addEventListener("click", (e) => {
                 e.preventDefault();
-                const index = parseInt(button.getAttribute("data-index"));
                 pinnedCourses.splice(index, 1);
                 void savePinnedCourses();
                 syncPinButtons();
                 refreshPinnedCoursesUI();
             });
+
+            item.append(link, unpinButton);
+            content.appendChild(item);
         });
 
+        block.append(title, content);
+        container.appendChild(block);
         return container;
     }
 

@@ -77,41 +77,43 @@
         return courses;
     }
 
-    // Create deadline list UI
+    function createElement(tagName, className, text) {
+        const element = document.createElement(tagName);
+        if (className) element.className = className;
+        if (text !== undefined) element.textContent = text;
+        return element;
+    }
+
+    // Create deadline list UI. Page-derived text is set with textContent, never parsed as HTML.
     function createDeadlineListUI(courses) {
         if (courses.length === 0) return null;
 
-        const container = document.createElement("div");
+        const container = createElement("div", "side-block-outer");
         container.id = "betterEclassDeadlineList";
-        container.className = "side-block-outer";
 
-        container.innerHTML = `
-      <div class="side-block">
-        <h4 class="side-block-title">
-          <span class="betterEclass-deadline-icon">⚠</span>
-          締切が近い課題
-          <span class="deadline-count">${courses.length}件</span>
-        </h4>
-        <div class="side-block-content">
-          ${courses
-              .map(
-                  (course) => `
-            <div class="deadline-item">
-              <a href="${course.url}" class="deadline-course-name" target="_top">
-                ${course.name}
-              </a>
-              <div class="deadline-warning">
-                <span style="color: #ff4444;">📌</span>
-                ${course.warning.replace("⚠ ", "")}
-              </div>
-            </div>
-          `,
-              )
-              .join("")}
-        </div>
-      </div>
-    `;
+        const block = createElement("div", "side-block");
+        const title = createElement("h4", "side-block-title");
+        title.append(createElement("span", "betterEclass-deadline-icon", "⚠"), "締切が近い課題", createElement("span", "deadline-count", `${courses.length}件`));
 
+        const content = createElement("div", "side-block-content");
+        courses.forEach((course) => {
+            const item = createElement("div", "deadline-item");
+
+            const link = createElement("a", "deadline-course-name", course.name);
+            link.setAttribute("href", course.url);
+            link.setAttribute("target", "_top");
+
+            const warning = createElement("div", "deadline-warning");
+            const pin = createElement("span", "", "📌");
+            pin.style.color = "#ff4444";
+            warning.append(pin, course.warning.replace("⚠ ", ""));
+
+            item.append(link, warning);
+            content.appendChild(item);
+        });
+
+        block.append(title, content);
+        container.appendChild(block);
         return container;
     }
 

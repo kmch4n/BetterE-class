@@ -26,6 +26,50 @@ function createDeadlineElement(courseUrl, warning, warningUrl = "", assignmentId
     };
 }
 
+class FakeElement {
+    constructor(tagName) {
+        this.tagName = tagName.toUpperCase();
+        this.className = "";
+        this.id = "";
+        this.children = [];
+        this.attributes = {};
+        this.style = {};
+        this.ownText = "";
+    }
+
+    append(...nodes) {
+        nodes.forEach((node) => this.children.push(typeof node === "string" ? { text: node } : node));
+    }
+
+    appendChild(node) {
+        this.append(node);
+        return node;
+    }
+
+    setAttribute(name, value) {
+        this.attributes[name] = String(value);
+    }
+
+    set textContent(value) {
+        this.ownText = String(value);
+        this.children = [];
+    }
+
+    get textContent() {
+        return this.ownText + this.children.map((child) => child.textContent ?? child.text).join("");
+    }
+}
+
+function countByClass(element, className) {
+    const own = element.className.split(" ").includes(className) ? 1 : 0;
+    return own + element.children.filter((child) => child instanceof FakeElement).reduce((sum, child) => sum + countByClass(child, className), 0);
+}
+
+function findByClass(element, className) {
+    if (element.className.split(" ").includes(className)) return [element];
+    return element.children.filter((child) => child instanceof FakeElement).flatMap((child) => findByClass(child, className));
+}
+
 async function renderDeadlineList(deadlineElements) {
     let onDomContentLoaded = null;
     let insertedList = null;
@@ -43,12 +87,8 @@ async function renderDeadlineList(deadlineElements) {
         addEventListener(type, callback) {
             if (type === "DOMContentLoaded") onDomContentLoaded = callback;
         },
-        createElement() {
-            return {
-                className: "",
-                id: "",
-                innerHTML: "",
-            };
+        createElement(tagName) {
+            return new FakeElement(tagName);
         },
         getElementById() {
             return null;
@@ -100,9 +140,9 @@ test("keeps distinct deadline warnings from the same course", async () => {
         createDeadlineElement("https://example.test/course/1", "⚠ Quiz due Friday"),
     ]);
 
-    assert.match(list.innerHTML, /2件/);
-    assert.match(list.innerHTML, /Report due tomorrow/);
-    assert.match(list.innerHTML, /Quiz due Friday/);
+    assert.match(list.textContent, /2件/);
+    assert.match(list.textContent, /Report due tomorrow/);
+    assert.match(list.textContent, /Quiz due Friday/);
 });
 
 test("keeps separate linkless deadlines with identical warning text", async () => {
@@ -111,8 +151,8 @@ test("keeps separate linkless deadlines with identical warning text", async () =
         createDeadlineElement("https://example.test/course/1", "⚠ Submission due tomorrow"),
     ]);
 
-    assert.match(list.innerHTML, /2件/);
-    assert.equal((list.innerHTML.match(/deadline-item/g) || []).length, 2);
+    assert.match(list.textContent, /2件/);
+    assert.equal(countByClass(list, "deadline-item"), 2);
 });
 
 test("removes repeated warnings with the same explicit assignment ID", async () => {
@@ -130,8 +170,8 @@ test("removes repeated warnings with the same explicit assignment ID", async () 
     );
     const list = await renderDeadlineList([deadline, duplicate]);
 
-    assert.match(list.innerHTML, /1件/);
-    assert.equal((list.innerHTML.match(/deadline-item/g) || []).length, 1);
+    assert.match(list.textContent, /1件/);
+    assert.equal(countByClass(list, "deadline-item"), 1);
 });
 
 test("keeps warnings with a shared link but no explicit assignment ID", async () => {
@@ -140,8 +180,8 @@ test("keeps warnings with a shared link but no explicit assignment ID", async ()
         createDeadlineElement("https://example.test/course/1", "⚠ Submission due", "https://example.test/assignment/10"),
     ]);
 
-    assert.match(list.innerHTML, /2件/);
-    assert.equal((list.innerHTML.match(/deadline-item/g) || []).length, 2);
+    assert.match(list.textContent, /2件/);
+    assert.equal(countByClass(list, "deadline-item"), 2);
 });
 
 test("keeps equal warning text when assignment links differ", async () => {
@@ -150,6 +190,19 @@ test("keeps equal warning text when assignment links differ", async () => {
         createDeadlineElement("https://example.test/course/1", "⚠ Submission due", "https://example.test/assignment/11"),
     ]);
 
-    assert.match(list.innerHTML, /2件/);
-    assert.equal((list.innerHTML.match(/deadline-item/g) || []).length, 2);
+    assert.match(list.textContent, /2件/);
+    assert.equal(countByClass(list, "deadline-item"), 2);
+});
+
+test("renders course names and warnings as text instead of markup", async () => {
+    const deadline = createDeadlineElement("https://example.test/course/1", "⚠ <img src=x onerror=alert(1)> due");
+    const list = await renderDeadlineList([deadline]);
+    const [link] = findByClass(list, "deadline-course-name");
+    const [warning] = findByClass(list, "deadline-warning");
+
+    assert.equal(link.textContent, "Sample Course");
+    assert.equal(link.attributes.href, "https://example.test/course/1");
+    assert.equal(link.attributes.target, "_top");
+    assert.match(warning.textContent, /<img src=x onerror=alert\(1\)> due$/);
+    assert.equal(countByClass(list, "deadline-item"), 1);
 });
