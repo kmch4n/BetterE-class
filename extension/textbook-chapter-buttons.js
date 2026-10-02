@@ -37,9 +37,6 @@
 
             // Watch for page changes
             observePageChanges();
-
-            // Process file_down.php attachments
-            processFileDownAttachments();
         });
 
     /**
@@ -258,8 +255,15 @@
         return null;
     }
 
-    // Update buttons for the current page
+    // Rebuild the current page buttons, then restore the per-row attachment buttons that the
+    // rebuild removed (both use the same container class)
     function updateButtonsForCurrentPage() {
+        renderCurrentPageButtons();
+        processFileDownAttachments();
+    }
+
+    // Render buttons for the current page
+    function renderCurrentPageButtons() {
         if (!pageInfo || !settings.enableDirectDownload) {
             return;
         }
