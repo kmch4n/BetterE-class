@@ -13,23 +13,41 @@ const FILE_EXT_WHITELIST = new Set([
     "mp4", "webm", "ogg", "mp3", "wav",
 ]);
 
+// Extensions that identify web pages or scripts rather than downloadable files.
+const NON_FILE_EXTENSIONS = new Set(["php", "html", "htm", "js", "css", "m3u8"]);
+
+// Elements that can embed the real file on an intermediate page.
+const EMBED_TAG_PATTERN = /<(iframe|frame|embed|video|audio|source|object)\b[^>]*>/gi;
+
 function decodeHtmlEntities(value) {
     return value
-        .replace(/&amp;/g, "&")
         .replace(/&lt;/g, "<")
         .replace(/&gt;/g, ">")
         .replace(/&quot;/g, '"')
-        .replace(/&#039;/g, "'");
+        .replace(/&#x([0-9a-f]+);/gi, (_, hex) => String.fromCodePoint(parseInt(hex, 16)))
+        .replace(/&#([0-9]+);/g, (_, dec) => String.fromCodePoint(parseInt(dec, 10)))
+        .replace(/&amp;/g, "&");
 }
 
 function resolveRelativeUrl(candidate, sourceUrl) {
     return new URL(candidate, sourceUrl).href;
 }
 
-function hasAllowedExtension(url) {
+// Read an attribute value from a raw start tag. Supports quoted and unquoted values.
+function getTagAttribute(tag, name) {
+    const pattern = new RegExp(`\\s${name}\\s*=\\s*(?:"([^"]*)"|'([^']*)'|([^\\s"'>]+))`, "i");
+    const match = tag.match(pattern);
+    if (!match) return null;
+    return decodeHtmlEntities(match[1] ?? match[2] ?? match[3]).trim();
+}
+
+function getUrlExtension(url) {
     const match = url.split(/[?#]/)[0].match(/\.([a-z0-9]+)$/i);
-    if (!match) return false;
-    return FILE_EXT_WHITELIST.has(match[1].toLowerCase());
+    return match ? match[1].toLowerCase() : "";
+}
+
+function hasAllowedExtension(url) {
+    return FILE_EXT_WHITELIST.has(getUrlExtension(url));
 }
 
 function isStreamManifestUrl(url) {
@@ -42,52 +60,93 @@ function isStreamManifestUrl(url) {
     }
 }
 
+function isDownloadPhpUrl(url) {
+    return /download\.php/i.test(url);
+}
+
+function isSameOrigin(url, sourceUrl) {
+    return new URL(url).origin === new URL(sourceUrl).origin;
+}
+
+// Course files are stored under /webclass/data/ on the same host as the intermediate page.
+function isCourseDataUrl(url, sourceUrl) {
+    const parsedUrl = new URL(url);
+    if (!isSameOrigin(url, sourceUrl)) return false;
+    if (!/\/webclass\/data\//i.test(parsedUrl.pathname)) return false;
+    const extension = getUrlExtension(parsedUrl.pathname);
+    return extension !== "" && !NON_FILE_EXTENSIONS.has(extension);
+}
+
+function isIgnorableHref(href) {
+    return !href || href.startsWith("#") || /^(javascript|mailto|data):/i.test(href);
+}
+
+// Resolve a raw attribute value; returns null when it cannot be a file URL.
+function toCandidateUrl(rawValue, sourceUrl) {
+    if (isIgnorableHref(rawValue)) return null;
+    try {
+        return resolveRelativeUrl(rawValue, sourceUrl);
+    } catch (_) {
+        return null;
+    }
+}
+
+function collectAnchorCandidates(html, sourceUrl) {
+    const candidates = [];
+    const anchorRegex = /<a\b[^>]*>/gi;
+    let match;
+    while ((match = anchorRegex.exec(html)) !== null) {
+        const tag = match[0];
+        const url = toCandidateUrl(getTagAttribute(tag, "href"), sourceUrl);
+        if (!url) continue;
+        candidates.push({
+            url,
+            hasTargetBlank: (getTagAttribute(tag, "target") || "").toLowerCase() === "_blank",
+        });
+    }
+    return candidates;
+}
+
+function collectEmbeddedCandidates(html, sourceUrl) {
+    const candidates = [];
+    let match;
+    EMBED_TAG_PATTERN.lastIndex = 0;
+    while ((match = EMBED_TAG_PATTERN.exec(html)) !== null) {
+        const tag = match[0];
+        const attribute = match[1].toLowerCase() === "object" ? "data" : "src";
+        const url = toCandidateUrl(getTagAttribute(tag, attribute), sourceUrl);
+        if (url) candidates.push({ url });
+    }
+    return candidates;
+}
+
 // Extract a real file URL from an intermediate page (loadit.php / file_down.php).
 // Returns { url, reason, candidateCount } so callers can log extraction failures.
 function extractFileUrlFromHtml(html, sourceUrl) {
-    const anchorRegex = /<a\b[^>]*?href\s*=\s*(['"])([^'"]+)\1[^>]*>/gi;
-    const candidates = [];
-    let match;
-    while ((match = anchorRegex.exec(html)) !== null) {
-        const rawHref = decodeHtmlEntities(match[2]);
-        const attrs = match[0];
-        candidates.push({
-            href: rawHref,
-            hasTargetBlank: /target\s*=\s*(['"])_blank\1/i.test(attrs),
-        });
-    }
+    const anchors = collectAnchorCandidates(html, sourceUrl);
+    const embedded = collectEmbeddedCandidates(html, sourceUrl);
+    const candidateCount = anchors.length + embedded.length;
 
-    const pickByDownloadPhp = candidates.find((c) => /download\.php/i.test(c.href));
-    if (pickByDownloadPhp) {
-        return {
-            url: resolveRelativeUrl(pickByDownloadPhp.href, sourceUrl),
-            reason: "download.php",
-            candidateCount: candidates.length,
-        };
-    }
+    // Ordered from most to least reliable. Anchors keep their historical priority.
+    const strategies = [
+        ["download.php", () => anchors.find((c) => isDownloadPhpUrl(c.url))],
+        ["target=_blank+extension", () => anchors.find((c) => c.hasTargetBlank && hasAllowedExtension(c.url))],
+        ["extension", () => anchors.find((c) => hasAllowedExtension(c.url))],
+        ["embedded", () => embedded.find((c) => isSameOrigin(c.url, sourceUrl) && (isDownloadPhpUrl(c.url) || (hasAllowedExtension(c.url) && isCourseDataUrl(c.url, sourceUrl))))],
+        ["course-data", () => anchors.find((c) => isCourseDataUrl(c.url, sourceUrl))],
+    ];
 
-    const pickByTargetBlank = candidates.find((c) => c.hasTargetBlank && hasAllowedExtension(c.href));
-    if (pickByTargetBlank) {
-        return {
-            url: resolveRelativeUrl(pickByTargetBlank.href, sourceUrl),
-            reason: "target=_blank+extension",
-            candidateCount: candidates.length,
-        };
-    }
-
-    const pickByExtension = candidates.find((c) => hasAllowedExtension(c.href));
-    if (pickByExtension) {
-        return {
-            url: resolveRelativeUrl(pickByExtension.href, sourceUrl),
-            reason: "extension",
-            candidateCount: candidates.length,
-        };
+    for (const [reason, pick] of strategies) {
+        const candidate = pick();
+        if (candidate) {
+            return { url: candidate.url, reason, candidateCount };
+        }
     }
 
     return {
         url: null,
-        reason: candidates.length === 0 ? "no-anchors" : "no-matching-extension",
-        candidateCount: candidates.length,
+        reason: candidateCount === 0 ? "no-anchors" : "no-matching-extension",
+        candidateCount,
     };
 }
 

@@ -88,6 +88,81 @@ test("reports why an intermediate page has no attachment candidates", () => {
     assert.equal(result.candidateCount, 0);
 });
 
+test("reads unquoted href and target attributes", () => {
+    const context = createBackgroundContext();
+    const result = extract(context, "<a href=../data/course/notes.pdf target=_blank>Notes</a>");
+
+    assert.equal(result.url, "https://eclass.doshisha.ac.jp/data/course/notes.pdf");
+    assert.equal(result.reason, "target=_blank+extension");
+});
+
+test("decodes numeric apostrophe entities in links", () => {
+    const context = createBackgroundContext();
+    const result = extract(context, '<a href="download.php?file=it&#39;s&#x26;.pdf&amp;t=1">File</a>');
+
+    assert.equal(result.url, "https://eclass.doshisha.ac.jp/webclass/download.php?file=it%27s&.pdf&t=1");
+});
+
+test("extracts files embedded without anchors", () => {
+    const context = createBackgroundContext();
+    const result = extract(context, '<img src="/webclass/images/icon.gif"><iframe src="/webclass/data/course/1/slides.pptx"></iframe>');
+
+    assert.equal(result.url, "https://eclass.doshisha.ac.jp/webclass/data/course/1/slides.pptx");
+    assert.equal(result.reason, "embedded");
+    assert.equal(result.candidateCount, 1);
+});
+
+test("reads the data attribute of object elements", () => {
+    const context = createBackgroundContext();
+    const result = extract(context, "<object data='/webclass/data/course/1/report.pdf' type='application/pdf'></object>");
+
+    assert.equal(result.url, "https://eclass.doshisha.ac.jp/webclass/data/course/1/report.pdf");
+    assert.equal(result.reason, "embedded");
+});
+
+test("ignores embedded resources outside course data", () => {
+    const context = createBackgroundContext();
+    const result = extract(context, '<iframe src="/webclass/images/banner.png"></iframe><embed src="https://example.test/data/x.pdf"><iframe src="https://example.test/webclass/download.php?f=1"></iframe>');
+
+    assert.equal(result.url, null);
+    assert.equal(result.reason, "no-matching-extension");
+});
+
+test("prefers anchors over embedded resources", () => {
+    const context = createBackgroundContext();
+    const result = extract(context, '<embed src="/webclass/data/course/1/preview.pdf"><a href="download.php?file=report.pdf">Report</a>');
+
+    assert.equal(result.url, "https://eclass.doshisha.ac.jp/webclass/download.php?file=report.pdf");
+    assert.equal(result.reason, "download.php");
+});
+
+test("accepts course data links with extensions outside the allowlist", () => {
+    const context = createBackgroundContext();
+    const result = extract(context, '<a href="index.php">Back</a><a href="/webclass/data/course/1/main.py">main.py</a>');
+
+    assert.equal(result.url, "https://eclass.doshisha.ac.jp/webclass/data/course/1/main.py");
+    assert.equal(result.reason, "course-data");
+});
+
+test("does not fall back to course data pages, scripts, or stream manifests", () => {
+    const context = createBackgroundContext();
+    const result = extract(
+        context,
+        '<a href="/webclass/data/course/1/index.html">Page</a><a href="/webclass/data/course/1/app.js">Script</a><a href="/webclass/data/course/1/master.m3u8">Stream</a>',
+    );
+
+    assert.equal(result.url, null);
+    assert.equal(result.candidateCount, 3);
+});
+
+test("skips non-navigational and invalid hrefs without throwing", () => {
+    const context = createBackgroundContext();
+    const result = extract(context, '<a href="javascript:void(0)">x</a><a href="#top">y</a><a href="mailto:a@b.test">z</a><a href="http://[bad">w</a><a href="files/a.pdf">a</a>');
+
+    assert.equal(result.url, "https://eclass.doshisha.ac.jp/webclass/files/a.pdf");
+    assert.equal(result.candidateCount, 1);
+});
+
 test("rejects unsuccessful intermediate-page responses", async () => {
     const context = createBackgroundContext(async () => ({
         ok: false,

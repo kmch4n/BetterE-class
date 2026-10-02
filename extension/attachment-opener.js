@@ -447,6 +447,27 @@
             try {
                 const absoluteUrl = resolveAbsoluteUrl(downloadUrl);
 
+                // Intermediate pages return HTML, so let the background resolve the real file
+                if (needsHtmlExtraction(absoluteUrl)) {
+                    chrome.runtime.sendMessage(
+                        {
+                            type: "downloadDirect",
+                            url: absoluteUrl,
+                            filename: fileName,
+                        },
+                        (response) => {
+                            if (chrome.runtime.lastError) {
+                                console.error("[BetterE-class] Runtime error:", chrome.runtime.lastError);
+                                return;
+                            }
+                            if (response && response.error) {
+                                console.error("[BetterE-class] Download error:", response.error);
+                            }
+                        },
+                    );
+                    return;
+                }
+
                 // Fetch the file with credentials to maintain session
                 const response = await fetch(absoluteUrl, {
                     credentials: "include",
@@ -546,5 +567,10 @@
 
     function resolveAbsoluteUrl(url) {
         return new URL(url, `${window.location.origin}/webclass/`).href;
+    }
+
+    // Must match needsHtmlExtraction in background.js
+    function needsHtmlExtraction(url) {
+        return url.includes("loadit.php") || url.includes("file_down.php");
     }
 })();
