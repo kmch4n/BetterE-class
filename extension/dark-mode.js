@@ -1055,6 +1055,41 @@
         return style;
     }
 
+    // Every pattern starts at a declaration boundary ("(^|;)\s*") so that, for example, the text
+    // "color:" rule cannot match the tail of "background-color:" or "border-color:".
+    function rewriteInlineStyle(style) {
+        const { bg, border, text } = DARK_COLORS;
+        return (
+            style
+                // Background colors
+                .replace(/(^|;)(\s*)background:\s*#ffffff(?![0-9a-fA-F])/gi, `$1$2background: ${bg.secondary}`)
+                .replace(/(^|;)(\s*)background:\s*#fff(?![0-9a-fA-F])/gi, `$1$2background: ${bg.secondary}`)
+                .replace(/(^|;)(\s*)background:\s*white\b(?!-)/gi, `$1$2background: ${bg.secondary}`)
+                .replace(/(^|;)(\s*)background-color:\s*#ffffff(?![0-9a-fA-F])/gi, `$1$2background-color: ${bg.secondary}`)
+                .replace(/(^|;)(\s*)background-color:\s*#fff(?![0-9a-fA-F])/gi, `$1$2background-color: ${bg.secondary}`)
+                .replace(/(^|;)(\s*)background-color:\s*white\b(?!-)/gi, `$1$2background-color: ${bg.secondary}`)
+                .replace(/(^|;)(\s*)background-color:\s*#eaf4fc/gi, `$1$2background-color: ${bg.tertiary}`)
+                .replace(/(^|;)(\s*)background-color:\s*#f8f8f8/gi, `$1$2background-color: ${bg.tertiary}`)
+                .replace(/(^|;)(\s*)background-color:\s*#f9f9f9/gi, `$1$2background-color: ${bg.secondary}`)
+                .replace(/(^|;)(\s*)background-color:\s*#f7f7f7/gi, `$1$2background-color: ${bg.secondary}`)
+                .replace(/(^|;)(\s*)background-color:\s*#f0f0f0/gi, `$1$2background-color: ${bg.secondary}`)
+                // Scroll highlight animation - yellow background
+                .replace(/(^|;)(\s*)background-color:\s*#fff3cd/gi, "$1$2background-color: rgba(210, 153, 34, 0.3)")
+                .replace(/(^|;)(\s*)background-color:\s*rgb\(255,\s*243,\s*205\)/gi, "$1$2background-color: rgba(210, 153, 34, 0.3)")
+                // Border colors
+                .replace(/(^|;)(\s*)border:\s*(\d+px\s+)?solid\s+#ffffff/gi, `$1$2border: $3solid ${border.primary}`)
+                .replace(/(^|;)(\s*)border:\s*(\d+px\s+)?solid\s+#fff(?![0-9a-fA-F])/gi, `$1$2border: $3solid ${border.primary}`)
+                .replace(/(^|;)(\s*)border:\s*(\d+px\s+)?solid\s+white\b(?!-)/gi, `$1$2border: $3solid ${border.primary}`)
+                .replace(/(^|;)(\s*)border-color:\s*#ffffff/gi, `$1$2border-color: ${border.primary}`)
+                .replace(/(^|;)(\s*)border-color:\s*#fff(?![0-9a-fA-F])/gi, `$1$2border-color: ${border.primary}`)
+                .replace(/(^|;)(\s*)border-color:\s*white\b(?!-)/gi, `$1$2border-color: ${border.primary}`)
+                // Text colors - only fix black text
+                .replace(/(^|;)(\s*)color:\s*#000000(?![0-9a-fA-F])/gi, `$1$2color: ${text.primary}`)
+                .replace(/(^|;)(\s*)color:\s*#000(?![0-9a-fA-F])/gi, `$1$2color: ${text.primary}`)
+                .replace(/(^|;)(\s*)color:\s*black\b/gi, `$1$2color: ${text.primary}`)
+        );
+    }
+
     function fixInlineStyles(trigger = "manual") {
         const startedAt = performance.now();
         let scannedElements = 0;
@@ -1072,33 +1107,7 @@
             const isNavbarImage = element.tagName === "IMG" && element.closest(".navbar");
             if (!isNavbarDropdown && !isNavbarImage && element.closest(".navbar-nav > li > a")) return;
 
-            let newStyle = style
-                // Background colors
-                .replace(/background:\s*#ffffff(?![0-9a-fA-F])/gi, `background: ${DARK_COLORS.bg.secondary}`)
-                .replace(/background:\s*#fff(?![0-9a-fA-F])/gi, `background: ${DARK_COLORS.bg.secondary}`)
-                .replace(/background:\s*white(?![;])/gi, `background: ${DARK_COLORS.bg.secondary}`)
-                .replace(/background-color:\s*#ffffff(?![0-9a-fA-F])/gi, `background-color: ${DARK_COLORS.bg.secondary}`)
-                .replace(/background-color:\s*#fff(?![0-9a-fA-F])/gi, `background-color: ${DARK_COLORS.bg.secondary}`)
-                .replace(/background-color:\s*white/gi, `background-color: ${DARK_COLORS.bg.secondary}`)
-                .replace(/background-color:\s*#eaf4fc/gi, `background-color: ${DARK_COLORS.bg.tertiary}`)
-                .replace(/background-color:\s*#f8f8f8/gi, `background-color: ${DARK_COLORS.bg.tertiary}`)
-                .replace(/background-color:\s*#f9f9f9/gi, `background-color: ${DARK_COLORS.bg.secondary}`)
-                .replace(/background-color:\s*#f7f7f7/gi, `background-color: ${DARK_COLORS.bg.secondary}`)
-                .replace(/background-color:\s*#f0f0f0/gi, `background-color: ${DARK_COLORS.bg.secondary}`)
-                // Scroll highlight animation - yellow background
-                .replace(/background-color:\s*#fff3cd/gi, `background-color: rgba(210, 153, 34, 0.3)`)
-                .replace(/background-color:\s*rgb\(255,\s*243,\s*205\)/gi, `background-color: rgba(210, 153, 34, 0.3)`)
-                // Border colors
-                .replace(/border:\s*(\d+px\s+)?solid\s+#ffffff/gi, `border: $1solid ${DARK_COLORS.border.primary}`)
-                .replace(/border:\s*(\d+px\s+)?solid\s+#fff(?![0-9a-fA-F])/gi, `border: $1solid ${DARK_COLORS.border.primary}`)
-                .replace(/border:\s*(\d+px\s+)?solid\s+white/gi, `border: $1solid ${DARK_COLORS.border.primary}`)
-                .replace(/border-color:\s*#ffffff/gi, `border-color: ${DARK_COLORS.border.primary}`)
-                .replace(/border-color:\s*#fff(?![0-9a-fA-F])/gi, `border-color: ${DARK_COLORS.border.primary}`)
-                .replace(/border-color:\s*white/gi, `border-color: ${DARK_COLORS.border.primary}`)
-                // Text colors - only fix black text
-                .replace(/color:\s*#000000(?![0-9a-fA-F])/gi, `color: ${DARK_COLORS.text.primary}`)
-                .replace(/color:\s*#000(?![0-9a-fA-F])/gi, `color: ${DARK_COLORS.text.primary}`)
-                .replace(/color:\s*black/gi, `color: ${DARK_COLORS.text.primary}`);
+            const newStyle = rewriteInlineStyle(style);
 
             if (newStyle !== style) {
                 element.setAttribute("style", newStyle);
