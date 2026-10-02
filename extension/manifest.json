@@ -135,6 +135,15 @@
         },
         {
             "matches": [
+                "*://eclass.doshisha.ac.jp/webclass/txtbk_show_chapter.php*",
+                "*://eclass.doshisha.ac.jp/webclass/txtbk_show_text.php*"
+            ],
+            "js": ["textbook-video-autoplay.js"],
+            "run_at": "document_end",
+            "all_frames": true
+        },
+        {
+            "matches": [
                 "*://eclass.doshisha.ac.jp/webclass/loadit.php?action=providePDF*"
             ],
             "js": ["textbook-loadit-extractor.js"],

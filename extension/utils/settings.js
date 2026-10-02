@@ -11,6 +11,9 @@
         enableAttachmentTab: true,
         enableDirectDownload: true,
 
+        // Textbook video features
+        enableVideoAutoAdvance: false,
+
         // Message tool features
         preventMessagePopup: true,
 

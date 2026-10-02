@@ -4,6 +4,7 @@ const popupSettingKeys = [
     "enableNewTab",
     "enableAttachmentTab",
     "enableDirectDownload",
+    "enableVideoAutoAdvance",
     "preventMessagePopup",
     "enableDeadlineHighlight",
     "enableDarkMode",
@@ -25,6 +26,7 @@ async function loadSettings() {
             enableNewTab: true,
             enableAttachmentTab: true,
             enableDirectDownload: true,
+            enableVideoAutoAdvance: false,
             preventMessagePopup: true,
             enableDeadlineHighlight: true,
             enableDarkMode: false,
@@ -151,6 +153,15 @@ function setupEventListeners() {
         if (success) {
             reloadCoursePages();
         }
+    });
+
+    // Read by content scripts through onSettingsChanged, so no reload is needed.
+    document.getElementById("enableVideoAutoAdvance").addEventListener("change", async (e) => {
+        const settings = await loadSettings();
+        settings.enableVideoAutoAdvance = e.target.checked;
+
+        const success = await saveSettings(settings);
+        showStatus(success ? "設定を保存しました" : "設定の保存に失敗しました", success);
     });
 
     debugModeEl.addEventListener("change", async (e) => {
