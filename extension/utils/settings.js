@@ -13,6 +13,7 @@
 
         // Textbook video features
         enableVideoAutoAdvance: false,
+        enableVideoMergeDownload: false,
 
         // Message tool features
         preventMessagePopup: true,

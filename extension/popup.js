@@ -5,6 +5,7 @@ const popupSettingKeys = [
     "enableAttachmentTab",
     "enableDirectDownload",
     "enableVideoAutoAdvance",
+    "enableVideoMergeDownload",
     "preventMessagePopup",
     "enableDeadlineHighlight",
     "enableDarkMode",
@@ -27,6 +28,7 @@ async function loadSettings() {
             enableAttachmentTab: true,
             enableDirectDownload: true,
             enableVideoAutoAdvance: false,
+            enableVideoMergeDownload: false,
             preventMessagePopup: true,
             enableDeadlineHighlight: true,
             enableDarkMode: false,
@@ -156,12 +158,14 @@ function setupEventListeners() {
     });
 
     // Read by content scripts through onSettingsChanged, so no reload is needed.
-    document.getElementById("enableVideoAutoAdvance").addEventListener("change", async (e) => {
-        const settings = await loadSettings();
-        settings.enableVideoAutoAdvance = e.target.checked;
+    ["enableVideoAutoAdvance", "enableVideoMergeDownload"].forEach((key) => {
+        document.getElementById(key).addEventListener("change", async (e) => {
+            const settings = await loadSettings();
+            settings[key] = e.target.checked;
 
-        const success = await saveSettings(settings);
-        showStatus(success ? "設定を保存しました" : "設定の保存に失敗しました", success);
+            const success = await saveSettings(settings);
+            showStatus(success ? "設定を保存しました" : "設定の保存に失敗しました", success);
+        });
     });
 
     debugModeEl.addEventListener("change", async (e) => {

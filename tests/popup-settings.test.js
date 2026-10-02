@@ -9,6 +9,7 @@ test("popup exposes every user-facing default setting", () => {
         "enableAttachmentTab",
         "enableDirectDownload",
         "enableVideoAutoAdvance",
+        "enableVideoMergeDownload",
         "preventMessagePopup",
         "enableDeadlineHighlight",
         "enableTocSidebar",

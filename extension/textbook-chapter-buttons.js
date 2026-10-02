@@ -107,6 +107,15 @@
         alert("この動画はストリーミング配信のため、動画ファイルとしてダウンロードできません。");
     }
 
+    /**
+     * Save a stream-only page as MP4 through textbook-video-download.js.
+     * @returns {boolean} true when the page was handled as a video
+     */
+    function downloadStreamPage(page, button, saveAs) {
+        const textbookVideo = window.BetterEclassUtils.textbookVideo;
+        return Boolean(textbookVideo && textbookVideo.downloadPage(page, { button, saveAs }));
+    }
+
     // Parse JSON data from the page
     function parsePageInfo() {
         try {
@@ -356,7 +365,7 @@
 
     // Create download button
     function createDownloadButton() {
-        return window.BetterEclassUtils.createDownloadButton(
+        const button = window.BetterEclassUtils.createDownloadButton(
             "⬇️",
             "ダウンロード",
             () => {
@@ -382,7 +391,7 @@
 
                 if (!downloadUrl) {
                     if (target.streamOnly) {
-                        showStreamOnlyNotice();
+                        if (!downloadStreamPage(currentPage, button, false)) showStreamOnlyNotice();
                         return;
                     }
                     alert("ファイルURLが取得できませんでした。");
@@ -417,11 +426,12 @@
             },
             true, // iconOnly mode
         );
+        return button;
     }
 
     // Create save as button
     function createSaveAsButton() {
-        return window.BetterEclassUtils.createSaveAsButton(
+        const button = window.BetterEclassUtils.createSaveAsButton(
             "💾",
             "名前を付けて保存",
             () => {
@@ -438,7 +448,7 @@
 
                 if (!downloadUrl) {
                     if (target.streamOnly) {
-                        showStreamOnlyNotice();
+                        if (!downloadStreamPage(currentPage, button, true)) showStreamOnlyNotice();
                         return;
                     }
                     alert("ファイルURLが取得できませんでした。");
@@ -473,6 +483,7 @@
             },
             true, // iconOnly mode
         );
+        return button;
     }
 
     // Create preview button

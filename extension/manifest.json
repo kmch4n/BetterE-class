@@ -129,7 +129,13 @@
             "matches": [
                 "*://eclass.doshisha.ac.jp/webclass/txtbk_show_chapter.php*"
             ],
-            "js": ["utils/button-factory.js", "textbook-chapter-buttons.js"],
+            "js": [
+                "utils/button-factory.js",
+                "vendor/mux.js/mux-mp4.min.js",
+                "utils/hls-mp4.js",
+                "textbook-video-download.js",
+                "textbook-chapter-buttons.js"
+            ],
             "run_at": "document_end",
             "all_frames": true
         },
