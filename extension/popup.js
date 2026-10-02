@@ -1,14 +1,32 @@
 // Get settings utility (loaded from utils/settings.js)
 const settingsAPI = window.BetterEclassUtils.settings;
+const popupSettingKeys = [
+    "enableNewTab",
+    "enableAttachmentTab",
+    "enableDirectDownload",
+    "preventMessagePopup",
+    "enableDeadlineHighlight",
+    "enableDarkMode",
+    "hideSaturday",
+    "hide67thPeriod",
+    "enableTocSidebar",
+    "enableAvailableMaterials",
+    "debugMode",
+];
 
 // Load settings
 async function loadSettings() {
     try {
-        const result = await settingsAPI.getSettings(["enableDarkMode", "hideSaturday", "hide67thPeriod", "enableTocSidebar", "enableAvailableMaterials", "debugMode"]);
+        const result = await settingsAPI.getSettings(popupSettingKeys);
         return result;
     } catch (error) {
         console.error("Failed to load settings:", error);
         return {
+            enableNewTab: true,
+            enableAttachmentTab: true,
+            enableDirectDownload: true,
+            preventMessagePopup: true,
+            enableDeadlineHighlight: true,
             enableDarkMode: false,
             hideSaturday: false,
             hide67thPeriod: false,
@@ -51,12 +69,9 @@ async function initializeUI() {
 
     // Load and set settings
     const settings = await loadSettings();
-    document.getElementById("enableDarkMode").checked = settings.enableDarkMode;
-    document.getElementById("hideSaturday").checked = settings.hideSaturday;
-    document.getElementById("hide67thPeriod").checked = settings.hide67thPeriod;
-    document.getElementById("enableTocSidebar").checked = settings.enableTocSidebar;
-    document.getElementById("enableAvailableMaterials").checked = settings.enableAvailableMaterials;
-    document.getElementById("debugMode").checked = settings.debugMode || false;
+    popupSettingKeys.forEach((key) => {
+        document.getElementById(key).checked = Boolean(settings[key]);
+    });
 }
 
 // Setup event listeners
@@ -67,6 +82,17 @@ function setupEventListeners() {
     const enableTocSidebarEl = document.getElementById("enableTocSidebar");
     const enableAvailableMaterialsEl = document.getElementById("enableAvailableMaterials");
     const debugModeEl = document.getElementById("debugMode");
+
+    ["enableNewTab", "enableAttachmentTab", "enableDirectDownload", "preventMessagePopup", "enableDeadlineHighlight"].forEach((key) => {
+        document.getElementById(key).addEventListener("change", async (e) => {
+            const settings = await loadSettings();
+            settings[key] = e.target.checked;
+
+            const success = await saveSettings(settings);
+            showStatus(success ? "設定を保存しました" : "設定の保存に失敗しました", success);
+            if (success) reloadEclassPages();
+        });
+    });
 
     enableDarkModeEl.addEventListener("change", async (e) => {
         const settings = await loadSettings();
@@ -133,11 +159,6 @@ function setupEventListeners() {
 
         const success = await saveSettings(settings);
         showStatus(success ? "設定を保存しました" : "設定の保存に失敗しました", success);
-
-        // Reload textbook pages to apply the change
-        if (success) {
-            reloadTextbookPages();
-        }
     });
 }
 
@@ -208,17 +229,17 @@ async function reloadCoursePages() {
     }
 }
 
-// Reload textbook pages to apply debug mode changes
-async function reloadTextbookPages() {
+// Reload e-class pages for settings that are read during script initialization.
+async function reloadEclassPages() {
     try {
         const tabs = await chrome.tabs.query({
-            url: "*://eclass.doshisha.ac.jp/webclass/txtbk_*.php*",
+            url: "*://eclass.doshisha.ac.jp/*",
         });
         for (const tab of tabs) {
             chrome.tabs.reload(tab.id);
         }
     } catch (error) {
-        console.error("Failed to reload textbook pages:", error);
+        console.error("Failed to reload e-class pages:", error);
     }
 }
 

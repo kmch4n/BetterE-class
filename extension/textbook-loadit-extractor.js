@@ -6,10 +6,14 @@
 
     // Debug mode - loaded from settings
     let DEBUG = false;
+    const settingsAPI = window.BetterEclassUtils.settings;
 
     // Load debug mode setting
-    chrome.storage.sync.get({ debugMode: false }, (items) => {
-        DEBUG = items.debugMode || false;
+    settingsAPI.getSetting("debugMode").then((debugMode) => {
+        DEBUG = debugMode;
+    });
+    settingsAPI.onSettingsChanged((changes) => {
+        if (changes.debugMode) DEBUG = changes.debugMode.newValue;
     });
 
     function findAndSendPdfUrl() {

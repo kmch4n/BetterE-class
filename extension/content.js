@@ -7,9 +7,7 @@
     // Load settings
     async function loadSettings() {
         try {
-            const result = await chrome.storage.sync.get({
-                enableNewTab: true,
-            });
+            const result = await window.BetterEclassUtils.settings.getSettings(["enableNewTab"]);
             settings = result;
             return result;
         } catch (error) {

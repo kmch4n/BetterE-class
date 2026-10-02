@@ -10,27 +10,23 @@
         enableAvailableMaterials: true,
     };
 
-    // Load settings
-    chrome.storage.sync.get(
-        {
-            enableAvailableMaterials: true,
-        },
-        (items) => {
-            settings = items;
+    const settingsAPI = window.BetterEclassUtils.settings;
 
-            if (settings.enableAvailableMaterials) {
-                if (document.readyState === "loading") {
-                    document.addEventListener("DOMContentLoaded", init);
-                } else {
-                    init();
-                }
+    settingsAPI.getSettings(["enableAvailableMaterials"]).then((items) => {
+        settings = items;
+
+        if (settings.enableAvailableMaterials) {
+            if (document.readyState === "loading") {
+                document.addEventListener("DOMContentLoaded", init);
+            } else {
+                init();
             }
-        },
-    );
+        }
+    });
 
     // Listen for settings changes
-    chrome.storage.onChanged.addListener((changes, namespace) => {
-        if (namespace === "sync" && changes.enableAvailableMaterials) {
+    settingsAPI.onSettingsChanged((changes) => {
+        if (changes.enableAvailableMaterials) {
             settings.enableAvailableMaterials = changes.enableAvailableMaterials.newValue;
 
             if (settings.enableAvailableMaterials) {

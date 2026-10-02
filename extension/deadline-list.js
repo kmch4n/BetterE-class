@@ -8,10 +8,7 @@
     // Load settings
     async function loadSettings() {
         try {
-            // Use storage.local for faster access
-            const result = await chrome.storage.local.get({
-                enableDeadlineHighlight: true,
-            });
+            const result = await window.BetterEclassUtils.settings.getSettings(["enableDeadlineHighlight"]);
             settings = result;
             return result;
         } catch (error) {
@@ -23,7 +20,7 @@
     // Extract courses with deadlines
     function getCoursesWithDeadlines() {
         const courses = [];
-        const seen = new Set(); // Track unique courses by URL
+        const seen = new Set(); // Track unique deadline entries
         const deadlineElements = document.querySelectorAll(".course-contents-info");
 
         deadlineElements.forEach((element) => {
@@ -50,12 +47,18 @@
 
             if (courseLink) {
                 const courseUrl = courseLink.href;
+                const warning = element.textContent.trim();
+                const assignmentId = element.getAttribute("data-assignment-id");
 
-                // Skip if we've already seen this course URL
-                if (seen.has(courseUrl)) {
-                    return;
+                // A shared course, message, or link cannot establish that two warnings are the same assignment.
+                if (assignmentId) {
+                    const normalizedWarning = warning.replace(/\s+/g, " ");
+                    const deadlineKey = `${courseUrl}\n${assignmentId}\n${normalizedWarning}`;
+                    if (seen.has(deadlineKey)) {
+                        return;
+                    }
+                    seen.add(deadlineKey);
                 }
-                seen.add(courseUrl);
 
                 const courseName = courseLink.textContent.trim().replace(/^»\s*/, "");
 
@@ -66,7 +69,7 @@
                     name: cleanCourseName,
                     fullName: courseName,
                     url: courseUrl,
-                    warning: element.textContent.trim(),
+                    warning,
                 });
             }
         });

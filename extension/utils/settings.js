@@ -35,22 +35,18 @@
     // Storage key prefix to avoid conflicts
     const STORAGE_PREFIX = "betterEclass_";
 
+    function hasOwn(object, key) {
+        return Object.prototype.hasOwnProperty.call(object, key);
+    }
+
     /**
      * Get a single setting value
      * @param {string} key - Setting key
      * @returns {Promise<any>} Setting value
      */
     async function getSetting(key) {
-        try {
-            const storageKey = STORAGE_PREFIX + key;
-            const result = await chrome.storage.local.get({
-                [storageKey]: DEFAULT_SETTINGS[key],
-            });
-            return result[storageKey];
-        } catch (error) {
-            console.error(`[BetterE-class] Failed to get setting ${key}:`, error);
-            return DEFAULT_SETTINGS[key];
-        }
+        const settings = await getSettings([key]);
+        return settings[key];
     }
 
     /**
@@ -61,50 +57,35 @@
     async function getSettings(keys = null) {
         try {
             const keysToGet = keys || Object.keys(DEFAULT_SETTINGS);
-
-            // Build storage keys with prefix for new location
-            const storageKeys = {};
-            keysToGet.forEach((key) => {
-                const storageKey = STORAGE_PREFIX + key;
-                storageKeys[storageKey] = DEFAULT_SETTINGS[key];
-            });
-
-            // Check new prefixed location in local storage
-            const result = await chrome.storage.local.get(storageKeys);
-
-            // Remove prefix from returned keys
+            const prefixedKeys = keysToGet.map((key) => STORAGE_PREFIX + key);
+            const [localResult, syncResult] = await Promise.all([
+                chrome.storage.local.get([...prefixedKeys, ...keysToGet]),
+                chrome.storage.sync.get(keysToGet),
+            ]);
             const settings = {};
-            Object.keys(result).forEach((storageKey) => {
-                const key = storageKey.replace(STORAGE_PREFIX, "");
-                settings[key] = result[storageKey];
+            const toMigrate = {};
+
+            keysToGet.forEach((key) => {
+                const prefixedKey = STORAGE_PREFIX + key;
+                if (hasOwn(localResult, prefixedKey)) {
+                    settings[key] = localResult[prefixedKey];
+                } else if (hasOwn(localResult, key)) {
+                    settings[key] = localResult[key];
+                    toMigrate[key] = localResult[key];
+                } else if (hasOwn(syncResult, key)) {
+                    settings[key] = syncResult[key];
+                    toMigrate[key] = syncResult[key];
+                } else {
+                    settings[key] = DEFAULT_SETTINGS[key];
+                }
             });
 
-            // Backward compatibility: check old sync storage for keys that still have default values
-            const keysToCheckOld = keysToGet.filter((key) => settings[key] === DEFAULT_SETTINGS[key]);
-            if (keysToCheckOld.length > 0) {
-                try {
-                    const oldDefaults = {};
-                    keysToCheckOld.forEach((key) => {
-                        oldDefaults[key] = DEFAULT_SETTINGS[key];
-                    });
-                    const oldResult = await chrome.storage.sync.get(oldDefaults);
-
-                    // Merge old values and migrate them
-                    const toMigrate = {};
-                    keysToCheckOld.forEach((key) => {
-                        if (oldResult[key] !== undefined && oldResult[key] !== DEFAULT_SETTINGS[key]) {
-                            settings[key] = oldResult[key];
-                            toMigrate[key] = oldResult[key];
-                        }
-                    });
-
-                    // Migrate old values to new location
-                    if (Object.keys(toMigrate).length > 0) {
-                        await setSettings(toMigrate);
-                    }
-                } catch (error) {
-                    // Silently ignore - old sync storage not available
-                }
+            if (Object.keys(toMigrate).length > 0) {
+                const migrationData = {};
+                Object.keys(toMigrate).forEach((key) => {
+                    migrationData[STORAGE_PREFIX + key] = toMigrate[key];
+                });
+                await chrome.storage.local.set(migrationData);
             }
 
             return settings;
@@ -151,15 +132,7 @@
                 storageData[storageKey] = settings[key];
             });
 
-            // Save to THREE locations for maximum backward compatibility:
-            // 1. local with prefix (new standard)
-            // 2. local without prefix (for dark-mode.js, deadline-list.js which use local)
-            // 3. sync without prefix (for other content scripts which use sync)
-            await Promise.all([
-                chrome.storage.local.set(storageData), // New prefixed location
-                chrome.storage.local.set(settings), // Old local location (for dark-mode, deadline-list)
-                chrome.storage.sync.set(settings), // Old sync location (for other scripts)
-            ]);
+            await chrome.storage.local.set(storageData);
 
             return true;
         } catch (error) {
@@ -205,23 +178,7 @@
      */
     async function migrateFromSync() {
         try {
-            // Get all old settings from sync storage
-            const oldSettings = await chrome.storage.sync.get(null);
-
-            if (Object.keys(oldSettings).length > 0) {
-                // Migrate to local with prefix
-                const newSettings = {};
-                Object.keys(DEFAULT_SETTINGS).forEach((key) => {
-                    if (oldSettings[key] !== undefined) {
-                        newSettings[key] = oldSettings[key];
-                    }
-                });
-
-                if (Object.keys(newSettings).length > 0) {
-                    await setSettings(newSettings);
-                }
-            }
-
+            await getSettings();
             return true;
         } catch (error) {
             console.error("[BetterE-class] Failed to migrate settings:", error);
@@ -229,49 +186,16 @@
         }
     }
 
-    /**
-     * Migrate localStorage data to chrome.storage.local
-     * @param {string} oldKey - Old localStorage key
-     * @param {string} newKey - New storage key (without prefix)
-     * @param {any} defaultValue - Default value if migration fails
-     */
-    async function migrateFromLocalStorage(oldKey, newKey, defaultValue = null) {
-        try {
-            // Check if already migrated
-            const existing = await getSetting(newKey);
-            if (existing !== DEFAULT_SETTINGS[newKey] && existing !== defaultValue) {
-                return true; // Already migrated
-            }
-
-            // Get data from localStorage
-            const oldData = localStorage.getItem(oldKey);
-            if (oldData) {
-                const parsed = JSON.parse(oldData);
-                await setSetting(newKey, parsed);
-
-                // Optionally remove from localStorage after successful migration
-                // localStorage.removeItem(oldKey);
-
-                return true;
-            }
-
-            return false;
-        } catch (error) {
-            console.error(`[BetterE-class] Failed to migrate ${oldKey}:`, error);
-            return false;
-        }
-    }
-
     // Export to global scope for use in content scripts
-    window.BetterEclassUtils = window.BetterEclassUtils || {};
-    window.BetterEclassUtils.settings = {
+    const root = typeof window !== "undefined" ? window : globalThis;
+    root.BetterEclassUtils = root.BetterEclassUtils || {};
+    root.BetterEclassUtils.settings = {
         getSetting,
         getSettings,
         setSetting,
         setSettings,
         onSettingsChanged,
         migrateFromSync,
-        migrateFromLocalStorage,
         DEFAULT_SETTINGS,
     };
 })();

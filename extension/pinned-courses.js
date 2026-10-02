@@ -1,17 +1,16 @@
 // Display pinned courses widget
 (function pinnedCourses() {
-    const STORAGE_KEY = "betterEclassPinnedCourses";
+    const LEGACY_STORAGE_KEY = "betterEclassPinnedCourses";
+    const STATE_KEY = "pinnedCourses";
+    const uiState = window.BetterEclassUtils.uiState;
 
     // Pinned courses data
     let pinnedCourses = [];
 
-    // Load pinned courses from localStorage
-    function loadPinnedCourses() {
+    async function loadPinnedCourses() {
         try {
-            const saved = localStorage.getItem(STORAGE_KEY);
-            if (saved) {
-                pinnedCourses = JSON.parse(saved);
-            }
+            const saved = await uiState.migrateFromLocalStorage(LEGACY_STORAGE_KEY, STATE_KEY, []);
+            pinnedCourses = Array.isArray(saved) ? saved : [];
             return pinnedCourses;
         } catch (error) {
             console.error("Failed to load pinned courses:", error);
@@ -19,10 +18,9 @@
         }
     }
 
-    // Save pinned courses to localStorage
-    function savePinnedCourses() {
+    async function savePinnedCourses() {
         try {
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(pinnedCourses));
+            await uiState.setState(STATE_KEY, pinnedCourses);
         } catch (error) {
             console.error("Failed to save pinned courses:", error);
         }
@@ -36,14 +34,14 @@
         }
 
         pinnedCourses.push({ name, url });
-        savePinnedCourses();
+        void savePinnedCourses();
         return true;
     }
 
     // Remove course from pinned list
     function unpinCourse(url) {
         pinnedCourses = pinnedCourses.filter((course) => course.url !== url);
-        savePinnedCourses();
+        void savePinnedCourses();
     }
 
     // Create pinned courses UI
@@ -86,7 +84,7 @@
                 e.preventDefault();
                 const index = parseInt(button.getAttribute("data-index"));
                 pinnedCourses.splice(index, 1);
-                savePinnedCourses();
+                void savePinnedCourses();
                 refreshPinnedCoursesUI();
             });
         });
@@ -176,8 +174,8 @@
     }
 
     // Initialize
-    function init() {
-        loadPinnedCourses();
+    async function init() {
+        await loadPinnedCourses();
 
         if (document.readyState === "loading") {
             document.addEventListener("DOMContentLoaded", () => {
@@ -200,5 +198,5 @@
         }
     }
 
-    init();
+    void init();
 })();

@@ -9,18 +9,23 @@
         enableAttachmentTab: true,
         enableDirectDownload: true,
     };
+    const settingsAPI = window.BetterEclassUtils.settings;
 
     // Load settings
-    chrome.storage.sync.get(["enableAttachmentTab", "enableDirectDownload", "debugMode"], (result) => {
+    settingsAPI.getSettings(["enableAttachmentTab", "enableDirectDownload", "debugMode"]).then((result) => {
         try {
-            settings.enableAttachmentTab = result.enableAttachmentTab !== undefined ? result.enableAttachmentTab : true;
-            settings.enableDirectDownload = result.enableDirectDownload !== undefined ? result.enableDirectDownload : true;
-            DEBUG = result.debugMode || false;
+            settings.enableAttachmentTab = result.enableAttachmentTab;
+            settings.enableDirectDownload = result.enableDirectDownload;
+            DEBUG = result.debugMode;
 
             init();
         } catch (error) {
             console.error("Failed to load attachment settings:", error);
         }
+    });
+
+    settingsAPI.onSettingsChanged((changes) => {
+        if (changes.debugMode) DEBUG = changes.debugMode.newValue;
     });
 
     function init() {
@@ -440,15 +445,7 @@
             text,
             async () => {
             try {
-                // Ensure we have an absolute URL
-                let absoluteUrl;
-                if (downloadUrl.startsWith("http")) {
-                    absoluteUrl = downloadUrl;
-                } else if (downloadUrl.startsWith("/")) {
-                    absoluteUrl = `${window.location.origin}${downloadUrl}`;
-                } else {
-                    absoluteUrl = `${window.location.origin}/webclass/${downloadUrl}`;
-                }
+                const absoluteUrl = resolveAbsoluteUrl(downloadUrl);
 
                 // Fetch the file with credentials to maintain session
                 const response = await fetch(absoluteUrl, {
@@ -488,15 +485,7 @@
             text,
             () => {
                 try {
-                    // Ensure we have an absolute URL
-                    let absoluteUrl;
-                    if (downloadUrl.startsWith("http")) {
-                        absoluteUrl = downloadUrl;
-                    } else if (downloadUrl.startsWith("/")) {
-                        absoluteUrl = `${window.location.origin}${downloadUrl}`;
-                    } else {
-                        absoluteUrl = `${window.location.origin}/webclass/${downloadUrl}`;
-                    }
+                    const absoluteUrl = resolveAbsoluteUrl(downloadUrl);
 
                     // Use Chrome downloads API to prompt save dialog
                     chrome.runtime.sendMessage(
@@ -530,24 +519,32 @@
             text,
             () => {
                 try {
-                    // Ensure we have an absolute URL
-                    let absoluteUrl;
-                    if (downloadUrl.startsWith("http")) {
-                        absoluteUrl = downloadUrl;
-                    } else if (downloadUrl.startsWith("/")) {
-                        absoluteUrl = `${window.location.origin}${downloadUrl}`;
-                    } else {
-                        absoluteUrl = `${window.location.origin}/webclass/${downloadUrl}`;
-                    }
-
-                    // For direct PDF URLs, just open in new tab
-                    // The browser will handle the preview
-                    window.open(absoluteUrl, "_blank", "noopener,noreferrer");
+                    const absoluteUrl = resolveAbsoluteUrl(downloadUrl);
+                    chrome.runtime.sendMessage(
+                        {
+                            type: "previewFile",
+                            url: absoluteUrl,
+                            filename: fileName,
+                        },
+                        (response) => {
+                            if (chrome.runtime.lastError) {
+                                console.error("[BetterE-class] Preview runtime error:", chrome.runtime.lastError);
+                                return;
+                            }
+                            if (response && response.error) {
+                                console.error("[BetterE-class] Preview error:", response.error);
+                            }
+                        },
+                    );
                 } catch (error) {
                     console.error("[BetterE-class] Error triggering preview:", error);
                 }
             },
             true, // iconOnly mode
         );
+    }
+
+    function resolveAbsoluteUrl(url) {
+        return new URL(url, `${window.location.origin}/webclass/`).href;
     }
 })();

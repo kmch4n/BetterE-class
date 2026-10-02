@@ -29,6 +29,12 @@
     },
     "content_scripts": [
         {
+            "matches": ["*://eclass.doshisha.ac.jp/*"],
+            "js": ["utils/settings.js"],
+            "run_at": "document_start",
+            "all_frames": true
+        },
+        {
             "matches": ["*://eclass.doshisha.ac.jp/webclass/course.php/*"],
             "js": [
                 "utils/material-icons.js",
@@ -51,7 +57,7 @@
             "run_at": "document_idle"
         },
         {
-            "matches": ["*://eclass.doshisha.ac.jp/*"],
+            "matches": ["*://eclass.doshisha.ac.jp/webclass/*"],
             "js": ["message-interceptor.js"],
             "run_at": "document_start",
             "all_frames": true
@@ -70,6 +76,15 @@
             "matches": ["*://eclass.doshisha.ac.jp/*"],
             "js": ["footer-branding.js"],
             "run_at": "document_end"
+        },
+        {
+            "matches": [
+                "*://eclass.doshisha.ac.jp/webclass/",
+                "*://eclass.doshisha.ac.jp/webclass/?*",
+                "*://eclass.doshisha.ac.jp/webclass/index.php*"
+            ],
+            "js": ["utils/ui-state.js"],
+            "run_at": "document_start"
         },
         {
             "matches": [

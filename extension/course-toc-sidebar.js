@@ -10,28 +10,23 @@
         enableTocSidebar: true,
     };
 
-    // Load settings
-    chrome.storage.sync.get(
-        {
-            enableTocSidebar: true,
-        },
-        (items) => {
-            settings = items;
+    const settingsAPI = window.BetterEclassUtils.settings;
 
-            if (settings.enableTocSidebar) {
-                // Wait for the page to load
-                if (document.readyState === "loading") {
-                    document.addEventListener("DOMContentLoaded", init);
-                } else {
-                    init();
-                }
+    settingsAPI.getSettings(["enableTocSidebar"]).then((items) => {
+        settings = items;
+
+        if (settings.enableTocSidebar) {
+            if (document.readyState === "loading") {
+                document.addEventListener("DOMContentLoaded", init);
+            } else {
+                init();
             }
-        },
-    );
+        }
+    });
 
     // Listen for settings changes
-    chrome.storage.onChanged.addListener((changes, namespace) => {
-        if (namespace === "sync" && changes.enableTocSidebar) {
+    settingsAPI.onSettingsChanged((changes) => {
+        if (changes.enableTocSidebar) {
             settings.enableTocSidebar = changes.enableTocSidebar.newValue;
 
             // Reload the page to apply changes

@@ -1,27 +1,26 @@
 // Make sections collapsible on the course list page
 (function makeCollapsibleSections() {
-    const STORAGE_KEY = "betterEclassCollapsedSections";
+    const LEGACY_STORAGE_KEY = "betterEclassCollapsedSections";
+    const STATE_KEY = "collapsedSections";
+    const uiState = window.BetterEclassUtils.uiState;
+    let collapsedState = {};
 
-    // Load collapsed state from localStorage
-    function loadCollapsedState() {
+    async function loadCollapsedState() {
         try {
-            const saved = localStorage.getItem(STORAGE_KEY);
-            return saved ? JSON.parse(saved) : {};
+            const saved = await uiState.migrateFromLocalStorage(LEGACY_STORAGE_KEY, STATE_KEY, {});
+            collapsedState = saved && typeof saved === "object" && !Array.isArray(saved) ? saved : {};
+            return collapsedState;
         } catch (error) {
             console.error("Failed to load collapsed state:", error);
             return {};
         }
     }
 
-    // Save collapsed state to localStorage
     function saveCollapsedState(sectionId, isCollapsed) {
-        try {
-            const state = loadCollapsedState();
-            state[sectionId] = isCollapsed;
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-        } catch (error) {
+        collapsedState[sectionId] = isCollapsed;
+        uiState.setState(STATE_KEY, collapsedState).catch((error) => {
             console.error("Failed to save collapsed state:", error);
-        }
+        });
     }
 
     // Create toggle button
@@ -43,7 +42,6 @@
             return;
         }
 
-        const collapsedState = loadCollapsedState();
         const isCollapsed = collapsedState[sectionId] === true;
 
         // Add toggle button to header
@@ -223,7 +221,9 @@
     }
 
     // Initialize
-    function init() {
+    async function init() {
+        await loadCollapsedState();
+
         // Wait for DOM to be ready
         setTimeout(() => {
             makeAdminNoticesCollapsible();
@@ -235,8 +235,10 @@
 
     // Run when DOM is ready
     if (document.readyState === "loading") {
-        document.addEventListener("DOMContentLoaded", init);
+        document.addEventListener("DOMContentLoaded", () => {
+            void init();
+        });
     } else {
-        init();
+        void init();
     }
 })();

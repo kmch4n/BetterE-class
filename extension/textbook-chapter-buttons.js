@@ -19,16 +19,12 @@
 
     // Store page information from JSON
     let pageInfo = null;
+    const settingsAPI = window.BetterEclassUtils.settings;
 
     // Load settings and initialize
-    chrome.storage.sync.get(
-        {
-            enableDirectDownload: true,
-            debugMode: false,
-        },
-        (items) => {
+    settingsAPI.getSettings(["enableDirectDownload", "debugMode"]).then((items) => {
             settings = items;
-            DEBUG = items.debugMode || false;
+            DEBUG = items.debugMode;
 
             // Parse JSON data to get page information
             parsePageInfo();
@@ -44,8 +40,7 @@
 
             // Process file_down.php attachments
             processFileDownAttachments();
-        },
-    );
+        });
 
     /**
      * Extract file extension from file path
@@ -65,6 +60,51 @@
      */
     function isPreviewableFile(extension) {
         return extension === "pdf";
+    }
+
+    function isStreamManifestUrl(url) {
+        if (!url) return false;
+        try {
+            const parsedUrl = new URL(url, window.location.origin);
+            if (parsedUrl.pathname.toLowerCase().endsWith(".m3u8")) return true;
+            return Array.from(parsedUrl.searchParams.values()).some((value) => value.split(/[?#]/)[0].toLowerCase().endsWith(".m3u8"));
+        } catch (_) {
+            return url.split(/[?#]/)[0].toLowerCase().endsWith(".m3u8");
+        }
+    }
+
+    function selectDownloadTarget(pageData) {
+        const candidates = [
+            { source: "fileDownloadUrl", url: pageData.fileDownloadUrl },
+            { source: "currentPdfUrl", url: currentPdfUrl },
+            { source: "fileUrl", url: pageData.fileUrl },
+        ].filter((candidate) => candidate.url);
+        const selected = candidates.find((candidate) => !isStreamManifestUrl(candidate.url));
+
+        return {
+            selected: selected || null,
+            streamOnly: !selected && candidates.some((candidate) => isStreamManifestUrl(candidate.url)),
+        };
+    }
+
+    function getDownloadFilename(pageData, target) {
+        if (target.source === "currentPdfUrl" && currentPdfFilename) {
+            return currentPdfFilename;
+        }
+        try {
+            const parsedUrl = new URL(target.url, window.location.origin);
+            const fileNameParam = parsedUrl.searchParams.get("file_name");
+            if (fileNameParam) return decodeURIComponent(fileNameParam);
+            const pathName = decodeURIComponent(parsedUrl.pathname.split("/").pop() || "");
+            if (pathName.includes(".")) return pathName;
+        } catch (_) {
+            // Fall through to a generic filename.
+        }
+        return `document.${pageData.fileExtension || "pdf"}`;
+    }
+
+    function showStreamOnlyNotice() {
+        alert("この動画はストリーミング配信のため、動画ファイルとしてダウンロードできません。");
     }
 
     // Parse JSON data from the page
@@ -328,10 +368,8 @@
 
                 const pageData = pageInfo[currentPage];
 
-                // Priority 1: fileDownloadUrl (file_down.php link) - most reliable for all file types
-                // Priority 2: currentPdfUrl (from loadit.php frame message) - works for PDFs
-                // Priority 3: fileUrl (constructed URL from JSON) - fallback
-                const downloadUrl = pageData.fileDownloadUrl || currentPdfUrl || pageData.fileUrl;
+                const target = selectDownloadTarget(pageData);
+                const downloadUrl = target.selected ? target.selected.url : null;
 
                 if (DEBUG) {
                     console.log("[BetterE-class] === Download URL Selection ===");
@@ -339,26 +377,20 @@
                     console.log("  - currentPdfUrl:", currentPdfUrl || "(not set)");
                     console.log("  - fileUrl:", pageData.fileUrl || "(not set)");
                     console.log("  - Selected URL:", downloadUrl);
+                    console.log("  - Selected source:", target.selected ? target.selected.source : "(none)");
                 }
 
                 if (!downloadUrl) {
+                    if (target.streamOnly) {
+                        showStreamOnlyNotice();
+                        return;
+                    }
                     alert("ファイルURLが取得できませんでした。");
                     if (DEBUG) console.error("[BetterE-class] No URL available for download");
                     return;
                 }
 
-                // Determine filename
-                let filename = currentPdfFilename;
-                if (!filename) {
-                    // Extract from fileDownloadUrl or use generic name
-                    if (pageData.fileDownloadUrl) {
-                        const urlParams = new URLSearchParams(pageData.fileDownloadUrl.split("?")[1]);
-                        filename = decodeURIComponent(urlParams.get("file_name") || "");
-                    }
-                    if (!filename) {
-                        filename = `document.${pageData.fileExtension || "pdf"}`;
-                    }
-                }
+                const filename = getDownloadFilename(pageData, target.selected);
 
                 if (DEBUG) {
                     console.log(`[BetterE-class] Downloading: ${downloadUrl}`);
@@ -369,8 +401,13 @@
                         type: "downloadDirect",
                         url: downloadUrl,
                         filename: filename,
+                        rejectStreamManifest: true,
                     },
                     (response) => {
+                        if (response && response.streamOnly) {
+                            showStreamOnlyNotice();
+                            return;
+                        }
                         if (response && response.error) {
                             console.error("[BetterE-class] Download error:", response.error);
                             alert(`ダウンロードエラー: ${response.error}`);
@@ -396,29 +433,20 @@
 
                 const pageData = pageInfo[currentPage];
 
-                // Priority 1: fileDownloadUrl (file_down.php link) - most reliable for all file types
-                // Priority 2: currentPdfUrl (from loadit.php frame message) - works for PDFs
-                // Priority 3: fileUrl (constructed URL from JSON) - fallback
-                const downloadUrl = pageData.fileDownloadUrl || currentPdfUrl || pageData.fileUrl;
+                const target = selectDownloadTarget(pageData);
+                const downloadUrl = target.selected ? target.selected.url : null;
 
                 if (!downloadUrl) {
+                    if (target.streamOnly) {
+                        showStreamOnlyNotice();
+                        return;
+                    }
                     alert("ファイルURLが取得できませんでした。");
                     if (DEBUG) console.error("[BetterE-class] No URL available for save");
                     return;
                 }
 
-                // Determine filename
-                let filename = currentPdfFilename;
-                if (!filename) {
-                    // Extract from fileDownloadUrl or use generic name
-                    if (pageData.fileDownloadUrl) {
-                        const urlParams = new URLSearchParams(pageData.fileDownloadUrl.split("?")[1]);
-                        filename = decodeURIComponent(urlParams.get("file_name") || "");
-                    }
-                    if (!filename) {
-                        filename = `document.${pageData.fileExtension || "pdf"}`;
-                    }
-                }
+                const filename = getDownloadFilename(pageData, target.selected);
 
                 if (DEBUG) {
                     console.log(`[BetterE-class] Save as: ${downloadUrl}`);
@@ -429,8 +457,13 @@
                         type: "downloadWithDialog",
                         url: downloadUrl,
                         filename: filename,
+                        rejectStreamManifest: true,
                     },
                     (response) => {
+                        if (response && response.streamOnly) {
+                            showStreamOnlyNotice();
+                            return;
+                        }
                         if (response && response.error) {
                             console.error("[BetterE-class] Download error:", response.error);
                             alert(`保存エラー: ${response.error}`);
@@ -663,16 +696,14 @@
     }
 
     // Monitor for changes in settings
-    chrome.storage.onChanged.addListener((changes, namespace) => {
-        if (namespace === "sync") {
-            if (changes.enableDirectDownload) {
-                settings.enableDirectDownload = changes.enableDirectDownload.newValue;
-            }
-            if (changes.debugMode) {
-                settings.debugMode = changes.debugMode.newValue;
-                DEBUG = changes.debugMode.newValue || false;
-                if (DEBUG) console.log("[BetterE-class] Debug mode enabled");
-            }
+    settingsAPI.onSettingsChanged((changes) => {
+        if (changes.enableDirectDownload) {
+            settings.enableDirectDownload = changes.enableDirectDownload.newValue;
+        }
+        if (changes.debugMode) {
+            settings.debugMode = changes.debugMode.newValue;
+            DEBUG = changes.debugMode.newValue;
+            if (DEBUG) console.log("[BetterE-class] Debug mode enabled");
         }
     });
 })();

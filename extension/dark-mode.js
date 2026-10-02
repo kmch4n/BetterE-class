@@ -1,6 +1,11 @@
 (function () {
     "use strict";
 
+    const settingsAPI = window.BetterEclassUtils.settings;
+    let DEBUG = false;
+    let pendingStyleFixFrame = null;
+    let styleScanCount = 0;
+
     const DARK_COLORS = {
         bg: {
             primary: "#0d1117",
@@ -1050,8 +1055,11 @@
         return style;
     }
 
-    function fixInlineStyles() {
+    function fixInlineStyles(trigger = "manual") {
+        const startedAt = performance.now();
+        let scannedElements = 0;
         const allElements = document.querySelectorAll("*[style]");
+        scannedElements += allElements.length;
 
         allElements.forEach((element) => {
             const style = element.getAttribute("style");
@@ -1099,6 +1107,7 @@
 
         // Fix HTML attributes
         const elementsWithBorderColorAttr = document.querySelectorAll("[bordercolor]");
+        scannedElements += elementsWithBorderColorAttr.length;
         elementsWithBorderColorAttr.forEach((element) => {
             const borderColor = element.getAttribute("bordercolor");
             if (borderColor && (borderColor.toLowerCase() === "#ffffff" || borderColor.toLowerCase() === "#fff" || borderColor.toLowerCase() === "white")) {
@@ -1108,6 +1117,7 @@
         });
 
         const elementsWithBgColorAttr = document.querySelectorAll("[bgcolor]");
+        scannedElements += elementsWithBgColorAttr.length;
         elementsWithBgColorAttr.forEach((element) => {
             const bgColor = element.getAttribute("bgcolor");
             const lowerBgColor = bgColor ? bgColor.toLowerCase() : "";
@@ -1141,6 +1151,7 @@
 
         whiteBackgroundSelectors.forEach((selector) => {
             const elements = document.querySelectorAll(selector);
+            scannedElements += elements.length;
             elements.forEach((el) => {
                 const computedStyle = window.getComputedStyle(el);
                 const bgColor = computedStyle.backgroundColor;
@@ -1153,15 +1164,31 @@
                 }
             });
         });
+
+        styleScanCount += 1;
+        if (DEBUG) {
+            console.debug("[BetterE-class] Dark mode DOM scan", {
+                trigger,
+                scan: styleScanCount,
+                elements: scannedElements,
+                durationMs: Number((performance.now() - startedAt).toFixed(2)),
+            });
+        }
+    }
+
+    function scheduleInlineStyleFix(trigger) {
+        if (pendingStyleFixFrame !== null) return;
+        pendingStyleFixFrame = requestAnimationFrame(() => {
+            pendingStyleFixFrame = null;
+            fixInlineStyles(trigger);
+        });
     }
 
     async function checkDarkModeEnabled() {
         try {
-            // Use storage.local for faster access to prevent white flash
-            const result = await chrome.storage.local.get({
-                enableDarkMode: false,
-            });
-            return result.enableDarkMode;
+            const settings = await settingsAPI.getSettings(["enableDarkMode", "debugMode"]);
+            DEBUG = settings.debugMode;
+            return settings.enableDarkMode;
         } catch (error) {
             console.error("[BetterE-class] Failed to load dark mode setting:", error);
             return false;
@@ -1185,15 +1212,15 @@
         }
 
         // Fix inline styles immediately and on delay
-        fixInlineStyles();
-        setTimeout(() => fixInlineStyles(), 100);
-        setTimeout(() => fixInlineStyles(), 500);
-        setTimeout(() => fixInlineStyles(), 1000);
+        fixInlineStyles("initial");
+        setTimeout(() => scheduleInlineStyleFix("delayed-100ms"), 100);
+        setTimeout(() => scheduleInlineStyleFix("delayed-500ms"), 500);
+        setTimeout(() => scheduleInlineStyleFix("delayed-1000ms"), 1000);
 
         // Watch for dynamic changes
         if (!window.betterEclassDarkModeObserver) {
-            window.betterEclassDarkModeObserver = new MutationObserver((mutations) => {
-                requestAnimationFrame(() => fixInlineStyles());
+            window.betterEclassDarkModeObserver = new MutationObserver(() => {
+                scheduleInlineStyleFix("mutation");
             });
 
             window.betterEclassDarkModeObserver.observe(document.documentElement, {
@@ -1247,6 +1274,10 @@
             window.betterEclassDarkModeObserver.disconnect();
             window.betterEclassDarkModeObserver = null;
         }
+        if (pendingStyleFixFrame !== null) {
+            cancelAnimationFrame(pendingStyleFixFrame);
+            pendingStyleFixFrame = null;
+        }
     }
 
     // Listen for settings changes
@@ -1260,6 +1291,10 @@
                 }
             });
         }
+    });
+
+    settingsAPI.onSettingsChanged((changes) => {
+        if (changes.debugMode) DEBUG = changes.debugMode.newValue;
     });
 
     // Initialize: Apply CSS immediately if enabled, to prevent white flash

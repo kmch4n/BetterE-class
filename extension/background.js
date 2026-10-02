@@ -1,4 +1,7 @@
 // Background service worker for BetterE-class
+importScripts("utils/settings.js");
+
+const settingsAPI = globalThis.BetterEclassUtils.settings;
 
 // File extension whitelist. Must stay in sync with extWhitelist in content.js
 // (service workers cannot import shared modules in Manifest V3).
@@ -20,20 +23,23 @@ function decodeHtmlEntities(value) {
 }
 
 function resolveRelativeUrl(candidate, sourceUrl) {
-    if (/^https?:\/\//i.test(candidate)) {
-        return candidate;
-    }
-    const base = new URL(sourceUrl);
-    if (candidate.startsWith("/")) {
-        return `${base.origin}${candidate}`;
-    }
-    return `${base.origin}/webclass/${candidate}`;
+    return new URL(candidate, sourceUrl).href;
 }
 
 function hasAllowedExtension(url) {
     const match = url.split(/[?#]/)[0].match(/\.([a-z0-9]+)$/i);
     if (!match) return false;
     return FILE_EXT_WHITELIST.has(match[1].toLowerCase());
+}
+
+function isStreamManifestUrl(url) {
+    try {
+        const parsedUrl = new URL(url);
+        if (parsedUrl.pathname.toLowerCase().endsWith(".m3u8")) return true;
+        return Array.from(parsedUrl.searchParams.values()).some((value) => value.split(/[?#]/)[0].toLowerCase().endsWith(".m3u8"));
+    } catch (_) {
+        return url.split(/[?#]/)[0].toLowerCase().endsWith(".m3u8");
+    }
 }
 
 // Extract a real file URL from an intermediate page (loadit.php / file_down.php).
@@ -85,12 +91,8 @@ function extractFileUrlFromHtml(html, sourceUrl) {
     };
 }
 
-function getDebugMode() {
-    return new Promise((resolve) => {
-        chrome.storage.local.get({ debugMode: false }, (items) => {
-            resolve(!!items.debugMode);
-        });
-    });
+async function getDebugMode() {
+    return await settingsAPI.getSetting("debugMode");
 }
 
 async function logExtractionFailure(sourceUrl, html, extraction) {
@@ -110,6 +112,9 @@ function needsHtmlExtraction(url) {
 
 async function resolveActualFileUrl(sourceUrl) {
     const response = await fetch(sourceUrl, { credentials: "include" });
+    if (!response.ok) {
+        throw new Error(`Failed to resolve file URL (HTTP ${response.status})`);
+    }
     const html = await response.text();
     const extraction = extractFileUrlFromHtml(html, sourceUrl);
     if (!extraction.url) {
@@ -145,8 +150,10 @@ function openPreviewTab(previewUrl, sender, sendResponse) {
 }
 
 function buildPreviewUrl(url) {
-    if (!url.includes("eclass.doshisha.ac.jp")) return url;
-    return url + (url.includes("?") ? "&" : "?") + "_preview=1";
+    const previewUrl = new URL(url);
+    if (previewUrl.hostname !== "eclass.doshisha.ac.jp") return url;
+    previewUrl.searchParams.set("_preview", "1");
+    return previewUrl.href;
 }
 
 // Handle download and preview requests
@@ -161,6 +168,10 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
                         sendResponse({ error: "ファイルのダウンロードリンクが見つかりませんでした。" });
                         return;
                     }
+                    if (message.rejectStreamManifest && isStreamManifestUrl(actualFileUrl)) {
+                        sendResponse({ streamOnly: true });
+                        return;
+                    }
                     performDownload(actualFileUrl, message.filename, saveAs, sendResponse);
                 })
                 .catch((error) => {
@@ -168,6 +179,10 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
                     sendResponse({ error: error.message });
                 });
         } else {
+            if (message.rejectStreamManifest && isStreamManifestUrl(message.url)) {
+                sendResponse({ streamOnly: true });
+                return false;
+            }
             performDownload(message.url, message.filename, saveAs, sendResponse);
         }
 

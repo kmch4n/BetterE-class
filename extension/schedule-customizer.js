@@ -9,10 +9,7 @@
     // Load settings from chrome.storage
     async function loadSettings() {
         try {
-            const result = await chrome.storage.sync.get({
-                hideSaturday: false,
-                hide67thPeriod: false,
-            });
+            const result = await window.BetterEclassUtils.settings.getSettings(["hideSaturday", "hide67thPeriod"]);
             settings = result;
             return result;
         } catch (error) {
