@@ -5,6 +5,9 @@
     let DEBUG = false;
     let pendingStyleFixFrame = null;
     let styleScanCount = 0;
+    let darkModeActive = false;
+    // Element -> Map(attribute name -> { original, written }) for every attribute dark mode rewrote
+    const trackedAttributes = new Map();
 
     const DARK_COLORS = {
         bg: {
@@ -1090,7 +1093,61 @@
         );
     }
 
+    // Remember the value before our first write and our latest write, so turning dark mode off can
+    // restore the page without a reload.
+    function recordAttributeWrite(element, name, previousValue) {
+        let attributes = trackedAttributes.get(element);
+        if (!attributes) {
+            attributes = new Map();
+            trackedAttributes.set(element, attributes);
+        }
+        const entry = attributes.get(name);
+        // A value that differs from our last write came from the page, so it becomes the new original
+        if (!entry || previousValue !== entry.written) {
+            attributes.set(name, { original: previousValue, written: element.getAttribute(name) });
+        } else {
+            entry.written = element.getAttribute(name);
+        }
+    }
+
+    function setTrackedAttribute(element, name, value) {
+        const previousValue = element.getAttribute(name);
+        element.setAttribute(name, value);
+        recordAttributeWrite(element, name, previousValue);
+    }
+
+    function trackStyleMutation(element, mutate) {
+        const previousValue = element.getAttribute("style");
+        mutate(element.style);
+        recordAttributeWrite(element, "style", previousValue);
+    }
+
+    function restoreTrackedAttributes() {
+        trackedAttributes.forEach((attributes, element) => {
+            attributes.forEach((entry, name) => {
+                // Keep values the page changed after our write
+                if (element.getAttribute(name) !== entry.written) return;
+                if (entry.original === null) {
+                    element.removeAttribute(name);
+                } else {
+                    element.setAttribute(name, entry.original);
+                }
+            });
+        });
+        trackedAttributes.clear();
+    }
+
+    function pruneDetachedElements() {
+        trackedAttributes.forEach((_attributes, element) => {
+            if (!element.isConnected) trackedAttributes.delete(element);
+        });
+    }
+
     function fixInlineStyles(trigger = "manual") {
+        // Delayed scans scheduled before dark mode was turned off must not re-apply it
+        if (!darkModeActive) return;
+        pruneDetachedElements();
+
         const startedAt = performance.now();
         let scannedElements = 0;
         const allElements = document.querySelectorAll("*[style]");
@@ -1110,7 +1167,7 @@
             const newStyle = rewriteInlineStyle(style);
 
             if (newStyle !== style) {
-                element.setAttribute("style", newStyle);
+                setTrackedAttribute(element, "style", newStyle);
             }
         });
 
@@ -1120,8 +1177,10 @@
         elementsWithBorderColorAttr.forEach((element) => {
             const borderColor = element.getAttribute("bordercolor");
             if (borderColor && (borderColor.toLowerCase() === "#ffffff" || borderColor.toLowerCase() === "#fff" || borderColor.toLowerCase() === "white")) {
-                element.setAttribute("bordercolor", DARK_COLORS.border.primary);
-                element.style.borderColor = DARK_COLORS.border.primary;
+                setTrackedAttribute(element, "bordercolor", DARK_COLORS.border.primary);
+                trackStyleMutation(element, (style) => {
+                    style.borderColor = DARK_COLORS.border.primary;
+                });
             }
         });
 
@@ -1130,12 +1189,11 @@
         elementsWithBgColorAttr.forEach((element) => {
             const bgColor = element.getAttribute("bgcolor");
             const lowerBgColor = bgColor ? bgColor.toLowerCase() : "";
-            if (lowerBgColor === "#ffffff" || lowerBgColor === "#fff" || lowerBgColor === "white") {
-                element.setAttribute("bgcolor", DARK_COLORS.bg.secondary);
-                element.style.backgroundColor = DARK_COLORS.bg.secondary;
-            } else if (lowerBgColor === "#eeeeee" || lowerBgColor === "#eee") {
-                element.setAttribute("bgcolor", DARK_COLORS.bg.secondary);
-                element.style.backgroundColor = DARK_COLORS.bg.secondary;
+            if (["#ffffff", "#fff", "white", "#eeeeee", "#eee"].includes(lowerBgColor)) {
+                setTrackedAttribute(element, "bgcolor", DARK_COLORS.bg.secondary);
+                trackStyleMutation(element, (style) => {
+                    style.backgroundColor = DARK_COLORS.bg.secondary;
+                });
             }
         });
 
@@ -1168,7 +1226,9 @@
                 if (bgColor === "rgb(255, 255, 255)" || bgColor === "white") {
                     // Skip if it has bgc_main class or specific bgcolor attribute
                     if (!el.classList.contains("bgc_main") && !el.hasAttribute("bgcolor")) {
-                        el.style.backgroundColor = "transparent";
+                        trackStyleMutation(el, (style) => {
+                            style.backgroundColor = "transparent";
+                        });
                     }
                 }
             });
@@ -1186,7 +1246,7 @@
     }
 
     function scheduleInlineStyleFix(trigger) {
-        if (pendingStyleFixFrame !== null) return;
+        if (!darkModeActive || pendingStyleFixFrame !== null) return;
         pendingStyleFixFrame = requestAnimationFrame(() => {
             pendingStyleFixFrame = null;
             fixInlineStyles(trigger);
@@ -1213,6 +1273,8 @@
             showMessagePageWarning();
             return;
         }
+
+        darkModeActive = true;
 
         // Inject styles immediately to prevent white flash
         if (!document.getElementById("betterEclassDarkMode")) {
@@ -1274,11 +1336,9 @@
     }
 
     function removeDarkMode() {
-        const styleElement = document.getElementById("betterEclassDarkMode");
-        if (styleElement) {
-            styleElement.remove();
-        }
+        darkModeActive = false;
 
+        // Stop observing first so the restore below does not schedule another scan
         if (window.betterEclassDarkModeObserver) {
             window.betterEclassDarkModeObserver.disconnect();
             window.betterEclassDarkModeObserver = null;
@@ -1287,6 +1347,13 @@
             cancelAnimationFrame(pendingStyleFixFrame);
             pendingStyleFixFrame = null;
         }
+
+        const styleElement = document.getElementById("betterEclassDarkMode");
+        if (styleElement) {
+            styleElement.remove();
+        }
+
+        restoreTrackedAttributes();
     }
 
     // Listen for settings changes

@@ -6,7 +6,7 @@ const vm = require("node:vm");
 function loadDarkModeHelpers() {
     const source = fs.readFileSync("extension/dark-mode.js", "utf8");
     const end = source.lastIndexOf("})();");
-    const exposedSource = `${source.slice(0, end)}window.__darkModeTest = { rewriteInlineStyle };\n})();`;
+    const exposedSource = `${source.slice(0, end)}window.__darkModeTest = { rewriteInlineStyle, setTrackedAttribute, trackStyleMutation, restoreTrackedAttributes };\n})();`;
     const context = {
         console,
         window: null,
@@ -64,4 +64,86 @@ test("leaves similar but different values untouched", () => {
     assert.equal(rewriteInlineStyle("background-color: whitesmoke"), "background-color: whitesmoke");
     assert.equal(rewriteInlineStyle("-webkit-background: white"), "-webkit-background: white");
     assert.equal(rewriteInlineStyle("background-color: #fff3cd"), "background-color: rgba(210, 153, 34, 0.3)");
+});
+
+class FakeElement {
+    constructor(attributes = {}) {
+        this.attributes = new Map(Object.entries(attributes));
+        const element = this;
+        this.style = {
+            set backgroundColor(value) {
+                element.appendStyle(`background-color: ${value};`);
+            },
+        };
+    }
+
+    appendStyle(declaration) {
+        const current = this.getAttribute("style");
+        this.setAttribute("style", current ? `${current} ${declaration}` : declaration);
+    }
+
+    getAttribute(name) {
+        return this.attributes.has(name) ? this.attributes.get(name) : null;
+    }
+
+    setAttribute(name, value) {
+        this.attributes.set(name, String(value));
+    }
+
+    removeAttribute(name) {
+        this.attributes.delete(name);
+    }
+}
+
+test("restores rewritten attributes and removes added style attributes", () => {
+    const helpers = loadDarkModeHelpers();
+    const cell = new FakeElement({ bgcolor: "#ffffff" });
+    const box = new FakeElement({ style: "color: black" });
+
+    helpers.setTrackedAttribute(cell, "bgcolor", "#161b22");
+    helpers.trackStyleMutation(cell, (style) => {
+        style.backgroundColor = "#161b22";
+    });
+    helpers.setTrackedAttribute(box, "style", "color: #c9d1d9");
+    helpers.restoreTrackedAttributes();
+
+    assert.equal(cell.getAttribute("bgcolor"), "#ffffff");
+    assert.equal(cell.getAttribute("style"), null);
+    assert.equal(box.getAttribute("style"), "color: black");
+});
+
+test("keeps the first original across repeated writes", () => {
+    const helpers = loadDarkModeHelpers();
+    const element = new FakeElement({ style: "color: black" });
+
+    helpers.setTrackedAttribute(element, "style", "color: #c9d1d9");
+    helpers.trackStyleMutation(element, (style) => {
+        style.backgroundColor = "transparent";
+    });
+    helpers.restoreTrackedAttributes();
+
+    assert.equal(element.getAttribute("style"), "color: black");
+});
+
+test("does not overwrite values the page changed after dark mode wrote them", () => {
+    const helpers = loadDarkModeHelpers();
+    const element = new FakeElement({ style: "color: black" });
+
+    helpers.setTrackedAttribute(element, "style", "color: #c9d1d9");
+    element.setAttribute("style", "display: none");
+    helpers.restoreTrackedAttributes();
+
+    assert.equal(element.getAttribute("style"), "display: none");
+});
+
+test("treats a page change between writes as the new original", () => {
+    const helpers = loadDarkModeHelpers();
+    const element = new FakeElement({ style: "color: black" });
+
+    helpers.setTrackedAttribute(element, "style", "color: #c9d1d9");
+    element.setAttribute("style", "color: black; display: none");
+    helpers.setTrackedAttribute(element, "style", "color: #c9d1d9; display: none");
+    helpers.restoreTrackedAttributes();
+
+    assert.equal(element.getAttribute("style"), "color: black; display: none");
 });
