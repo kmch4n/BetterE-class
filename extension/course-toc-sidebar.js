@@ -151,15 +151,13 @@
                     // Toggle functionality
                     toggleBtn.addEventListener("click", (e) => {
                         e.stopPropagation();
-                        newItem.classList.toggle("expanded");
-                        toggleBtn.textContent = newItem.classList.contains("expanded") ? "▼" : "▶";
+                        setItemExpanded(newItem, !newItem.classList.contains("expanded"));
                     });
 
                     // Click on link also toggles
                     newLink.addEventListener("click", (e) => {
                         e.preventDefault();
-                        newItem.classList.toggle("expanded");
-                        toggleBtn.textContent = newItem.classList.contains("expanded") ? "▼" : "▶";
+                        setItemExpanded(newItem, !newItem.classList.contains("expanded"));
                     });
 
                     newList.appendChild(newItem);
@@ -194,6 +192,9 @@
         // Add to page
         document.body.appendChild(sidebar);
 
+        // Styles must apply before the scroll spy measures sub-lists for its first auto-expand
+        addStyles();
+
         // Setup scroll spy to highlight active section
         setupScrollSpy(sidebar);
 
@@ -211,32 +212,33 @@
         const collapseAllBtn = sidebar.querySelector(".toc-collapse-all-btn");
 
         expandAllBtn.addEventListener("click", () => {
-            const allItems = sidebar.querySelectorAll(".toc-item");
-            allItems.forEach((item) => {
-                if (!item.classList.contains("expanded")) {
-                    item.classList.add("expanded");
-                    const toggle = item.querySelector(".toc-toggle");
-                    if (toggle) toggle.textContent = "▼";
-                }
-            });
+            sidebar.querySelectorAll(".toc-item").forEach((item) => setItemExpanded(item, true));
         });
 
         collapseAllBtn.addEventListener("click", () => {
-            const allItems = sidebar.querySelectorAll(".toc-item");
-            allItems.forEach((item) => {
-                if (item.classList.contains("expanded")) {
-                    item.classList.remove("expanded");
-                    const toggle = item.querySelector(".toc-toggle");
-                    if (toggle) toggle.textContent = "▶";
-                }
-            });
+            sidebar.querySelectorAll(".toc-item").forEach((item) => setItemExpanded(item, false));
         });
-
-        // Add styles
-        addStyles();
 
         // Hide the original TOC modal button
         hideOriginalToc();
+    }
+
+    // Expand or collapse a TOC item, animating its sub-list to its full height
+    function setItemExpanded(item, expanded) {
+        if (item.classList.contains("expanded") === expanded) return;
+        item.classList.toggle("expanded", expanded);
+
+        const toggle = item.querySelector(".toc-toggle");
+        if (toggle) toggle.textContent = expanded ? "▼" : "▶";
+
+        const subList = item.querySelector(".toc-sublist");
+        if (!subList) return;
+        const { expand, collapse } = window.BetterEclassUtils.expandTransition;
+        if (expanded) {
+            expand(subList);
+        } else {
+            collapse(subList);
+        }
     }
 
     function setupScrollSpy(sidebar) {
@@ -300,9 +302,7 @@
                     }
 
                     if (shouldCollapse) {
-                        item.classList.remove("expanded");
-                        const toggle = item.querySelector(".toc-toggle");
-                        if (toggle) toggle.textContent = "▶";
+                        setItemExpanded(item, false);
                     }
                 }
             });
@@ -313,11 +313,7 @@
                 tocItem.classList.add("active-section");
 
                 // Auto-expand the active section
-                if (!tocItem.classList.contains("expanded")) {
-                    tocItem.classList.add("expanded");
-                    const toggle = tocItem.querySelector(".toc-toggle");
-                    if (toggle) toggle.textContent = "▼";
-                }
+                setItemExpanded(tocItem, true);
             }
         }
 
@@ -873,10 +869,6 @@
         max-height: 0;
         overflow: hidden;
         transition: max-height 0.3s ease;
-      }
-
-      .toc-item.expanded .toc-sublist {
-        max-height: 1000px;
       }
 
       .toc-subitem {

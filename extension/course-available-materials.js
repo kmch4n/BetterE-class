@@ -276,8 +276,14 @@
 
             // Toggle functionality
             sectionHeader.addEventListener("click", () => {
-                sectionGroup.classList.toggle("expanded");
-                toggleIcon.textContent = sectionGroup.classList.contains("expanded") ? "▼" : "▶";
+                const expanded = sectionGroup.classList.toggle("expanded");
+                toggleIcon.textContent = expanded ? "▼" : "▶";
+                const { expand, collapse } = window.BetterEclassUtils.expandTransition;
+                if (expanded) {
+                    expand(sectionContent);
+                } else {
+                    collapse(sectionContent);
+                }
             });
 
             sectionGroup.appendChild(sectionHeader);
@@ -376,10 +382,6 @@
         max-height: 0;
         overflow: hidden;
         transition: max-height 0.3s ease;
-      }
-
-      .material-section.expanded .section-content {
-        max-height: 1000px;
       }
 
       .material-item {

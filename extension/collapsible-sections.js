@@ -52,44 +52,34 @@
         // Setup content
         contentElement.classList.add("betterEclass-collapsible-content");
 
-        // Set initial max-height for smooth animation
-        if (!isCollapsed) {
-            contentElement.style.maxHeight = contentElement.scrollHeight + "px";
-        } else {
+        // Expanded content has no height limit, so content that grows later is never clipped
+        if (isCollapsed) {
             contentElement.classList.add("collapsed");
+            // An explicit start height lets the first expand animate
+            contentElement.style.maxHeight = "0px";
         }
 
         // Toggle function
         function toggle() {
+            const { expand, collapse } = window.BetterEclassUtils.expandTransition;
             const isCurrentlyCollapsed = contentElement.classList.contains("collapsed");
 
             if (isCurrentlyCollapsed) {
                 // Expand - remove collapsed class first to get correct scrollHeight
                 contentElement.classList.remove("collapsed");
-                contentElement.style.maxHeight = contentElement.scrollHeight + "px";
-                toggleButton.innerHTML = "▼";
+                expand(contentElement);
+                toggleButton.textContent = "▼";
                 saveCollapsedState(sectionId, false);
             } else {
-                // Collapse
-                contentElement.style.maxHeight = contentElement.scrollHeight + "px";
-                // Force reflow
-                contentElement.offsetHeight;
-                contentElement.style.maxHeight = "0";
+                collapse(contentElement);
                 contentElement.classList.add("collapsed");
-                toggleButton.innerHTML = "▶";
+                toggleButton.textContent = "▶";
                 saveCollapsedState(sectionId, true);
             }
         }
 
         // Add click event
         headerElement.addEventListener("click", toggle);
-
-        // Update max-height on window resize
-        window.addEventListener("resize", () => {
-            if (!contentElement.classList.contains("collapsed")) {
-                contentElement.style.maxHeight = contentElement.scrollHeight + "px";
-            }
-        });
     }
 
     // Make admin notices collapsible

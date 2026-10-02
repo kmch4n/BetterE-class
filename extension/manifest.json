@@ -38,6 +38,7 @@
             "matches": ["*://eclass.doshisha.ac.jp/webclass/course.php/*"],
             "js": [
                 "utils/material-icons.js",
+                "utils/expand-transition.js",
                 "eclass-top-button.js",
                 "course-toc-sidebar.js",
                 "course-available-materials.js"
@@ -111,7 +112,7 @@
                 "*://eclass.doshisha.ac.jp/webclass/?*",
                 "*://eclass.doshisha.ac.jp/webclass/index.php*"
             ],
-            "js": ["collapsible-sections.js"],
+            "js": ["utils/expand-transition.js", "collapsible-sections.js"],
             "css": ["collapsible.css"],
             "run_at": "document_idle"
         },
