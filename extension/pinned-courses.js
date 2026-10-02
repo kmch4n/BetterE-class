@@ -85,6 +85,7 @@
                 const index = parseInt(button.getAttribute("data-index"));
                 pinnedCourses.splice(index, 1);
                 void savePinnedCourses();
+                syncPinButtons();
                 refreshPinnedCoursesUI();
             });
         });
@@ -134,17 +135,28 @@
         courseListLinks.forEach(addPinButton);
     }
 
+    function isCoursePinned(url) {
+        return pinnedCourses.some((course) => course.url === url);
+    }
+
+    // Reflect the current pinned state on every pin button, including duplicates of the same course
+    function syncPinButtons() {
+        document.querySelectorAll(".betterEclass-pin-button").forEach((pinButton) => {
+            const isPinned = isCoursePinned(pinButton.dataset.courseUrl);
+            pinButton.textContent = isPinned ? "📌" : "📍";
+            pinButton.title = isPinned ? "ピン留めを解除" : "ピン留めする";
+        });
+    }
+
     function addPinButton(link) {
         // Skip if already has pin button
         if (link.parentElement.querySelector(".betterEclass-pin-button")) return;
 
         const url = link.href;
-        const isPinned = pinnedCourses.some((course) => course.url === url);
 
         const pinButton = document.createElement("span");
         pinButton.className = "betterEclass-pin-button";
-        pinButton.innerHTML = isPinned ? "📌" : "📍";
-        pinButton.title = isPinned ? "ピン留めを解除" : "ピン留めする";
+        pinButton.dataset.courseUrl = url;
 
         // Add course-item class to parent for CSS hover effect
         if (!link.parentElement.classList.contains("betterEclass-course-item")) {
@@ -159,18 +171,17 @@
 
             const courseName = link.textContent.trim().replace(/^»\s*/, "").replace(/^△/, "");
 
-            if (isPinned) {
+            if (isCoursePinned(url)) {
                 unpinCourse(url);
-                pinButton.innerHTML = "📍";
-                pinButton.title = "ピン留めする";
             } else {
                 pinCourse(courseName, url);
-                pinButton.innerHTML = "📌";
-                pinButton.title = "ピン留めを解除";
             }
 
+            syncPinButtons();
             refreshPinnedCoursesUI();
         });
+
+        syncPinButtons();
     }
 
     // Initialize
