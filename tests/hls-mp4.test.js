@@ -56,17 +56,50 @@ function sampleEntryType(mp4) {
 }
 
 /**
- * Decode times (tfdt) of every fragment for one track, in that track's timescale.
+ * Presentation intervals of every fragment of one track, in seconds (tfdt + trun durations).
  */
-function trackBaseTimes(boxes, trackId) {
-    const times = [];
+function trackIntervals(boxes, trackId) {
+    const tkhdIndex = boxes.findIndex((box) => box.type === "tkhd" && box.buffer.readUInt32BE(box.offset + 20) === trackId);
+    const mdhd = boxes.slice(tkhdIndex).find((box) => box.type === "mdhd");
+    const timescale = mdhd.buffer.readUInt32BE(mdhd.offset + 20);
+    const intervals = [];
     boxes.forEach((box, index) => {
         if (box.type !== "tfhd" || box.buffer.readUInt32BE(box.offset + 12) !== trackId) return;
         const tfdt = boxes.slice(index).find((candidate) => candidate.type === "tfdt");
-        const version = tfdt.buffer[tfdt.offset + 8];
-        times.push(version === 1 ? Number(tfdt.buffer.readBigUInt64BE(tfdt.offset + 12)) : tfdt.buffer.readUInt32BE(tfdt.offset + 12));
+        const trun = boxes.slice(index).find((candidate) => candidate.type === "trun");
+        const start = tfdt.buffer[tfdt.offset + 8] === 1 ? Number(tfdt.buffer.readBigUInt64BE(tfdt.offset + 12)) : tfdt.buffer.readUInt32BE(tfdt.offset + 12);
+        const flags = trun.buffer.readUIntBE(trun.offset + 9, 3);
+        assert.ok(flags & 0x100, "mux.js writes per-sample durations");
+        let field = trun.offset + 16 + (flags & 0x1 ? 4 : 0) + (flags & 0x4 ? 4 : 0);
+        const stride = [0x100, 0x200, 0x400, 0x800].filter((flag) => flags & flag).length * 4;
+        let end = start;
+        for (let i = 0; i < trun.buffer.readUInt32BE(trun.offset + 12); i++, field += stride) end += trun.buffer.readUInt32BE(field);
+        intervals.push({ start: start / timescale, end: end / timescale });
     });
-    return times;
+    return intervals;
+}
+
+function movieDurationSeconds(boxes) {
+    const mvhd = boxes.find((box) => box.type === "mvhd");
+    return mvhd.buffer.readUInt32BE(mvhd.offset + 24) / mvhd.buffer.readUInt32BE(mvhd.offset + 20);
+}
+
+/**
+ * Assert that two merged sections join without overlap and with at most a short gap.
+ */
+function assertSeamlessJoin(boxes) {
+    const video = trackIntervals(boxes, 1);
+    const audio = trackIntervals(boxes, 2);
+    assert.equal(video.length, 2);
+    assert.equal(audio.length, 2);
+    // Video: the second section starts where the first ends (allowing a frame-sized delay).
+    assert.ok(video[1].start >= video[0].end - 1e-6, "video sections must not overlap");
+    assert.ok(video[1].start - video[0].end < 0.2, "video gap at the join must stay short");
+    // Audio: never plays twice at once.
+    assert.ok(audio[1].start >= audio[0].end - 1e-3, "audio sections must not overlap");
+    assert.ok(audio[1].start - audio[0].end < 0.2, "audio gap at the join must stay short");
+    // The header length covers the last sample of either track.
+    assert.ok(Math.abs(movieDurationSeconds(boxes) - Math.max(video[1].end, audio[1].end)) < 0.01);
 }
 
 test("parses segment URLs and durations relative to the playlist", () => {
@@ -117,14 +150,15 @@ test("converts a single TS stream into an MP4 with a known duration", () => {
     const { hlsMp4, muxjs } = loadHlsMp4();
     const mp4 = concat(hlsMp4.transmuxSections([loadFixtureSection(hlsMp4, "a")], muxjs));
     const boxes = readBoxes(mp4);
-    const mvhd = boxes.find((box) => box.type === "mvhd");
-    const timescale = mvhd.buffer.readUInt32BE(mvhd.offset + 20);
 
     assert.deepEqual(
         boxes.filter((box) => ["ftyp", "moov", "moof", "mdat"].includes(box.type)).map((box) => box.type).slice(0, 2),
         ["ftyp", "moov"],
     );
-    assert.equal(mvhd.buffer.readUInt32BE(mvhd.offset + 24) / timescale, 2);
+    const [video] = trackIntervals(boxes, 1);
+    const [audio] = trackIntervals(boxes, 2);
+    assert.equal(video.end - video.start, 2);
+    assert.ok(Math.abs(movieDurationSeconds(boxes) - Math.max(video.end, audio.end)) < 0.01);
 });
 
 test("places merged sections back-to-back with increasing fragment numbers", () => {
@@ -132,16 +166,12 @@ test("places merged sections back-to-back with increasing fragment numbers", () 
     const sections = [loadFixtureSection(hlsMp4, "a"), loadFixtureSection(hlsMp4, "b")];
     const boxes = readBoxes(concat(hlsMp4.transmuxSections(sections, muxjs)));
 
-    const mvhd = boxes.find((box) => box.type === "mvhd");
-    assert.equal(mvhd.buffer.readUInt32BE(mvhd.offset + 24) / mvhd.buffer.readUInt32BE(mvhd.offset + 20), 3);
-
     const sequences = boxes.filter((box) => box.type === "mfhd").map((box) => box.buffer.readUInt32BE(box.offset + 12));
     assert.deepEqual(
         sequences,
         sequences.map((_, index) => index + 1),
     );
-
-    assert.deepEqual(trackBaseTimes(boxes, 1), [0, 2 * 90000]);
+    assertSeamlessJoin(boxes);
 });
 
 test("merges videos whose H.264 profile and stream PIDs differ", () => {
@@ -156,8 +186,7 @@ test("merges videos whose H.264 profile and stream PIDs differ", () => {
         boxes.filter((box) => box.type === "tkhd").map((box) => box.buffer.readUInt32BE(box.offset + 20)).sort(),
         [1, 2],
     );
-    assert.deepEqual(trackBaseTimes(boxes, 1), [0, 2 * 90000]);
-    assert.equal(trackBaseTimes(boxes, 2).length, 2);
+    assertSeamlessJoin(boxes);
 });
 
 test("keeps avc1 when every video shares the same parameter sets", () => {
@@ -178,4 +207,127 @@ test("rejects merging when no converter is available", () => {
     const { hlsMp4 } = loadHlsMp4();
 
     assert.throws(() => hlsMp4.transmuxSections([], null), /動画変換ライブラリ/);
+});
+
+test("treats an HTML login page as an invalid segment", () => {
+    const { hlsMp4 } = loadHlsMp4();
+    const html = new TextEncoder().encode("<!DOCTYPE html><html><body>login</body></html>".padEnd(400, " "));
+    const ts = new Uint8Array(fs.readFileSync(path.join(FIXTURE_DIR, "a", "seg0.ts")));
+
+    assert.equal(hlsMp4.isTransportStream(html), false);
+    assert.equal(hlsMp4.isTransportStream(ts), true);
+});
+
+test("reads the declared streams from the PMT", () => {
+    const { hlsMp4 } = loadHlsMp4();
+    const read = (name) => JSON.parse(JSON.stringify(hlsMp4.probeTsStreams(loadFixtureSection(hlsMp4, name).segments)));
+
+    assert.deepEqual(read("a"), { found: true, video: true, audio: true, videoPid: 256, unsupported: [] });
+    assert.deepEqual(read("c"), { found: true, video: true, audio: true, videoPid: 257, unsupported: [] });
+    assert.deepEqual(read("g"), { found: true, video: true, audio: false, videoPid: 256, unsupported: [] });
+    assert.deepEqual(read("e"), { found: true, video: true, audio: false, videoPid: 256, unsupported: ["音声: MP3"] });
+});
+
+test("stops before saving a video whose audio codec cannot be converted", () => {
+    const { hlsMp4, muxjs } = loadHlsMp4();
+
+    assert.throws(() => hlsMp4.transmuxSections([loadFixtureSection(hlsMp4, "e")], muxjs), /未対応の形式（音声: MP3）/);
+});
+
+test("stops when audio ends partway through a video", () => {
+    const { hlsMp4, muxjs } = loadHlsMp4();
+
+    assert.throws(() => hlsMp4.transmuxSections([loadFixtureSection(hlsMp4, "f")], muxjs), /音声の長さ.*一致しません/);
+});
+
+test("names the section whose audio is missing when merging", () => {
+    const { hlsMp4, muxjs } = loadHlsMp4();
+    const sections = [loadFixtureSection(hlsMp4, "a"), loadFixtureSection(hlsMp4, "f")];
+
+    assert.throws(() => hlsMp4.transmuxSections(sections, muxjs), /^Error: 2本目の動画の音声/);
+});
+
+test("stops when a segment is missing from the downloaded data", () => {
+    const { hlsMp4, muxjs } = loadHlsMp4();
+    const section = loadFixtureSection(hlsMp4, "a");
+    section.segments = section.segments.slice(0, 1);
+
+    assert.throws(() => hlsMp4.transmuxSections([section], muxjs), /長さ.*一致しません/);
+});
+
+test("saves a video that has no audio track at all", () => {
+    const { hlsMp4, muxjs } = loadHlsMp4();
+    const boxes = readBoxes(concat(hlsMp4.transmuxSections([loadFixtureSection(hlsMp4, "g")], muxjs)));
+
+    assert.deepEqual(
+        boxes.filter((box) => box.type === "hdlr").map((box) => box.buffer.toString("ascii", box.offset + 16, box.offset + 20)),
+        ["vide"],
+    );
+});
+
+/**
+ * Load hls-mp4.js with fetch() served from the fixture directory, so the whole
+ * download pipeline (playlist -> segments -> conversion -> checks) runs end to end.
+ * @param {(url: URL) => {status?: number, body: string|Buffer}|null} [override]
+ */
+function loadHlsMp4WithFixtureFetch(override) {
+    const context = { URL, Blob, console, setTimeout, Promise, Uint8Array };
+    context.window = context;
+    context.self = context;
+    context.globalThis = context;
+    context.location = { href: "https://eclass.example/webclass/txtbk_show_chapter.php", origin: "https://eclass.example" };
+    context.fetch = async (input) => {
+        const url = new URL(input);
+        const custom = override && override(url);
+        const { status = 200, body } = custom || { body: fs.readFileSync(path.join(FIXTURE_DIR, ...url.pathname.split("/").filter(Boolean))) };
+        const bytes = typeof body === "string" ? Buffer.from(body, "utf8") : body;
+        return {
+            ok: status >= 200 && status < 300,
+            status,
+            text: async () => bytes.toString("utf8"),
+            arrayBuffer: async () => bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength),
+        };
+    };
+    vm.createContext(context);
+    vm.runInContext(fs.readFileSync("extension/vendor/mux.js/mux-mp4.min.js", "utf8"), context);
+    vm.runInContext(fs.readFileSync("extension/utils/hls-mp4.js", "utf8"), context);
+    return context.BetterEclassUtils.hlsMp4;
+}
+
+test("downloads and merges playlists end to end", async () => {
+    const hlsMp4 = loadHlsMp4WithFixtureFetch();
+    const phases = [];
+    const blob = await hlsMp4.downloadAsMp4(["https://eclass.example/a/index.m3u8", "https://eclass.example/c/index.m3u8"], ({ phase, ratio }) =>
+        phases.push(`${phase}:${ratio}`),
+    );
+    const boxes = readBoxes(new Uint8Array(await blob.arrayBuffer()));
+
+    assert.equal(blob.type, "video/mp4");
+    assert.ok(phases.includes("fetch:1") && phases.includes("convert:1"));
+    assertSeamlessJoin(boxes);
+});
+
+test("aborts the download when a segment comes back as an HTML page", async () => {
+    const hlsMp4 = loadHlsMp4WithFixtureFetch((url) => (url.pathname.endsWith("seg1.ts") ? { body: "<!DOCTYPE html><html>login</html>".padEnd(376, " ") } : null));
+
+    await assert.rejects(hlsMp4.downloadAsMp4(["https://eclass.example/a/index.m3u8"]), /ログインが切れた可能性/);
+});
+
+test("refuses playlists that are still being recorded", async () => {
+    const playlist = fs.readFileSync(path.join(FIXTURE_DIR, "a", "index.m3u8"), "utf8").replace("#EXT-X-ENDLIST", "");
+    const hlsMp4 = loadHlsMp4WithFixtureFetch((url) => (url.pathname.endsWith("index.m3u8") ? { body: playlist } : null));
+
+    await assert.rejects(hlsMp4.downloadAsMp4(["https://eclass.example/a/index.m3u8"]), /配信が完了していない/);
+});
+
+test("refuses master playlists that carry audio as a separate rendition", async () => {
+    const master = [
+        "#EXTM3U",
+        '#EXT-X-MEDIA:TYPE=AUDIO,GROUP-ID="aud",NAME="ja",URI="audio/index.m3u8"',
+        '#EXT-X-STREAM-INF:BANDWIDTH=300000,AUDIO="aud"',
+        "a/index.m3u8",
+    ].join("\n");
+    const hlsMp4 = loadHlsMp4WithFixtureFetch((url) => (url.pathname.endsWith("master.m3u8") ? { body: master } : null));
+
+    await assert.rejects(hlsMp4.downloadAsMp4(["https://eclass.example/master.m3u8"]), /音声が別配信/);
 });
