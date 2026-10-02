@@ -5,6 +5,15 @@
 (function () {
     "use strict";
 
+    // Names may already be decoded by URLSearchParams; a literal "%" must not throw
+    function safeDecodeURIComponent(value) {
+        try {
+            return decodeURIComponent(value);
+        } catch (_) {
+            return value;
+        }
+    }
+
     // Debug mode - loaded from settings
     let DEBUG = false;
 
@@ -91,8 +100,8 @@
         try {
             const parsedUrl = new URL(target.url, window.location.origin);
             const fileNameParam = parsedUrl.searchParams.get("file_name");
-            if (fileNameParam) return decodeURIComponent(fileNameParam);
-            const pathName = decodeURIComponent(parsedUrl.pathname.split("/").pop() || "");
+            if (fileNameParam) return safeDecodeURIComponent(fileNameParam);
+            const pathName = safeDecodeURIComponent(parsedUrl.pathname.split("/").pop() || "");
             if (pathName.includes(".")) return pathName;
         } catch (_) {
             // Fall through to a generic filename.
@@ -531,7 +540,7 @@
                     // Extract from fileDownloadUrl or use generic name
                     if (pageData.fileDownloadUrl) {
                         const urlParams = new URLSearchParams(pageData.fileDownloadUrl.split("?")[1]);
-                        filename = decodeURIComponent(urlParams.get("file_name") || "");
+                        filename = safeDecodeURIComponent(urlParams.get("file_name") || "");
                     }
                     if (!filename) {
                         filename = `document.${pageData.fileExtension || "pdf"}`;
@@ -604,7 +613,7 @@
                 // Extract filename from URL
                 const urlParams = new URLSearchParams(href.split("?")[1]);
                 const filename = urlParams.get("file_name") || "document.pdf";
-                const decodedFilename = decodeURIComponent(filename);
+                const decodedFilename = safeDecodeURIComponent(filename);
 
                 // Find the parent row
                 const row = link.closest("tr[data-page]");

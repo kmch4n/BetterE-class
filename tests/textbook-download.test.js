@@ -7,7 +7,7 @@ function loadDownloadHelpers() {
     const source = fs.readFileSync("extension/textbook-chapter-buttons.js", "utf8");
     const exposedSource = source.replace(
         /\}\)\(\);\s*$/,
-        "window.__textbookDownloadTest = { isStreamManifestUrl, selectDownloadTarget };\n})();",
+        "window.__textbookDownloadTest = { isStreamManifestUrl, selectDownloadTarget, getDownloadFilename };\n})();",
     );
     const context = {
         URL,
@@ -65,4 +65,18 @@ test("reports stream-only content when every candidate is an m3u8 manifest", () 
 
     assert.equal(result.selected, null);
     assert.equal(result.streamOnly, true);
+});
+
+test("keeps file names that contain a literal percent sign", () => {
+    const helpers = loadDownloadHelpers();
+    const url = `https://eclass.doshisha.ac.jp/webclass/file_down.php?file_name=${encodeURIComponent("100%達成.pdf")}`;
+
+    assert.equal(helpers.getDownloadFilename({}, { source: "fileDownloadUrl", url }), "100%達成.pdf");
+});
+
+test("still decodes file names that arrive double-encoded", () => {
+    const helpers = loadDownloadHelpers();
+    const url = `https://eclass.doshisha.ac.jp/webclass/file_down.php?file_name=${encodeURIComponent(encodeURIComponent("資料.pdf"))}`;
+
+    assert.equal(helpers.getDownloadFilename({}, { source: "fileDownloadUrl", url }), "資料.pdf");
 });

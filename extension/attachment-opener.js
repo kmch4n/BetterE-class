@@ -2,6 +2,15 @@
 (function () {
     "use strict";
 
+    // Names may already be decoded by URLSearchParams; a literal "%" must not throw
+    function safeDecodeURIComponent(value) {
+        try {
+            return decodeURIComponent(value);
+        } catch (_) {
+            return value;
+        }
+    }
+
     // Debug mode - loaded from settings
     let DEBUG = false;
 
@@ -61,7 +70,7 @@
         try {
             // Extract filename from URL
             const urlParts = pdfUrl.split("/");
-            const filename = decodeURIComponent(urlParts[urlParts.length - 1]);
+            const filename = safeDecodeURIComponent(urlParts[urlParts.length - 1]);
 
             const message = {
                 type: "betterEclass_quizPdfUrl",
@@ -319,7 +328,7 @@
 
         // Extract filename from path
         const fileName = filePath.split("/").pop();
-        const decodedFileName = decodeURIComponent(fileName);
+        const decodedFileName = safeDecodeURIComponent(fileName);
 
         // Create button container
         const buttonContainer = document.createElement("div");
@@ -350,7 +359,7 @@
 
         // Extract filename from path
         const fileName = filePath.split("/").pop();
-        const decodedFileName = decodeURIComponent(fileName);
+        const decodedFileName = safeDecodeURIComponent(fileName);
 
         // Create button container
         const buttonContainer = document.createElement("div");
@@ -383,7 +392,7 @@
         // Extract file name from URL
         const urlParams = new URLSearchParams(downloadUrl.split("?")[1]);
         const fileName = urlParams.get("file_name");
-        const decodedFileName = fileName ? decodeURIComponent(fileName) : "file";
+        const decodedFileName = fileName ? safeDecodeURIComponent(fileName) : "file";
 
         // Create button container
         const buttonContainer = document.createElement("div");
@@ -415,7 +424,7 @@
         // Extract file name from URL path
         const urlPath = pdfUrl.split("?")[0];
         const fileName = urlPath.substring(urlPath.lastIndexOf("/") + 1);
-        const decodedFileName = decodeURIComponent(fileName);
+        const decodedFileName = safeDecodeURIComponent(fileName);
 
         // Create button container
         const buttonContainer = document.createElement("div");

@@ -237,3 +237,59 @@ test("does not start a guarded download for a stream manifest", () => {
     assert.equal(response.streamOnly, true);
     assert.equal(downloadStarted, false);
 });
+
+function sanitize(context, name) {
+    context.fixtureName = name;
+    return vm.runInContext("sanitizeDownloadFilename(fixtureName)", context);
+}
+
+test("replaces characters that chrome.downloads rejects in file names", () => {
+    const context = createBackgroundContext();
+
+    assert.equal(sanitize(context, 'a/b\\c:d*e?f"g<h>i|j.pdf'), "a_b_c_d_e_f_g_h_i_j.pdf");
+    assert.equal(sanitize(context, "tab\tname\u0001.pdf"), "tab_name_.pdf");
+    assert.equal(sanitize(context, "100%達成.pdf"), "100%達成.pdf");
+});
+
+test("trims leading and trailing dots and spaces", () => {
+    const context = createBackgroundContext();
+
+    assert.equal(sanitize(context, "  report.pdf. "), "report.pdf");
+    assert.equal(sanitize(context, ".."), undefined);
+    assert.equal(sanitize(context, "   "), undefined);
+    assert.equal(sanitize(context, undefined), undefined);
+});
+
+test("prefixes reserved Windows device names", () => {
+    const context = createBackgroundContext();
+
+    assert.equal(sanitize(context, "CON.tar.gz"), "_CON.tar.gz");
+    assert.equal(sanitize(context, "nul.txt"), "_nul.txt");
+    assert.equal(sanitize(context, "lpt1"), "_lpt1");
+    assert.equal(sanitize(context, "console.pdf"), "console.pdf");
+});
+
+test("shortens long file names while keeping the extension", () => {
+    const context = createBackgroundContext();
+    const result = sanitize(context, `${"資料".repeat(150)}.pptx`);
+
+    assert.equal(result.length, 200);
+    assert.ok(result.endsWith("資料.pptx") || result.endsWith("資.pptx"));
+});
+
+test("passes a sanitized file name to chrome.downloads and omits empty names", () => {
+    const context = createBackgroundContext();
+    const calls = [];
+    context.chrome.downloads.download = (options, callback) => {
+        calls.push(options);
+        callback(1);
+    };
+    const send = (filename) =>
+        context.messageListener({ type: "downloadDirect", url: "https://eclass.doshisha.ac.jp/webclass/data/course/1/a.pdf", filename }, {}, () => {});
+
+    send("Q1: intro?.pdf");
+    send("...");
+
+    assert.equal(calls[0].filename, "Q1_ intro_.pdf");
+    assert.equal("filename" in calls[1], false);
+});

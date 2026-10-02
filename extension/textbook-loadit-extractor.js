@@ -4,6 +4,15 @@
 (function () {
     "use strict";
 
+    // Names may already be decoded by URLSearchParams; a literal "%" must not throw
+    function safeDecodeURIComponent(value) {
+        try {
+            return decodeURIComponent(value);
+        } catch (_) {
+            return value;
+        }
+    }
+
     // Debug mode - loaded from settings
     let DEBUG = false;
     const settingsAPI = window.BetterEclassUtils.settings;
@@ -53,7 +62,7 @@
 
             // Extract filename from URL
             const urlParts = pdfUrl.split("/");
-            const filename = decodeURIComponent(urlParts[urlParts.length - 1]);
+            const filename = safeDecodeURIComponent(urlParts[urlParts.length - 1]);
 
             // Send message to parent frames (going up through the frame hierarchy)
             try {
@@ -111,7 +120,7 @@
             }
 
             // Extract filename and extension
-            const filename = decodeURIComponent(fileParam.split("/").pop());
+            const filename = safeDecodeURIComponent(fileParam.split("/").pop());
             const extension = getFileExtension(filename);
 
             const message = {

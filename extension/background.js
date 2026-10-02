@@ -182,8 +182,38 @@ async function resolveActualFileUrl(sourceUrl) {
     return extraction.url;
 }
 
+const MAX_FILENAME_LENGTH = 200;
+
+// Make a suggested file name acceptable to chrome.downloads, which rejects reserved characters,
+// leading or trailing dots and spaces, and reserved Windows device names with "Invalid filename".
+// Returns undefined when nothing usable remains so Chrome derives the name itself.
+function sanitizeDownloadFilename(name) {
+    if (typeof name !== "string") return undefined;
+
+    let sanitized = name
+        .replace(/[\\/:*?"<>|\u0000-\u001f\u007f]/g, "_")
+        .replace(/\s+/g, " ")
+        .replace(/^[\s.]+|[\s.]+$/g, "");
+
+    if (sanitized.length > MAX_FILENAME_LENGTH) {
+        const extensionMatch = sanitized.match(/\.[A-Za-z0-9]{1,8}$/);
+        const extension = extensionMatch ? extensionMatch[0] : "";
+        sanitized = sanitized.slice(0, MAX_FILENAME_LENGTH - extension.length).replace(/[\s.]+$/, "") + extension;
+    }
+
+    if (/^(con|prn|aux|nul|com[1-9]|lpt[1-9])(\.|$)/i.test(sanitized)) {
+        sanitized = `_${sanitized}`;
+    }
+
+    return sanitized || undefined;
+}
+
 function performDownload(url, filename, saveAs, sendResponse) {
-    chrome.downloads.download({ url, filename, saveAs }, (downloadId) => {
+    const options = { url, saveAs };
+    const safeFilename = sanitizeDownloadFilename(filename);
+    if (safeFilename) options.filename = safeFilename;
+
+    chrome.downloads.download(options, (downloadId) => {
         if (chrome.runtime.lastError) {
             console.error("[BetterE-class] Download error:", chrome.runtime.lastError);
             sendResponse({ error: chrome.runtime.lastError.message });

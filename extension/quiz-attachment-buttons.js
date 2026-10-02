@@ -4,6 +4,15 @@
 (function () {
     "use strict";
 
+    // Names may already be decoded by URLSearchParams; a literal "%" must not throw
+    function safeDecodeURIComponent(value) {
+        try {
+            return decodeURIComponent(value);
+        } catch (_) {
+            return value;
+        }
+    }
+
     // Debug mode - loaded from settings
     let DEBUG = false;
     const settingsAPI = window.BetterEclassUtils.settings;
@@ -47,7 +56,7 @@
         try {
             const urlParams = new URLSearchParams(url.split("?")[1]);
             const filename = urlParams.get("file_name");
-            return filename ? decodeURIComponent(filename) : "download";
+            return filename ? safeDecodeURIComponent(filename) : "download";
         } catch (e) {
             return "download";
         }

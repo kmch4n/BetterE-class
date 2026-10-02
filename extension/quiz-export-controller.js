@@ -4,6 +4,15 @@
 (function () {
     "use strict";
 
+    // Names may already be decoded by URLSearchParams; a literal "%" must not throw
+    function safeDecodeURIComponent(value) {
+        try {
+            return decodeURIComponent(value);
+        } catch (_) {
+            return value;
+        }
+    }
+
     const CONTROLLER_KEY = "__betterEclassQuizExportController";
     const COMPLETION_RESET_MS = 3000;
     const FRAME_WAIT_TIMEOUT_MS = 30000;
@@ -468,7 +477,7 @@
         for (const frameName of ["button", "question", "answer"]) {
             try {
                 const contentsName = new URLSearchParams(getFrame(frameName)?.location.search || "").get("contents_name");
-                if (contentsName) return decodeURIComponent(contentsName);
+                if (contentsName) return safeDecodeURIComponent(contentsName);
             } catch (_error) {
                 // Try the next same-origin frame.
             }
