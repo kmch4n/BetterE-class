@@ -285,7 +285,7 @@ e-classページをダークテーマで表示します。
 すべてのe-classページの下部にBetterE-classのバージョン情報が表示されます。
 
 **表示内容**
-- 「🚀 BetterE-class v1.8.1」
+- 「🚀 BetterE-class v1.8.2」
 - クリックするとGitHubリポジトリが開く
 
 **用途**
