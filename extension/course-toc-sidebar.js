@@ -15,6 +15,12 @@
     const icons = window.BetterEclassUtils.icons;
     const getMaterialTypeIconName = window.BetterEclassUtils.getMaterialTypeIconName;
     const FLASH_MS = 1600;
+    // Sections kept open around the one being read: the current section plus one on each side.
+    const OPEN_WINDOW = 3;
+    // The section being read is the last one whose top has passed this fraction of the viewport.
+    const READING_LINE = 1 / 3;
+    // Items the user opened or closed by hand; the scroll spy leaves them as they are.
+    const userToggled = new WeakSet();
 
     settingsAPI.getSettings(["enableTocSidebar"]).then((items) => {
         settings = items;
@@ -265,10 +271,12 @@
 
             toggleBtn.addEventListener("click", (e) => {
                 e.stopPropagation();
+                userToggled.add(newItem);
                 setItemExpanded(newItem, !newItem.classList.contains("expanded"));
             });
             newLink.addEventListener("click", (e) => {
                 e.preventDefault();
+                userToggled.add(newItem);
                 setItemExpanded(newItem, !newItem.classList.contains("expanded"));
             });
 
@@ -281,10 +289,16 @@
         setupScrollSpy(sidebar);
 
         sidebar.querySelector(".toc-expand-all-btn").addEventListener("click", () => {
-            sidebar.querySelectorAll(".toc-item").forEach((item) => setItemExpanded(item, true));
+            sidebar.querySelectorAll(".toc-item").forEach((item) => {
+                userToggled.add(item);
+                setItemExpanded(item, true);
+            });
         });
         sidebar.querySelector(".toc-collapse-all-btn").addEventListener("click", () => {
-            sidebar.querySelectorAll(".toc-item").forEach((item) => setItemExpanded(item, false));
+            sidebar.querySelectorAll(".toc-item").forEach((item) => {
+                userToggled.add(item);
+                setItemExpanded(item, false);
+            });
         });
 
         // Hide the original TOC modal button
@@ -332,68 +346,68 @@
             }
         });
 
+        // TOC items in page order, each with the section it points to.
+        const entries = Array.from(sections)
+            .map((section) => ({ section, item: sectionMap.get(section.id) }))
+            .filter(({ item }) => item);
+        if (entries.length === 0) return;
+
         let isScrolling = false;
+        let currentIndex = -1;
 
-        // Function to update active section
-        function updateActiveSection() {
-            if (isScrolling) return;
-
-            const scrollPosition = window.scrollY + 150; // Offset for better UX
-
-            // Find the current section
-            let currentSection = null;
-            let maxTop = -1;
-
-            sections.forEach((section) => {
-                const sectionTop = section.offsetTop;
-
-                if (scrollPosition >= sectionTop && sectionTop > maxTop) {
-                    currentSection = section;
-                    maxTop = sectionTop;
-                }
+        function findCurrentIndex() {
+            // At the bottom of the page the last sections may never reach the reading line.
+            if (window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 2) return entries.length - 1;
+            const line = window.innerHeight * READING_LINE;
+            let index = 0;
+            entries.forEach(({ section }, i) => {
+                if (section.getBoundingClientRect().top <= line) index = i;
             });
-
-            // Remove all active classes and collapse past sections
-            tocItems.forEach((item) => {
-                const wasActive = item.classList.contains("active-section");
-                item.classList.remove("active-section");
-
-                // Collapse sections that are no longer active
-                if (wasActive && item.classList.contains("expanded")) {
-                    // Check if this is the current section
-                    let shouldCollapse = true;
-                    if (currentSection && sectionMap.has(currentSection.id)) {
-                        const currentItem = sectionMap.get(currentSection.id);
-                        if (currentItem === item) {
-                            shouldCollapse = false;
-                        }
-                    }
-
-                    if (shouldCollapse) {
-                        setItemExpanded(item, false);
-                    }
-                }
-            });
-
-            // Add active class to current section
-            if (currentSection && sectionMap.has(currentSection.id)) {
-                const tocItem = sectionMap.get(currentSection.id);
-                tocItem.classList.add("active-section");
-
-                // Auto-expand the active section
-                setItemExpanded(tocItem, true);
-            }
+            return index;
         }
 
-        // Throttle scroll event for performance
-        let scrollTimeout;
+        // Keep the window of open items fully inside the list, so three stay open at the ends too.
+        function openRange(index) {
+            const size = Math.min(OPEN_WINDOW, entries.length);
+            const start = Math.max(0, Math.min(index - Math.floor(size / 2), entries.length - size));
+            return [start, start + size - 1];
+        }
+
+        // Scroll only the sidebar's own column, never the page, to keep the current item visible.
+        function revealInSidebar(item) {
+            const column = sidebar.closest(".col-sm-4.col-md-3");
+            if (!column || column.scrollHeight <= column.clientHeight) return;
+            const header = item.querySelector(".toc-item-header") || item;
+            const itemRect = header.getBoundingClientRect();
+            const columnRect = column.getBoundingClientRect();
+            if (itemRect.top < columnRect.top) column.scrollTop -= columnRect.top - itemRect.top + 8;
+            else if (itemRect.bottom > columnRect.bottom) column.scrollTop += itemRect.bottom - columnRect.bottom + 8;
+        }
+
+        function updateActiveSection() {
+            if (isScrolling) return;
+            const index = findCurrentIndex();
+            if (index === currentIndex) return;
+            currentIndex = index;
+
+            const [start, end] = openRange(index);
+            entries.forEach(({ item }, i) => {
+                item.classList.toggle("active-section", i === index);
+                if (!userToggled.has(item)) setItemExpanded(item, i >= start && i <= end);
+            });
+            revealInSidebar(entries[index].item);
+        }
+
+        // Update at most once per frame while scrolling, not only after scrolling stops.
+        let frame = 0;
         window.addEventListener(
             "scroll",
             () => {
-                if (scrollTimeout) {
-                    clearTimeout(scrollTimeout);
-                }
-                scrollTimeout = setTimeout(updateActiveSection, 100);
+                if (frame) return;
+                frame = requestAnimationFrame(() => {
+                    frame = 0;
+                    updateActiveSection();
+                });
             },
             { passive: true },
         );
@@ -407,6 +421,7 @@
                 isScrolling = true;
                 setTimeout(() => {
                     isScrolling = false;
+                    updateActiveSection();
                 }, 1000);
             });
         });
