@@ -29,7 +29,9 @@
 }
 
 .bec-side-widget .side-block-content {
-    padding: var(--bec-space-2xs) 0;
+    /* Lines nested under a link start where its text does, after the "» " prefix */
+    --bec-side-widget-indent: calc(var(--bec-space-3xs) + var(--bec-text-md)); /* "» " is about 1em at 13px */
+    padding: var(--bec-space-2xs);
 }
 
 .bec-side-widget-list {
@@ -43,18 +45,22 @@
     flex-wrap: wrap;
     align-items: center;
     column-gap: var(--bec-space-2xs);
-    padding: 0 var(--bec-space-2xs) 0 var(--bec-space-sm);
 }
 
+/* Same voice as e-class's own side-block links: "» " prefix, underlined, 13px. */
 .bec-side-widget-link {
     flex: 1;
     min-width: 0;
-    padding: var(--bec-space-xs) 0;
+    padding: var(--bec-space-3xs);
     font-size: var(--bec-text-md);
     line-height: 1.45;
     color: var(--bec-color-accent);
-    text-decoration: none;
+    text-decoration: underline;
     overflow-wrap: anywhere;
+}
+
+.bec-side-widget-link::before {
+    content: "» ";
 }
 
 .bec-side-widget-link:focus-visible,
@@ -65,8 +71,7 @@
 
 .bec-side-widget-meta {
     flex-basis: 100%;
-    margin-top: calc(var(--bec-space-xs) * -1);
-    padding-bottom: var(--bec-space-xs);
+    padding: 0 0 var(--bec-space-2xs) var(--bec-side-widget-indent);
     font-size: var(--bec-text-sm);
     color: var(--bec-color-muted);
 }
@@ -92,12 +97,8 @@
 }
 
 @media (hover: hover) {
-    .bec-side-widget-item:hover {
-        background: var(--bec-color-paper-2);
-    }
-
     .bec-side-widget-link:hover {
-        text-decoration: underline;
+        color: var(--bec-color-accent-2);
     }
 
     .bec-side-widget-action {

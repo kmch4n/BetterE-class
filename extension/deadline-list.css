@@ -37,8 +37,8 @@
 #betterEclassDeadlineList .bec-deadline-tasks {
     flex-basis: 100%;
     list-style: none;
-    margin: calc(var(--bec-space-2xs) * -1) 0 0;
-    padding: 0 0 var(--bec-space-xs);
+    margin: 0;
+    padding: 0 0 var(--bec-space-2xs) var(--bec-side-widget-indent);
 }
 
 #betterEclassDeadlineList .bec-deadline-task {
