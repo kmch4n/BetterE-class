@@ -342,7 +342,7 @@ const observer = new IntersectionObserver(callback, {
 ### メッセージページ
 
 #### message-tools.js
-**対象**: `messages.php/inbox*`（旧 `msg_editor.php` は e-class の更新で廃止）
+**対象**: `messages.php/inbox*`、科目別の `messages.php/course/*/inbox*`（旧 `msg_editor.php` は e-class の更新で廃止）
 
 「すべて既読にする」ボタンを追加。
 

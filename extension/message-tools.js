@@ -1,5 +1,6 @@
 // message-tools.js
-// Adds a "すべて既読にする" button next to each message toolbar on the inbox (messages.php/inbox).
+// Adds a "すべて既読にする" button next to each message toolbar on the inbox
+// (messages.php/inbox and the per-course messages.php/course/<id>/inbox).
 // It checks every message on the current page and submits e-class's own "既読にする" action.
 
 (function addMarkAllAsReadButton() {
@@ -62,7 +63,8 @@
     // The inbox has a toolbar above and below the list; add the button after each "ダウンロード"
     function insertButtons() {
         const form = getMessageForm();
-        if (!form) return;
+        // Nothing to mark on an empty inbox
+        if (!form || !form.querySelector('input[type="checkbox"][name="id[]"]')) return;
 
         form.querySelectorAll('[name="downloadmsg"]').forEach((downloadButton) => {
             const next = downloadButton.nextElementSibling;
