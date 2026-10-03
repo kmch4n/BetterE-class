@@ -395,6 +395,53 @@
         }
     }
 
+    // AudioSampleEntry: channel count at +24, sample rate (16.16 fixed point) at +32 from the box start.
+    function describeAudioEntry(initSegment, offset) {
+        const channels = readUint16(initSegment, offset + 24);
+        const sampleRate = readUint32(initSegment, offset + 32) >>> 16;
+        const layout = channels === 1 ? "モノラル" : channels === 2 ? "ステレオ" : `${channels}ch`;
+        return `${sampleRate / 1000}kHz・${layout}`;
+    }
+
+    /**
+     * Explain why two sections cannot share one MP4: which property differs, with each value.
+     * @param {{name: string, description: {tracks: Array<{handler: string, signature: string, format: string}>}}} first
+     * @param {{name: string, description: {tracks: Array<{handler: string, signature: string, format: string}>}}} other
+     * @returns {string}
+     */
+    function describeMismatch(first, other) {
+        const kinds = [];
+        const details = [];
+        // Values that differ, collected per section so each section's values read together:
+        // "第1節は1920×1080・48kHz・ステレオ、第2節は1920×1200・32kHz・モノラル".
+        const firstValues = [];
+        const otherValues = [];
+        [
+            ["vide", "画面の大きさ", "映像"],
+            ["soun", "音声の形式", "音声"],
+        ].forEach(([handler, kind, media]) => {
+            const a = first.description.tracks.find((track) => track.handler === handler);
+            const b = other.description.tracks.find((track) => track.handler === handler);
+            if (!a && !b) return;
+            if (!a || !b) {
+                kinds.push(`${media}の有無`);
+                details.push(`${a ? other.name : first.name}には${media}がありません`);
+            } else if (a.signature !== b.signature) {
+                kinds.push(kind);
+                if (a.format && b.format && a.format !== b.format) {
+                    firstValues.push(a.format);
+                    otherValues.push(b.format);
+                } else {
+                    details.push(`${first.name}と${other.name}で${kind}の設定が違います`);
+                }
+            }
+        });
+        if (firstValues.length > 0) details.unshift(`${first.name}は${firstValues.join("・")}、${other.name}は${otherValues.join("・")}`);
+        if (kinds.length === 0) kinds.push("形式");
+        const reason = details.length > 0 ? `（${details.join("。")}）` : "";
+        return `動画ごとに${kinds.join("と")}が異なるため結合できません${reason}。保存ボタンで1本ずつ保存してください`;
+    }
+
     /**
      * Collect the per-track details needed to merge init segments.
      * @param {Uint8Array} initSegment
@@ -409,7 +456,7 @@
             if (type === "mvhd") {
                 mvhdOffset = offset;
             } else if (type === "trak") {
-                current = { id: 0, tkhdOffset: -1, handler: "", timescale: 0, entryOffset: -1, signature: "", avcC: null };
+                current = { id: 0, tkhdOffset: -1, handler: "", timescale: 0, entryOffset: -1, signature: "", avcC: null, format: "" };
                 tracks.push(current);
             } else if (type === "trex") {
                 trexOffsets.push(offset);
@@ -425,10 +472,12 @@
             } else if (type === "avc1" || type === "avc3") {
                 current.entryOffset = offset;
                 current.signature = `video:${readUint16(initSegment, offset + 32)}x${readUint16(initSegment, offset + 34)}`;
+                current.format = `${readUint16(initSegment, offset + 32)}×${readUint16(initSegment, offset + 34)}`;
             } else if (type === "avcC") {
                 current.avcC = initSegment.subarray(offset, offset + size);
             } else if (type === "mp4a") {
                 current.signature = `audio:${Array.from(initSegment.subarray(offset, offset + size)).join(",")}`;
+                current.format = describeAudioEntry(initSegment, offset);
             }
         });
 
@@ -730,6 +779,7 @@
         const fragments = [];
         let initSegment = null;
         let initDescription = null;
+        let initName = "";
         let expectedSignature = "";
         let parameterSetsDiffer = false;
         let timelineSeconds = 0;
@@ -738,6 +788,8 @@
 
         sections.forEach((section, index) => {
             const label = sections.length > 1 ? `${index + 1}本目の動画` : "動画";
+            // The section's own title (e.g. "第1節 講義の概要") reads better in a mismatch report.
+            const name = section.label || label;
 
             const streams = probeTsStreams(section.segments);
             if (!streams.found) throw new Error(`${label}の構成（映像・音声）を読み取れませんでした`);
@@ -775,10 +827,11 @@
             if (!initSegment) {
                 initSegment = result.initSegment;
                 initDescription = description;
+                initName = name;
                 expectedSignature = signature;
                 remapInitTrackIds(initSegment, description, idMap);
             } else if (signature !== expectedSignature) {
-                throw new Error("動画ごとに解像度や音声の形式が異なるため結合できません");
+                throw new Error(describeMismatch({ name: initName, description: initDescription }, { name, description }));
             } else {
                 const firstVideo = initDescription.tracks.find((track) => track.handler === "vide");
                 const video = description.tracks.find((track) => track.handler === "vide");
@@ -812,7 +865,7 @@
      * @param {(progress: {phase: "fetch"|"convert", ratio: number}) => void} [onProgress]
      * @returns {Promise<Blob>}
      */
-    async function downloadAsMp4(manifestUrls, onProgress) {
+    async function downloadAsMp4(manifestUrls, onProgress, { labels = [] } = {}) {
         const report = (phase, ratio) => {
             if (onProgress) onProgress({ phase, ratio: Math.max(0, Math.min(1, ratio)) });
         };
@@ -826,12 +879,13 @@
         const totalSegments = playlists.reduce((sum, playlist) => sum + playlist.segments.length, 0);
         let fetchedBefore = 0;
         const sections = [];
-        for (const playlist of playlists) {
+        for (const [index, playlist] of playlists.entries()) {
             const segments = await fetchSegments(playlist.segments, (done) => {
                 report("fetch", (fetchedBefore + done) / totalSegments);
             });
             fetchedBefore += playlist.segments.length;
             sections.push({
+                label: labels[index] || "",
                 segments,
                 duration: playlist.duration,
                 integerDurations: playlist.segments.every((segment) => Number.isInteger(segment.duration)),
@@ -884,6 +938,7 @@
         probeTsStreams,
         pickBestVariant,
         transmuxSections,
+        describeMismatch,
         downloadAsMp4,
         toMp4Filename,
         saveBlob,

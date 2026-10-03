@@ -196,11 +196,67 @@ test("keeps avc1 when every video shares the same parameter sets", () => {
     assert.equal(sampleEntryType(mp4), "avc1");
 });
 
-test("refuses to merge videos with different resolutions", () => {
+test("refuses to merge videos with different resolutions and names both sizes", () => {
+    const { hlsMp4, muxjs } = loadHlsMp4();
+    const sections = [
+        { ...loadFixtureSection(hlsMp4, "a"), label: "第1節 講義の概要" },
+        { ...loadFixtureSection(hlsMp4, "d"), label: "第2節 統計学と確率論" },
+    ];
+
+    assert.throws(
+        () => hlsMp4.transmuxSections(sections, muxjs),
+        {
+            message:
+                "動画ごとに画面の大きさが異なるため結合できません（第1節 講義の概要は160×90、第2節 統計学と確率論は128×72）。保存ボタンで1本ずつ保存してください",
+        },
+    );
+});
+
+test("falls back to numbered names when sections have no titles", () => {
     const { hlsMp4, muxjs } = loadHlsMp4();
     const sections = [loadFixtureSection(hlsMp4, "a"), loadFixtureSection(hlsMp4, "d")];
 
-    assert.throws(() => hlsMp4.transmuxSections(sections, muxjs), /解像度や音声の形式が異なる/);
+    assert.throws(() => hlsMp4.transmuxSections(sections, muxjs), /1本目の動画は160×90、2本目の動画は128×72/);
+});
+
+test("names the section without audio when only one has it", () => {
+    const { hlsMp4, muxjs } = loadHlsMp4();
+    const sections = [loadFixtureSection(hlsMp4, "a"), { ...loadFixtureSection(hlsMp4, "g"), label: "第2節" }];
+
+    assert.throws(() => hlsMp4.transmuxSections(sections, muxjs), /音声の有無が異なるため結合できません（第2節には音声がありません）/);
+});
+
+test("groups each section's values when size and audio both differ", () => {
+    const { hlsMp4 } = loadHlsMp4();
+    const describe = (size, audio) => ({
+        tracks: [
+            { handler: "vide", signature: `video:${size}`, format: size },
+            { handler: "soun", signature: `audio:${audio}`, format: audio },
+        ],
+    });
+
+    assert.equal(
+        hlsMp4.describeMismatch(
+            { name: "第1節「講義の概要」", description: describe("1920×1080", "48kHz・ステレオ") },
+            { name: "第2節「統計学と確率論」", description: describe("1920×1200", "32kHz・モノラル") },
+        ),
+        "動画ごとに画面の大きさと音声の形式が異なるため結合できません（第1節「講義の概要」は1920×1080・48kHz・ステレオ、第2節「統計学と確率論」は1920×1200・32kHz・モノラル）。保存ボタンで1本ずつ保存してください",
+    );
+});
+
+test("describes a differing audio format by rate and channels", () => {
+    const { hlsMp4 } = loadHlsMp4();
+    const describe = (audio) => ({
+        tracks: [
+            { handler: "vide", signature: "video:1920x1080", format: "1920×1080" },
+            { handler: "soun", signature: `audio:${audio}`, format: audio },
+        ],
+    });
+
+    assert.equal(
+        hlsMp4.describeMismatch({ name: "第1節", description: describe("48kHz・ステレオ") }, { name: "第2節", description: describe("44.1kHz・モノラル") }),
+        "動画ごとに音声の形式が異なるため結合できません（第1節は48kHz・ステレオ、第2節は44.1kHz・モノラル）。保存ボタンで1本ずつ保存してください",
+    );
 });
 
 test("rejects merging when no converter is available", () => {

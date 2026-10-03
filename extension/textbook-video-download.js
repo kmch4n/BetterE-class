@@ -57,6 +57,12 @@
             .filter(Boolean);
     }
 
+    // "第2節「統計学と確率論」", used to point at a section in error messages.
+    function sectionLabel(page) {
+        const title = getRowTitle(page.page);
+        return title ? `第${page.page}節「${title}」` : `第${page.page}節`;
+    }
+
     function getMaterialTitle() {
         const parts = Array.from(document.querySelectorAll("#WsTitle"))
             .map((element) => element.textContent.replace(/^\s*>\s*/, "").trim())
@@ -135,6 +141,7 @@
             const blob = await hlsMp4.downloadAsMp4(
                 pages.map((page) => page.manifestUrl),
                 (progress) => reportProgress(progress, pages.length),
+                { labels: pages.map(sectionLabel) },
             );
 
             if (fileHandle) {
