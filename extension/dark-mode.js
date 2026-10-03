@@ -655,17 +655,6 @@
         color: ${DARK_COLORS.text.secondary} !important;
       }
 
-      /* BetterE-class Mark All as Read button */
-      #betterEclassMarkAllAsRead {
-        background-color: ${DARK_COLORS.accent.blue} !important;
-        color: ${DARK_COLORS.bg.primary} !important;
-        box-shadow: 0 2px 4px rgba(88, 166, 255, 0.3) !important;
-      }
-      #betterEclassMarkAllAsRead:hover {
-        background-color: #479de8 !important;
-        box-shadow: 0 4px 8px rgba(88, 166, 255, 0.4) !important;
-      }
-
       /* Checkboxes - dark mode styling */
       input[type="checkbox"] {
         appearance: none !important;

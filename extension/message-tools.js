@@ -1,127 +1,79 @@
 // message-tools.js
-// Adds "Mark All as Read" button on message page
+// Adds a "すべて既読にする" button next to each message toolbar on the inbox (messages.php/inbox).
+// It checks every message on the current page and submits e-class's own "既読にする" action.
 
 (function addMarkAllAsReadButton() {
     "use strict";
 
-    console.log("[BetterE-class] Message tools initialized");
+    const BUTTON_CLASS = "betterEclass-mark-all-read";
 
-    // Create "すべて既読にする" button
+    function getMessageForm() {
+        return document.getElementById("message-form") || document.querySelector("form:has(#MsgListTable)");
+    }
+
+    // Mark every message on this page as read using e-class's own form action
+    function markAllMessagesAsRead(button) {
+        const form = getMessageForm();
+        const markAsReadButton = form && form.querySelector('[name="UNSET_UNREADFLAG"]');
+        if (!markAsReadButton) {
+            console.error("[BetterE-class] Mark as read button not found");
+            return;
+        }
+
+        // The inbox renders the list twice (desktop table and a hidden mobile list); check the visible one
+        const allCheckboxes = Array.from(form.querySelectorAll('input[type="checkbox"][name="id[]"]'));
+        const visible = allCheckboxes.filter((checkbox) => checkbox.getClientRects().length > 0);
+        const checkboxes = visible.length > 0 ? visible : allCheckboxes.filter((checkbox) => checkbox.closest("#MsgListTable"));
+        if (checkboxes.length === 0) return;
+
+        checkboxes.forEach((checkbox) => {
+            checkbox.checked = true;
+        });
+        const selectAll = form.querySelector('input[type="checkbox"][name="autochecker"]');
+        if (selectAll) selectAll.checked = true;
+
+        // Prevent double submission while the page reloads
+        document.querySelectorAll(`.${BUTTON_CLASS}`).forEach((element) => {
+            element.disabled = true;
+        });
+        button.textContent = "既読にしています…";
+
+        if (typeof form.requestSubmit === "function") {
+            form.requestSubmit(markAsReadButton);
+        } else {
+            markAsReadButton.click();
+        }
+    }
+
     function createMarkAllAsReadButton() {
         const button = document.createElement("button");
         button.type = "button";
-        button.textContent = "✓ すべて既読にする";
-        button.id = "betterEclassMarkAllAsRead";
-
-        // Modern button styling
-        Object.assign(button.style, {
-            backgroundColor: "#1a73e8",
-            color: "white",
-            border: "none",
-            borderRadius: "6px",
-            padding: "8px 16px",
-            fontSize: "13px",
-            fontWeight: "500",
-            cursor: "pointer",
-            marginLeft: "1.5em",
-            marginRight: "1em",
-            transition: "all 0.2s ease",
-            boxShadow: "0 2px 4px rgba(26, 115, 232, 0.3)",
-            fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+        // Same look as e-class's own toolbar buttons
+        button.className = `btn btn-default btn-sm ${BUTTON_CLASS}`;
+        button.textContent = "すべて既読にする";
+        button.title = "このページのメッセージをすべて既読にします";
+        button.addEventListener("click", (event) => {
+            event.preventDefault();
+            markAllMessagesAsRead(button);
         });
-
-        // Hover effect
-        button.addEventListener("mouseenter", function () {
-            this.style.backgroundColor = "#1557b0";
-            this.style.boxShadow = "0 4px 8px rgba(26, 115, 232, 0.4)";
-            this.style.transform = "translateY(-1px)";
-        });
-
-        button.addEventListener("mouseleave", function () {
-            this.style.backgroundColor = "#1a73e8";
-            this.style.boxShadow = "0 2px 4px rgba(26, 115, 232, 0.3)";
-            this.style.transform = "translateY(0)";
-        });
-
-        // Active effect
-        button.addEventListener("mousedown", function () {
-            this.style.transform = "translateY(0)";
-            this.style.boxShadow = "0 1px 2px rgba(26, 115, 232, 0.3)";
-        });
-
-        button.addEventListener("mouseup", function () {
-            this.style.transform = "translateY(-1px)";
-            this.style.boxShadow = "0 4px 8px rgba(26, 115, 232, 0.4)";
-        });
-
-        button.onclick = function (e) {
-            e.preventDefault();
-            markAllMessagesAsRead();
-        };
-
         return button;
     }
 
-    // Mark all messages as read
-    function markAllMessagesAsRead() {
-        try {
-            // 1. Click the "select all" checkbox
-            const selectAllCheckbox = document.querySelector('input[type="checkbox"][name="autochecker"]');
-            if (!selectAllCheckbox) {
-                console.error("[BetterE-class] Select all checkbox not found");
-                return;
-            }
+    // The inbox has a toolbar above and below the list; add the button after each "ダウンロード"
+    function insertButtons() {
+        const form = getMessageForm();
+        if (!form) return;
 
-            // Check if already checked, if not, click it
-            if (!selectAllCheckbox.checked) {
-                selectAllCheckbox.click();
-            }
-
-            // 2. Use requestAnimationFrame for smoother execution
-            requestAnimationFrame(() => {
-                // Click the "mark as read" button
-                const markAsReadButton = document.querySelector('input[type="submit"][name="UNSET_UNREADFLAG"]');
-                if (!markAsReadButton) {
-                    console.error("[BetterE-class] Mark as read button not found");
-                    return;
-                }
-
-                markAsReadButton.click();
-            });
-        } catch (error) {
-            console.error("[BetterE-class] Error marking all messages as read:", error);
-        }
+        form.querySelectorAll('[name="downloadmsg"]').forEach((downloadButton) => {
+            const next = downloadButton.nextElementSibling;
+            if (next && next.classList.contains(BUTTON_CLASS)) return;
+            downloadButton.after(" ", createMarkAllAsReadButton());
+        });
     }
 
-    // Insert the button into the page
-    function insertButton() {
-        // Find the download button
-        const downloadButton = document.querySelector('input[type="submit"][name="downloadmsg"][value="ダウンロード"]');
-        if (!downloadButton) {
-            return;
-        }
-
-        // Check if button already exists
-        if (document.getElementById("betterEclassMarkAllAsRead")) {
-            return;
-        }
-
-        // Create and insert the new button
-        const newButton = createMarkAllAsReadButton();
-
-        // Insert after "ダウンロード" button (at the end)
-        downloadButton.parentNode.insertBefore(newButton, downloadButton.nextSibling);
+    if (document.readyState === "loading") {
+        document.addEventListener("DOMContentLoaded", insertButtons);
+    } else {
+        insertButtons();
     }
-
-    // Initialize
-    function init() {
-        // Wait for page to be fully loaded
-        if (document.readyState === "loading") {
-            document.addEventListener("DOMContentLoaded", insertButton);
-        } else {
-            insertButton();
-        }
-    }
-
-    init();
 })();

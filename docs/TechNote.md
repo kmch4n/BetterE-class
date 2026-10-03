@@ -342,16 +342,15 @@ const observer = new IntersectionObserver(callback, {
 ### メッセージページ
 
 #### message-tools.js
-**対象**: `msg_editor.php*`
+**対象**: `messages.php/inbox*`（旧 `msg_editor.php` は e-class の更新で廃止）
 
 「すべて既読にする」ボタンを追加。
 
 **実装方法**
-1. ボタンを作成してページ上部に追加
-2. クリックですべての未読メッセージIDを収集
-3. 各メッセージに対して既読APIリクエストを送信
-4. XMLHttpRequestで `POST` リクエスト
-5. UI更新 (未読バッジを削除)
+1. 上下のツールバーの「ダウンロード」(`[name="downloadmsg"]`) の右に、e-class と同じ `btn btn-default btn-sm` のボタンを追加
+2. クリックで、表示中のレイアウト（PC 用の `#MsgListTable` かスマホ用の一覧）の `id[]` チェックボックスをすべてチェック
+3. e-class の「既読にする」(`[name="UNSET_UNREADFLAG"]`) を submitter として `form.requestSubmit()` で送信
+4. 二重送信を防ぐため、送信中はボタンを無効化
 
 ---
 
