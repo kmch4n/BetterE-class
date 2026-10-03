@@ -84,67 +84,39 @@
 
         const filename = extractFilename(url);
 
-        // Create button container
-        const buttonContainer = document.createElement("div");
-        buttonContainer.className = "betterEclass-attachment-btns";
-        buttonContainer.style.cssText = `
-            display: inline-flex;
-            gap: 4px;
-            margin-left: 8px;
-            vertical-align: middle;
-        `;
+        const controls = window.BetterEclassUtils.controls;
+        const buttonContainer = document.createElement("span");
+        buttonContainer.className = "bec-scope bec-quiz-attachment betterEclass-attachment-btns";
 
-        // Create Download button
-        const downloadButton = window.BetterEclassUtils.createDownloadButton(
-            "⬇️",
-            "ダウンロード",
-            () => {
-                if (DEBUG) {
-                    console.log("[BetterE-class] Downloading:", filename);
-                    console.log("[BetterE-class] URL:", absoluteUrl);
+        // Errors show on the button itself (icon + tooltip) instead of an alert().
+        function requestDownload(type, button) {
+            if (DEBUG) console.log(`[BetterE-class] ${type}:`, filename, absoluteUrl);
+            controls.setButtonState(button, "busy");
+            chrome.runtime.sendMessage({ type, url: absoluteUrl, filename }, (response) => {
+                const error = chrome.runtime.lastError?.message || response?.error;
+                if (error) {
+                    controls.setButtonState(button, "error");
+                    button.title = `保存できませんでした: ${error}`;
+                    return;
                 }
+                controls.setButtonState(button, "idle");
+            });
+        }
 
-                chrome.runtime.sendMessage(
-                    {
-                        type: "downloadDirect",
-                        url: absoluteUrl,
-                        filename: filename,
-                    },
-                    (response) => {
-                        if (response && response.error) {
-                            alert(`ダウンロードエラー: ${response.error}`);
-                        }
-                    }
-                );
-            },
-            true // iconOnly
-        );
-
-        // Create Save As button
-        const saveAsButton = window.BetterEclassUtils.createSaveAsButton(
-            "💾",
-            "名前を付けて保存",
-            () => {
-                if (DEBUG) {
-                    console.log("[BetterE-class] Save As:", filename);
-                    console.log("[BetterE-class] URL:", absoluteUrl);
-                }
-
-                chrome.runtime.sendMessage(
-                    {
-                        type: "downloadWithDialog",
-                        url: absoluteUrl,
-                        filename: filename,
-                    },
-                    (response) => {
-                        if (response && response.error) {
-                            alert(`ダウンロードエラー: ${response.error}`);
-                        }
-                    }
-                );
-            },
-            true // iconOnly
-        );
+        const downloadButton = controls.createButton({
+            icon: "download",
+            label: "保存",
+            title: `${filename} をダウンロードします`,
+            variant: "icon",
+            onClick: (_event, button) => requestDownload("downloadDirect", button),
+        });
+        const saveAsButton = controls.createButton({
+            icon: "saveAs",
+            label: "保存先を選んで保存",
+            title: "保存先と名前を選んで保存します",
+            variant: "icon",
+            onClick: (_event, button) => requestDownload("downloadWithDialog", button),
+        });
 
         buttonContainer.appendChild(downloadButton);
         buttonContainer.appendChild(saveAsButton);
@@ -195,9 +167,8 @@
             return;
         }
 
-        // Check if button factory is available
-        if (!window.BetterEclassUtils?.createDownloadButton) {
-            console.warn("[BetterE-class] Button factory not available");
+        if (!window.BetterEclassUtils?.controls) {
+            console.warn("[BetterE-class] Shared controls not available");
             return;
         }
 

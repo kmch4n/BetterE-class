@@ -137,13 +137,14 @@
             "js": [
                 "utils/button-factory.js",
                 "utils/icons.js",
+                "utils/controls.js",
                 "textbook-panel.js",
                 "vendor/mux.js/mux-mp4.min.js",
                 "utils/hls-mp4.js",
                 "textbook-video-download.js",
                 "textbook-chapter-buttons.js"
             ],
-            "css": ["bec-tokens.css", "textbook-panel.css"],
+            "css": ["bec-tokens.css", "bec-controls.css", "textbook-panel.css"],
             "run_at": "document_end",
             "all_frames": true
         },
@@ -187,12 +188,16 @@
             ],
             "js": [
                 "utils/button-factory.js",
+                "utils/icons.js",
+                "utils/controls.js",
+                "utils/quiz-text.js",
                 "attachment-opener.js",
                 "quiz-attachment-buttons.js",
                 "quiz-copy-button.js",
                 "quiz-export-controller.js",
                 "quiz-export-all.js"
             ],
+            "css": ["bec-tokens.css", "bec-controls.css", "quiz.css"],
             "run_at": "document_end",
             "all_frames": true
         }

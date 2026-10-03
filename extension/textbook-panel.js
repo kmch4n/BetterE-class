@@ -17,73 +17,8 @@
         return element;
     }
 
-    /**
-     * Create a panel-styled button.
-     * @param {{icon: string, label: string, title?: string, variant?: "default"|"primary"|"icon", onClick: (event: MouseEvent, button: HTMLButtonElement) => void}} options
-     * @returns {HTMLButtonElement}
-     */
-    function createButton({ icon, label, title, variant = "default", onClick }) {
-        const button = createElement("button", `bec-btn${variant === "default" ? "" : ` bec-btn--${variant}`}`, { type: "button" });
-        button.dataset.icon = icon;
-        if (title) button.title = title;
-        if (icons) button.appendChild(icons.create(icon));
-
-        if (variant === "icon") {
-            button.setAttribute("aria-label", label);
-            if (!title) button.title = label;
-        } else {
-            const text = createElement("span", "bec-btn__label");
-            text.textContent = label;
-            button.appendChild(text);
-        }
-
-        button.addEventListener("click", (event) => {
-            // aria-disabled keeps the button focusable so its tooltip explains why it is unavailable.
-            if (button.getAttribute("aria-disabled") === "true" || button.getAttribute("aria-busy") === "true") {
-                event.preventDefault();
-                return;
-            }
-            onClick(event, button);
-        });
-        return button;
-    }
-
-    function swapIcon(button, name) {
-        if (!icons) return;
-        const current = button.querySelector("svg");
-        const next = icons.create(name);
-        if (current) current.replaceWith(next);
-        else button.prepend(next);
-    }
-
-    /**
-     * Reflect a button's state. "disabled" needs a reason, shown as the tooltip.
-     * @param {HTMLButtonElement} button
-     * @param {"idle"|"busy"|"disabled"|"error"|"success"} state
-     * @param {{reason?: string}} [options]
-     */
-    function setButtonState(button, state, { reason } = {}) {
-        if (!button) return;
-        button.removeAttribute("aria-busy");
-        button.removeAttribute("aria-disabled");
-        delete button.dataset.state;
-        swapIcon(button, button.dataset.icon);
-
-        if (state === "busy") {
-            button.setAttribute("aria-busy", "true");
-            swapIcon(button, "spinner");
-        } else if (state === "disabled") {
-            button.setAttribute("aria-disabled", "true");
-            if (reason) button.title = reason;
-        } else if (state === "error" || state === "success") {
-            button.dataset.state = state;
-            swapIcon(button, state === "error" ? "alert" : "check");
-            // Return to idle so the state reads as an event, not a mode.
-            setTimeout(() => {
-                if (button.dataset.state === state) setButtonState(button, "idle");
-            }, 3000);
-        }
-    }
+    // Buttons come from utils/controls.js so every injected page shares one button style.
+    const { createButton, setButtonState } = window.BetterEclassUtils.controls;
 
     function getPanel() {
         return document.getElementById(PANEL_ID);

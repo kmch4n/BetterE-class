@@ -14,6 +14,8 @@
     }
 
     const CONTROLLER_KEY = "__betterEclassQuizExportController";
+    // Set by quiz-export-all.js on the button frame window; it owns the buttons and messages.
+    const UI_KEY = "__betterEclassQuizExportUI";
     const COMPLETION_RESET_MS = 3000;
     const FRAME_WAIT_TIMEOUT_MS = 30000;
     const FIRST_QUESTION_NOOP_GRACE_MS = 2000;
@@ -106,12 +108,8 @@
         return getFrameDocument("button");
     }
 
-    function getQuestionElement(questionDoc) {
-        return questionDoc.querySelector(".question p, .question .content") || questionDoc.querySelector(".question.previewPlace, .question, .previewPlace");
-    }
-
     function getQuestionText(questionDoc) {
-        return getQuestionElement(questionDoc)?.textContent.trim() || "";
+        return window.BetterEclassUtils.quizText.getQuestionText(questionDoc);
     }
 
     function detectAnswerLayout(answerDoc) {
@@ -249,47 +247,28 @@
             mode: state.mode,
             current: Math.min(state.currentIndex + 1, state.questionNumbers.length),
             total: state.questionNumbers.length,
+            collected: state.exportData.length,
             lastError: state.lastError,
         };
     }
 
-    function syncUI() {
-        const buttonDoc = getButtonDocument();
-        if (!buttonDoc) return;
-        const copyButton = buttonDoc.querySelector(".betterEclass-quiz-copy-all-btn");
-        const exportButton = buttonDoc.querySelector(".betterEclass-quiz-export-all-btn");
-        if (!copyButton || !exportButton) return;
-
-        const running = isRunning();
-        copyButton.disabled = running;
-        exportButton.disabled = running;
-        copyButton.style.opacity = running ? "0.6" : "1";
-        exportButton.style.opacity = running ? "0.6" : "1";
-        copyButton.style.cursor = running ? "not-allowed" : "pointer";
-        exportButton.style.cursor = running ? "not-allowed" : "pointer";
-
-        if (state.phase === "completed-awaiting-copy") {
-            copyButton.textContent = "📋 収集完了・クリックしてコピー";
-            exportButton.textContent = "💾 全て出力";
-        } else if (running) {
-            const progress = `${Math.min(state.currentIndex + 1, state.questionNumbers.length)}/${state.questionNumbers.length}`;
-            copyButton.textContent = `📋 収集中... (${progress})`;
-            exportButton.textContent = `💾 収集中... (${progress})`;
-        } else if (state.phase === "completed") {
-            copyButton.textContent = state.mode === "copy" ? "✅ コピー完了!" : "📋 全てコピー";
-            exportButton.textContent = state.mode === "file" ? "✅ エクスポート完了!" : "💾 全て出力";
-        } else {
-            copyButton.textContent = "📋 全てコピー";
-            exportButton.textContent = "💾 全て出力";
+    function getUI() {
+        try {
+            return getFrame("button")?.[UI_KEY] || null;
+        } catch (_error) {
+            return null;
         }
     }
 
-    function showAlert(message) {
-        try {
-            getFrame("button")?.alert(message);
-        } catch (_error) {
-            window.alert(message);
-        }
+    function syncUI() {
+        getUI()?.render(getViewState());
+    }
+
+    // Messages appear under the buttons instead of blocking the page with alert().
+    function notify(tone, text) {
+        const ui = getUI();
+        if (ui) ui.showMessage(tone, text);
+        else console.warn("[BetterE-class] Quiz export:", text);
     }
 
     function clearCompletionReset() {
@@ -520,8 +499,12 @@
         URL.revokeObjectURL(url);
     }
 
-    function getWarningsMessage() {
-        return state.warnings.length > 0 ? ["Export completed with notes:", ...state.warnings.map((warning) => `- ${warning}`)].join("\n") : "";
+    function getCompletionMessage() {
+        const total = state.exportData.length;
+        const done = state.mode === "copy" ? `${total}問をコピーしました` : `${total}問をファイルに保存しました`;
+        if (state.warnings.length === 0) return { tone: "success", text: done };
+        state.warnings.forEach((warning) => console.warn("[BetterE-class]", warning));
+        return { tone: "info", text: `${done}。${state.warnings.length}問は回答欄を読み取れませんでした` };
     }
 
     async function finalize(runId) {
@@ -544,9 +527,13 @@
         }
 
         syncUI();
-        const warningsMessage = getWarningsMessage();
-        if (warningsMessage) showAlert(warningsMessage);
-        if (state.phase === "completed") scheduleCompletionReset(runId);
+        if (state.phase === "completed") {
+            const message = getCompletionMessage();
+            notify(message.tone, message.text);
+            scheduleCompletionReset(runId);
+        } else {
+            notify("info", "問題を集めました。もう一度「全てコピー」を押すとコピーします");
+        }
     }
 
     async function restoreFirstQuestion(runId, snapshot) {
@@ -605,9 +592,25 @@
         await finalize(runId);
     }
 
+    /**
+     * Describe what a run would do, so the button frame can ask for a second click before starting.
+     * @returns {{count: number, notice: string} | {error: string}}
+     */
+    function describeStart() {
+        if (isRunning()) return { error: "エクスポート中です。しばらくお待ちください。" };
+        const navigationButtons = getQuestionNavigationButtons();
+        if (navigationButtons.length === 0) return { error: "問題が見つかりませんでした。" };
+        const activeNavigation = navigationButtons.find(({ button }) => isQuestionButtonActive(button));
+        const firstQuestionNumber = navigationButtons[0].questionNumber;
+        const notice = activeNavigation
+            ? `${navigationButtons.length}問を最初から順番に表示して集めます。`
+            : `${navigationButtons.length}問を集めます。現在の位置がわからないため、先に${firstQuestionNumber}番の問題を表示しておくと確実です。`;
+        return { count: navigationButtons.length, notice };
+    }
+
     async function start(mode) {
         if (isRunning()) {
-            showAlert("エクスポート中です。しばらくお待ちください。");
+            notify("error", "エクスポート中です。しばらくお待ちください。");
             return;
         }
         if (state.phase === "completed-awaiting-copy" && mode === "copy") {
@@ -617,15 +620,9 @@
 
         const navigationButtons = getQuestionNavigationButtons();
         if (navigationButtons.length === 0) {
-            showAlert("問題が見つかりませんでした。");
+            notify("error", "問題が見つかりませんでした。");
             return;
         }
-
-        const activeNavigation = navigationButtons.find(({ button }) => isQuestionButtonActive(button));
-        const firstQuestionNumber = navigationButtons[0].questionNumber;
-        const modeText = mode === "copy" ? "コピー" : "エクスポート";
-        const startNotice = activeNavigation ? "最初の問題から順番に収集します。" : `現在位置を判定できないため、${firstQuestionNumber}番の問題を表示してから実行してください。`;
-        if (!getFrame("button")?.confirm(`${navigationButtons.length}問の問題を${modeText}します。\n\n${startNotice}`)) return;
 
         state.runId = createRunId();
         state.phase = "preparing";
@@ -649,7 +646,7 @@
             state.phase = "failed";
             state.lastError = error.message;
             syncUI();
-            showAlert("問題の収集に失敗しました。もう一度お試しください。");
+            notify("error", "問題の収集に失敗しました。もう一度お試しください。");
         }
     }
 
@@ -660,14 +657,17 @@
             state.phase = "completed";
             state.lastError = null;
             scheduleCompletionReset(state.runId);
+            syncUI();
+            notify("success", `${state.exportData.length}問をコピーしました`);
         } catch (error) {
             state.lastError = error.message;
-            showAlert("クリップボードへのコピーに失敗しました。タブを表示した状態でもう一度お試しください。");
+            syncUI();
+            notify("error", "クリップボードにコピーできませんでした。タブを表示した状態でもう一度お試しください。");
         }
-        syncUI();
     }
 
     window[CONTROLLER_KEY] = {
+        describeStart,
         start,
         retryCopy,
         registerButtonFrame,

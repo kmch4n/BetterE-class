@@ -107,11 +107,13 @@ function createHarness(options = {}) {
                     },
                 },
             },
-            confirm() {
-                return true;
-            },
-            alert(message) {
-                harness.alerts.push(message);
+            __betterEclassQuizExportUI: {
+                render(view) {
+                    harness.views.push(view);
+                },
+                showMessage(tone, text) {
+                    harness.messages.push({ tone, text });
+                },
             },
             postMessage() {},
         },
@@ -163,15 +165,11 @@ function createHarness(options = {}) {
     Object.defineProperty(buttons[1], "disabled", { get: () => activeState.number === 1 });
     Object.defineProperty(buttons[2], "disabled", { get: () => activeState.number === 2 });
 
-    const copyButton = { disabled: false, style: {}, textContent: "" };
-    const exportButton = { disabled: false, style: {}, textContent: "" };
     frames.button.document = {
         body: {
             appendChild() {},
         },
-        querySelector(selector) {
-            if (selector === ".betterEclass-quiz-copy-all-btn") return copyButton;
-            if (selector === ".betterEclass-quiz-export-all-btn") return exportButton;
+        querySelector() {
             return null;
         },
         querySelectorAll(selector) {
@@ -191,7 +189,8 @@ function createHarness(options = {}) {
     };
 
     const harness = {
-        alerts: [],
+        messages: [],
+        views: [],
         buttons,
         clickCounts,
         clipboardContent: null,
@@ -252,6 +251,7 @@ function createHarness(options = {}) {
     context.window = context;
     context.window.frames = nestedFrameCollection;
     vm.createContext(context);
+    vm.runInContext(fs.readFileSync("extension/utils/quiz-text.js", "utf8"), context);
     vm.runInContext(fs.readFileSync("extension/quiz-export-controller.js", "utf8"), context);
     harness.controller = context.window.__betterEclassQuizExportController;
     harness.rootDocument = context.document;
@@ -380,7 +380,7 @@ test("a second start request cannot create a concurrent export run", async () =>
     assert.equal(harness.controller.getState().exportData.length, 3);
     assert.equal(harness.clickCounts.get(2), 1);
     assert.equal(harness.clickCounts.get(3), 1);
-    assert.ok(harness.alerts.includes("エクスポート中です。しばらくお待ちください。"));
+    assert.ok(harness.messages.some(({ tone, text }) => tone === "error" && text === "エクスポート中です。しばらくお待ちください。"));
 });
 
 test("hidden collection preserves output for a focused retry without recollecting", async () => {
@@ -414,15 +414,26 @@ test("copy attempts the clipboard without requiring root-document focus", async 
     assert.notEqual(harness.clipboardContent, null);
 });
 
-test("completed button labels reset after three seconds", async () => {
+test("completion is reported as a message and the view returns to idle", async () => {
     const harness = createHarness({ initialQuestion: 1, activeQuestion: 1 });
 
     await harness.controller.start("copy");
 
     assert.equal(harness.controller.getViewState().phase, "completed");
+    assert.deepEqual(harness.messages.at(-1), { tone: "success", text: "3問をコピーしました" });
     await waitForPhase(harness.controller, "idle");
-    assert.equal(harness.frames.button.document.querySelector(".betterEclass-quiz-copy-all-btn").textContent, "📋 全てコピー");
-    assert.equal(harness.frames.button.document.querySelector(".betterEclass-quiz-export-all-btn").textContent, "💾 全て出力");
+    assert.equal(harness.views.at(-1).phase, "idle");
+});
+
+test("describeStart explains the run without starting it", () => {
+    const harness = createHarness({ initialQuestion: 1, activeQuestion: 1 });
+
+    const plan = harness.controller.describeStart();
+
+    assert.equal(plan.count, 3);
+    assert.match(plan.notice, /3問/);
+    assert.equal(harness.controller.getViewState().phase, "idle");
+    assert.equal(harness.clickCounts.size, 0);
 });
 
 test("unsupported answer layouts do not add placeholder text", async () => {
@@ -451,8 +462,7 @@ test("source keeps the UI guard and removes fixed polling from the controller", 
 
 test("button controls render before sibling quiz frames are ready", () => {
     let insertedContainer = null;
-    let copyButton = null;
-    let exportButton = null;
+    const buttonStates = new Map();
     const anchor = {
         parentNode: {
             insertBefore(node) {
@@ -466,6 +476,43 @@ test("button controls render before sibling quiz frames are ready", () => {
         },
         parentElement: anchor,
     };
+    function createElementMock(tagName) {
+        const element = {
+            tagName,
+            children: [],
+            className: "",
+            dataset: {},
+            hidden: false,
+            style: {},
+            setAttribute() {},
+            appendChild(child) {
+                element.children.push(child);
+            },
+            append(...children) {
+                element.children.push(...children);
+            },
+        };
+        element.classList = {
+            add(name) {
+                element.className += ` ${name}`;
+            },
+        };
+        return element;
+    }
+    const controls = {
+        createButton({ label }) {
+            const button = createElementMock("button");
+            button.label = label;
+            return button;
+        },
+        setButtonLabel(button, label) {
+            button.label = label;
+        },
+        setButtonState(button, state, options = {}) {
+            buttonStates.set(button.label, { state, reason: options.reason });
+        },
+        setMessage() {},
+    };
     const documentMock = {
         readyState: "complete",
         body: {
@@ -474,34 +521,16 @@ test("button controls render before sibling quiz frames are ready", () => {
                 insertedContainer = node;
             },
         },
-        createElement(tagName) {
-            const element = {
-                tagName,
-                children: [],
-                className: "",
-                disabled: false,
-                style: {},
-                textContent: "",
-                addEventListener() {},
-                appendChild(child) {
-                    this.children.push(child);
-                    if (child.className === "betterEclass-quiz-copy-all-btn") copyButton = child;
-                    if (child.className === "betterEclass-quiz-export-all-btn") exportButton = child;
-                },
-            };
-            return element;
-        },
+        createElement: createElementMock,
         querySelector(selector) {
             if (selector === 'input[name="page_num"]') return navigationButton;
             if (selector === ".betterEclass-quiz-export-controls") return insertedContainer;
-            if (selector === ".betterEclass-quiz-copy-all-btn") return copyButton;
-            if (selector === ".betterEclass-quiz-export-all-btn") return exportButton;
             return null;
         },
     };
     const context = {
+        BetterEclassUtils: { controls },
         MutationObserver: MutationObserverMock,
-        alert() {},
         document: documentMock,
         location: {
             href: "https://eclass.doshisha.ac.jp/webclass/dqstn_button.php",
@@ -517,7 +546,8 @@ test("button controls render before sibling quiz frames are ready", () => {
     vm.runInContext(fs.readFileSync("extension/quiz-export-all.js", "utf8"), context);
 
     assert.notEqual(insertedContainer, null);
-    assert.equal(copyButton.disabled, true);
-    assert.equal(exportButton.disabled, true);
-    assert.equal(copyButton.textContent, "📋 準備中...");
+    assert.match(insertedContainer.className, /bec-scope/);
+    assert.deepEqual(buttonStates.get("全てコピー"), { state: "disabled", reason: "準備しています" });
+    assert.deepEqual(buttonStates.get("全て出力"), { state: "disabled", reason: "準備しています" });
+    assert.equal(typeof context.__betterEclassQuizExportUI.render, "function");
 });

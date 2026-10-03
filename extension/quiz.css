@@ -1,0 +1,61 @@
+/* Hallmark · component: quiz copy/export controls · genre: modern-minimal · tone: utilitarian
+ * theme: custom (host-matched; tokens in bec-tokens.css, buttons in bec-controls.css)
+ * states: default · hover · focus · active · disabled · loading · error · success
+ */
+
+/* ---- Left column: copy all / export all ----------------------------------- */
+
+.bec-quiz-export {
+    box-sizing: border-box;
+    display: grid;
+    gap: var(--bec-space-xs);
+    margin: var(--bec-space-sm) var(--bec-space-2xs);
+    min-width: 0;
+}
+
+.bec-quiz-export__actions {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--bec-space-2xs);
+}
+
+.bec-quiz-export .bec-btn {
+    width: 100%;
+}
+
+.bec-quiz-export .bec-message,
+.bec-quiz-export .bec-progress {
+    font-size: var(--bec-text-xs);
+}
+
+.bec-quiz-export [hidden] {
+    display: none;
+}
+
+/* ---- Question frame: copy this question ----------------------------------- */
+
+.bec-quiz-copy {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--bec-space-sm);
+    margin-bottom: var(--bec-space-md);
+}
+
+.bec-quiz-copy .bec-message[hidden] {
+    display: none;
+}
+
+/* ---- Answer frame: attachment actions ------------------------------------- */
+
+.bec-quiz-attachment {
+    display: inline-flex;
+    gap: var(--bec-space-2xs);
+    margin-left: var(--bec-space-sm);
+    vertical-align: middle;
+}
+
+.bec-quiz-attachment .bec-btn--icon {
+    width: 26px;
+    height: 26px;
+}
