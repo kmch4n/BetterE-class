@@ -263,8 +263,8 @@
             const notice = document.createElement("div");
             notice.id = MUTED_NOTICE_ID;
             notice.setAttribute("role", "status");
+            notice.className = "bec-scope bec-notice";
             notice.textContent = "ブラウザの自動再生制限により、ミュートで再生しています。音声はプレーヤーで戻してください。";
-            notice.style.cssText = "margin:4px 0;padding:4px 8px;font-size:12px;background:#fff3cd;color:#664d03;";
             video.insertAdjacentElement("afterend", notice);
             video.addEventListener("volumechange", function onVolumeChange() {
                 if (!video.muted) {

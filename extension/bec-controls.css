@@ -196,6 +196,60 @@
     color: var(--bec-color-success);
 }
 
+/* ---- Disclosure headings ------------------------------------------------- */
+
+/* An e-class heading turned into a disclosure button (course timeline, top-page sections);
+ * it keeps the heading's own look and adds a chevron that points down when open. */
+.bec-collapsible-heading .bec-heading-toggle {
+    display: flex;
+    align-items: center;
+    gap: var(--bec-space-xs);
+    width: 100%;
+    padding: 0;
+    font: inherit;
+    color: inherit;
+    text-align: left;
+    background: none;
+    border: none;
+    cursor: pointer;
+}
+
+.bec-collapsible-heading .bec-heading-chevron {
+    flex: none;
+    color: var(--bec-color-muted);
+    transform: rotate(90deg);
+    transition: transform var(--bec-dur-short) var(--bec-ease-out);
+}
+
+.bec-collapsible-heading.is-collapsed .bec-heading-chevron {
+    transform: rotate(0deg);
+}
+
+.bec-collapsible-heading .bec-heading-toggle:focus-visible {
+    outline: 2px solid var(--bec-color-focus);
+    outline-offset: 2px;
+}
+
+@media (hover: hover) {
+    .bec-collapsible-heading .bec-heading-toggle:hover .bec-heading-chevron {
+        color: var(--bec-color-ink);
+    }
+}
+
+/* ---- Inline notice -------------------------------------------------------- */
+
+.bec-notice {
+    box-sizing: border-box;
+    margin: var(--bec-space-2xs) 0;
+    padding: var(--bec-space-xs) var(--bec-space-sm);
+    font-size: var(--bec-text-sm);
+    line-height: 1.5;
+    color: var(--bec-color-ink);
+    background: var(--bec-color-paper-2);
+    border: 1px solid var(--bec-color-rule);
+    border-radius: var(--bec-radius-control);
+}
+
 @keyframes bec-spin {
     to {
         transform: rotate(360deg);
@@ -220,6 +274,10 @@
     .bec-btn:active,
     .bec-btn.is-active {
         transform: none;
+    }
+
+    .bec-collapsible-heading .bec-heading-chevron {
+        transition: none;
     }
 
     .bec-btn[aria-busy="true"] svg,

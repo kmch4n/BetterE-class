@@ -45,7 +45,7 @@
                 "course-toc-sidebar.js",
                 "course-timeline-toggle.js"
             ],
-            "css": ["bec-tokens.css", "course-sidebars.css"],
+            "css": ["bec-tokens.css", "bec-controls.css", "course-sidebars.css"],
             "run_at": "document_end"
         },
         {
@@ -116,8 +116,8 @@
                 "*://eclass.doshisha.ac.jp/webclass/?*",
                 "*://eclass.doshisha.ac.jp/webclass/index.php*"
             ],
-            "js": ["utils/expand-transition.js", "collapsible-sections.js"],
-            "css": ["collapsible.css"],
+            "js": ["utils/icons.js", "utils/expand-transition.js", "collapsible-sections.js"],
+            "css": ["bec-tokens.css", "bec-controls.css", "collapsible.css"],
             "run_at": "document_idle"
         },
         {
@@ -135,7 +135,6 @@
                 "*://eclass.doshisha.ac.jp/webclass/txtbk_show_chapter.php*"
             ],
             "js": [
-                "utils/button-factory.js",
                 "utils/icons.js",
                 "utils/controls.js",
                 "textbook-panel.js",
@@ -154,6 +153,7 @@
                 "*://eclass.doshisha.ac.jp/webclass/txtbk_show_text.php*"
             ],
             "js": ["textbook-video-autoplay.js"],
+            "css": ["bec-tokens.css", "bec-controls.css"],
             "run_at": "document_end",
             "all_frames": true
         },
@@ -167,7 +167,8 @@
         },
         {
             "matches": ["*://eclass.doshisha.ac.jp/webclass/loadit.php*"],
-            "js": ["utils/button-factory.js", "attachment-opener.js"],
+            "js": ["utils/icons.js", "utils/controls.js", "attachment-opener.js"],
+            "css": ["bec-tokens.css", "bec-controls.css", "file-actions.css"],
             "run_at": "document_end",
             "all_frames": true
         },
@@ -175,7 +176,8 @@
             "matches": [
                 "*://eclass.doshisha.ac.jp/webclass/txtbk_show_text.php*"
             ],
-            "js": ["utils/button-factory.js", "attachment-opener.js"],
+            "js": ["utils/icons.js", "utils/controls.js", "attachment-opener.js"],
+            "css": ["bec-tokens.css", "bec-controls.css", "file-actions.css"],
             "run_at": "document_end",
             "all_frames": true
         },
@@ -187,7 +189,6 @@
                 "*://eclass.doshisha.ac.jp/webclass/dqstn_question.php*"
             ],
             "js": [
-                "utils/button-factory.js",
                 "utils/icons.js",
                 "utils/controls.js",
                 "utils/quiz-text.js",
@@ -197,7 +198,7 @@
                 "quiz-export-controller.js",
                 "quiz-export-all.js"
             ],
-            "css": ["bec-tokens.css", "bec-controls.css", "quiz.css"],
+            "css": ["bec-tokens.css", "bec-controls.css", "file-actions.css", "quiz.css"],
             "run_at": "document_end",
             "all_frames": true
         }

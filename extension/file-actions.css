@@ -1,0 +1,40 @@
+/* Hallmark · component: file save / save-as / preview actions · genre: modern-minimal · tone: utilitarian
+ * theme: custom (host-matched; tokens in bec-tokens.css, buttons in bec-controls.css)
+ * layouts: block (under a link) · labeled (quiz left column) · floating (framed file)
+ */
+
+.bec-file-actions {
+    box-sizing: border-box;
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--bec-space-2xs);
+}
+
+.bec-file-actions--block {
+    margin-top: var(--bec-space-xs);
+}
+
+/* The quiz left column is about 160px wide, so labeled buttons stack like copy all / export all. */
+.bec-file-actions--labeled {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+}
+
+.bec-file-actions--labeled .bec-btn {
+    width: 100%;
+}
+
+.bec-file-actions--floating {
+    position: absolute;
+    top: var(--bec-space-md);
+    right: var(--bec-space-md);
+    z-index: 10;
+    padding: var(--bec-space-2xs);
+    background: var(--bec-color-paper);
+    border: 1px solid var(--bec-color-rule);
+    border-radius: var(--bec-radius-panel);
+}
+
+.bec-file-actions-cell {
+    padding: var(--bec-space-sm) var(--bec-space-2xs);
+}

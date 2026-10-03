@@ -659,7 +659,6 @@
     }
 
     function createDownloadButtonForAttachment(url, filename) {
-        // Use shared button factory from utils/button-factory.js
         return createPanelButton(
             { icon: "download", label: `${filename || "添付ファイル"}をダウンロード`, variant: "icon" },
             () => {
@@ -680,7 +679,6 @@
     }
 
     function createSaveAsButtonForAttachment(url, filename) {
-        // Use shared button factory from utils/button-factory.js
         return createPanelButton(
             { icon: "saveAs", label: `${filename || "添付ファイル"}を保存先を選んで保存`, variant: "icon" },
             () => {
@@ -701,7 +699,6 @@
     }
 
     function createPreviewButtonForAttachment(url, filename) {
-        // Use shared button factory from utils/button-factory.js
         return createPanelButton(
             { icon: "preview", label: `${filename || "添付ファイル"}をプレビュー`, variant: "icon" },
             () => {

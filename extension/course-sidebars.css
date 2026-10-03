@@ -49,43 +49,6 @@
     }
 }
 
-/* "タイムライン" heading turned into a disclosure button; keeps e-class's .page-header look. */
-.bec-collapsible-heading .bec-heading-toggle {
-    display: flex;
-    align-items: center;
-    gap: var(--bec-space-xs);
-    width: 100%;
-    padding: 0;
-    font: inherit;
-    color: inherit;
-    text-align: left;
-    background: none;
-    border: none;
-    cursor: pointer;
-}
-
-.bec-collapsible-heading .bec-heading-chevron {
-    flex: none;
-    color: var(--bec-color-muted);
-    transform: rotate(90deg);
-    transition: transform var(--bec-dur-short) var(--bec-ease-out);
-}
-
-.bec-collapsible-heading.is-collapsed .bec-heading-chevron {
-    transform: rotate(0deg);
-}
-
-.bec-collapsible-heading .bec-heading-toggle:focus-visible {
-    outline: 2px solid var(--bec-color-focus);
-    outline-offset: 2px;
-}
-
-@media (hover: hover) {
-    .bec-collapsible-heading .bec-heading-toggle:hover .bec-heading-chevron {
-        color: var(--bec-color-ink);
-    }
-}
-
 /* ---- Course TOC (left column, below the timeline) -------------------------- */
 
 #betterEclass-toc-sidebar {

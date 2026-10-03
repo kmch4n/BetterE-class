@@ -16,18 +16,15 @@
         return;
     }
 
-    // Add BetterE-class branding
-    const betterEclassBrand = document.createElement("span");
-    betterEclassBrand.textContent = ` | 🚀 BetterE-class v${version}`;
-    betterEclassBrand.style.cssText = "color: #4a90e2; font-weight: 500;";
+    // Add BetterE-class branding as a quiet link that inherits the footer's colour,
+    // matching "Powered by WebClass" next to it.
+    const link = document.createElement("a");
+    link.href = "https://github.com/kmch4n/BetterE-class";
+    link.target = "_blank";
+    link.rel = "noopener";
+    link.textContent = `BetterE-class v${version}`;
+    link.title = "BetterE-class - E-classを便利にする拡張機能";
+    link.style.color = "inherit";
 
-    // Optionally make it clickable to link to GitHub
-    betterEclassBrand.style.cursor = "pointer";
-    betterEclassBrand.title = "BetterE-class - E-classを便利にする拡張機能";
-
-    betterEclassBrand.addEventListener("click", () => {
-        window.open("https://github.com/kmch4n/BetterE-class", "_blank");
-    });
-
-    footerMessage.appendChild(betterEclassBrand);
+    footerMessage.append(" | ", link);
 })();

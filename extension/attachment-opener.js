@@ -124,29 +124,8 @@
         const newRow = document.createElement("tr");
         const cell = document.createElement("td");
         cell.setAttribute("colspan", "2");
-        cell.style.cssText = "padding: 10px 5px;";
-
-        const buttonContainer = document.createElement("div");
-        buttonContainer.className = "betterEclass-quiz-download-btns";
-        buttonContainer.style.cssText = "display: flex; flex-direction: column; gap: 6px;";
-
-        // Create buttons
-        const downloadBtn = createDownloadButton("⬇️", "ダウンロード", pdfUrl, filename);
-        const saveAsBtn = createSaveAsButton("💾", "名前を付けて保存", pdfUrl, filename);
-        const previewBtn = createPreviewButton("👁️", "プレビュー", pdfUrl, filename);
-
-        downloadBtn.style.width = "100%";
-        downloadBtn.style.justifyContent = "center";
-        saveAsBtn.style.width = "100%";
-        saveAsBtn.style.justifyContent = "center";
-        previewBtn.style.width = "100%";
-        previewBtn.style.justifyContent = "center";
-
-        buttonContainer.appendChild(downloadBtn);
-        buttonContainer.appendChild(saveAsBtn);
-        buttonContainer.appendChild(previewBtn);
-
-        cell.appendChild(buttonContainer);
+        cell.className = "bec-file-actions-cell";
+        cell.appendChild(createFileActions(pdfUrl, filename, { layout: "labeled", className: "betterEclass-quiz-download-btns" }));
         newRow.appendChild(cell);
 
         // Insert after the Q.1 row (first row)
@@ -326,28 +305,17 @@
             return;
         }
 
-        // Extract filename from path
-        const fileName = filePath.split("/").pop();
-        const decodedFileName = safeDecodeURIComponent(fileName);
+        const decodedFileName = safeDecodeURIComponent(filePath.split("/").pop());
+        const actions = createFileActions(loaditUrl, decodedFileName, {
+            layout: "floating",
+            preview: false,
+            className: "betterEclass-frame-download",
+        });
 
-        // Create button container
-        const buttonContainer = document.createElement("div");
-        buttonContainer.className = "betterEclass-frame-download";
-        buttonContainer.style.cssText = "position: absolute; top: 10px; right: 10px; z-index: 1000; display: flex; gap: 4px; background: rgba(255, 255, 255, 0.95); padding: 6px; border-radius: 6px; box-shadow: 0 2px 8px rgba(0,0,0,0.15);";
-
-        // Create direct download button
-        const downloadBtn = createDownloadButton("⬇️", "ダウンロード", loaditUrl, decodedFileName);
-        buttonContainer.appendChild(downloadBtn);
-
-        // Create "save as" button
-        const saveAsBtn = createSaveAsButton("💾", "名前を付けて保存", loaditUrl, decodedFileName);
-        buttonContainer.appendChild(saveAsBtn);
-
-        // Insert button container
         if (frameContainer.style.position === "" || frameContainer.style.position === "static") {
             frameContainer.style.position = "relative";
         }
-        frameContainer.appendChild(buttonContainer);
+        frameContainer.appendChild(actions);
     }
 
     function addDownloadButtonForLoaditLink(link, loaditUrl, filePath) {
@@ -357,29 +325,8 @@
             return;
         }
 
-        // Extract filename from path
-        const fileName = filePath.split("/").pop();
-        const decodedFileName = safeDecodeURIComponent(fileName);
-
-        // Create button container
-        const buttonContainer = document.createElement("div");
-        buttonContainer.className = "betterEclass-download-btns";
-        buttonContainer.style.cssText = "margin-top: 6px; display: flex; gap: 4px; flex-wrap: wrap;";
-
-        // Create direct download button
-        const downloadBtn = createDownloadButton("⬇️", "ダウンロード", loaditUrl, decodedFileName);
-        buttonContainer.appendChild(downloadBtn);
-
-        // Create "save as" button
-        const saveAsBtn = createSaveAsButton("💾", "名前を付けて保存", loaditUrl, decodedFileName);
-        buttonContainer.appendChild(saveAsBtn);
-
-        // Create preview button
-        const previewBtn = createPreviewButton("👁️", "プレビュー", loaditUrl, decodedFileName);
-        buttonContainer.appendChild(previewBtn);
-
-        // Insert button after the link
-        parent.appendChild(buttonContainer);
+        const decodedFileName = safeDecodeURIComponent(filePath.split("/").pop());
+        parent.appendChild(createFileActions(loaditUrl, decodedFileName, { layout: "block", className: "betterEclass-download-btns" }));
     }
 
     function addDownloadButton(attachmentLink, downloadUrl) {
@@ -389,30 +336,9 @@
             return;
         }
 
-        // Extract file name from URL
-        const urlParams = new URLSearchParams(downloadUrl.split("?")[1]);
-        const fileName = urlParams.get("file_name");
+        const fileName = new URLSearchParams(downloadUrl.split("?")[1]).get("file_name");
         const decodedFileName = fileName ? safeDecodeURIComponent(fileName) : "file";
-
-        // Create button container
-        const buttonContainer = document.createElement("div");
-        buttonContainer.className = "betterEclass-download-btns";
-        buttonContainer.style.cssText = "margin-top: 6px; display: flex; gap: 4px; flex-wrap: wrap;";
-
-        // Create direct download button
-        const downloadBtn = createDownloadButton("⬇️", "ダウンロード", downloadUrl, decodedFileName);
-        buttonContainer.appendChild(downloadBtn);
-
-        // Create "save as" button
-        const saveAsBtn = createSaveAsButton("💾", "名前を付けて保存", downloadUrl, decodedFileName);
-        buttonContainer.appendChild(saveAsBtn);
-
-        // Create preview button
-        const previewBtn = createPreviewButton("👁️", "プレビュー", downloadUrl, decodedFileName);
-        buttonContainer.appendChild(previewBtn);
-
-        // Insert button after the attachment link
-        parent.appendChild(buttonContainer);
+        parent.appendChild(createFileActions(downloadUrl, decodedFileName, { layout: "block", className: "betterEclass-download-btns" }));
     }
 
     function addDownloadButtonForDirectLink(pdfLink, pdfUrl) {
@@ -421,157 +347,89 @@
             return;
         }
 
-        // Extract file name from URL path
         const urlPath = pdfUrl.split("?")[0];
-        const fileName = urlPath.substring(urlPath.lastIndexOf("/") + 1);
-        const decodedFileName = safeDecodeURIComponent(fileName);
-
-        // Create button container
-        const buttonContainer = document.createElement("div");
-        buttonContainer.className = "betterEclass-download-btns";
-        buttonContainer.style.cssText = "margin-top: 6px; display: flex; gap: 4px; flex-wrap: wrap;";
-
-        // Create direct download button
-        const downloadBtn = createDownloadButton("⬇️", "ダウンロード", pdfUrl, decodedFileName);
-        buttonContainer.appendChild(downloadBtn);
-
-        // Create "save as" button
-        const saveAsBtn = createSaveAsButton("💾", "名前を付けて保存", pdfUrl, decodedFileName);
-        buttonContainer.appendChild(saveAsBtn);
-
-        // Create preview button (for direct PDF links, preview is just opening in new tab)
-        const previewBtn = createPreviewButton("👁️", "プレビュー", pdfUrl, decodedFileName);
-        buttonContainer.appendChild(previewBtn);
-
-        // Insert button container after the link
-        pdfLink.parentNode.insertBefore(buttonContainer, pdfLink.nextSibling);
+        const decodedFileName = safeDecodeURIComponent(urlPath.substring(urlPath.lastIndexOf("/") + 1));
+        const actions = createFileActions(pdfUrl, decodedFileName, { layout: "block", className: "betterEclass-download-btns" });
+        pdfLink.parentNode.insertBefore(actions, pdfLink.nextSibling);
     }
 
-    function createDownloadButton(icon, text, downloadUrl, fileName) {
-        // Use shared button factory from utils/button-factory.js
-        return window.BetterEclassUtils.createDownloadButton(
-            icon,
-            text,
-            async () => {
-            try {
-                const absoluteUrl = resolveAbsoluteUrl(downloadUrl);
+    /**
+     * Save / save-as / preview buttons for one file, built on utils/controls.js.
+     * "labeled" shows text labels (narrow quiz column), "block" sits under a link,
+     * "floating" overlays the top-right corner of a framed file.
+     * @param {string} url
+     * @param {string} fileName
+     * @param {{layout: "labeled"|"block"|"floating", preview?: boolean, className?: string}} options
+     * @returns {HTMLElement}
+     */
+    function createFileActions(url, fileName, { layout, preview = true, className = "" }) {
+        const controls = window.BetterEclassUtils.controls;
+        const labeled = layout === "labeled";
+        const container = document.createElement("div");
+        container.className = `bec-scope bec-file-actions bec-file-actions--${layout} ${className}`.trim();
+        container.setAttribute("role", "group");
+        container.setAttribute("aria-label", fileName);
 
-                // Intermediate pages return HTML, so let the background resolve the real file
-                if (needsHtmlExtraction(absoluteUrl)) {
-                    chrome.runtime.sendMessage(
-                        {
-                            type: "downloadDirect",
-                            url: absoluteUrl,
-                            filename: fileName,
-                        },
-                        (response) => {
-                            if (chrome.runtime.lastError) {
-                                console.error("[BetterE-class] Runtime error:", chrome.runtime.lastError);
-                                return;
-                            }
-                            if (response && response.error) {
-                                console.error("[BetterE-class] Download error:", response.error);
-                            }
-                        },
-                    );
-                    return;
-                }
+        const actions = [
+            { icon: "download", label: "ダウンロード", title: `${fileName} をダウンロードします`, run: () => downloadFile(url, fileName) },
+            { icon: "saveAs", label: "保存先を選ぶ", title: "保存先と名前を選んで保存します", run: () => requestBackground("downloadWithDialog", url, fileName) },
+        ];
+        if (preview) {
+            actions.push({ icon: "preview", label: "プレビュー", title: "新しいタブでプレビューします", run: () => requestBackground("previewFile", url, fileName) });
+        }
 
-                // Fetch the file with credentials to maintain session
-                const response = await fetch(absoluteUrl, {
-                    credentials: "include",
-                });
-                if (!response.ok) {
-                    console.error("[BetterE-class] Download failed:", response.status);
-                    return;
-                }
-
-                const blob = await response.blob();
-                const url = URL.createObjectURL(blob);
-
-                // Create a temporary link and click it
-                const link = document.createElement("a");
-                link.href = url;
-                link.download = fileName || "download";
-                link.style.display = "none";
-                document.body.appendChild(link);
-                link.click();
-                document.body.removeChild(link);
-
-                // Clean up the URL object
-                setTimeout(() => URL.revokeObjectURL(url), 100);
-            } catch (error) {
-                console.error("[BetterE-class] Error triggering download:", error);
-            }
-            },
-            true, // iconOnly mode
-        );
+        actions.forEach(({ icon, label, title, run }) => {
+            const button = controls.createButton({
+                icon,
+                label,
+                title,
+                variant: labeled ? "default" : "icon",
+                onClick: async (_event, target) => {
+                    controls.setButtonState(target, "busy");
+                    const error = await run().catch((caught) => caught.message || String(caught));
+                    controls.setButtonState(target, error ? "error" : "idle");
+                    target.title = error ? `できませんでした: ${error}` : title;
+                },
+            });
+            container.appendChild(button);
+        });
+        return container;
     }
 
-    function createSaveAsButton(icon, text, downloadUrl, fileName) {
-        // Use shared button factory from utils/button-factory.js
-        return window.BetterEclassUtils.createSaveAsButton(
-            icon,
-            text,
-            () => {
-                try {
-                    const absoluteUrl = resolveAbsoluteUrl(downloadUrl);
-
-                    // Use Chrome downloads API to prompt save dialog
-                    chrome.runtime.sendMessage(
-                        {
-                            type: "downloadWithDialog",
-                            url: absoluteUrl,
-                            filename: fileName,
-                        },
-                        (response) => {
-                            if (chrome.runtime.lastError) {
-                                console.error("[BetterE-class] Runtime error:", chrome.runtime.lastError);
-                            }
-
-                            if (response && response.error) {
-                                console.error("[BetterE-class] Download error:", response.error);
-                            }
-                        },
-                    );
-                } catch (error) {
-                    console.error("[BetterE-class] Error triggering save as:", error);
-                }
-            },
-            true, // iconOnly mode
-        );
+    /**
+     * Ask background.js to handle a file. Resolves with an error message, or null on success.
+     * @returns {Promise<string|null>}
+     */
+    function requestBackground(type, url, fileName) {
+        return new Promise((resolve) => {
+            chrome.runtime.sendMessage({ type, url: resolveAbsoluteUrl(url), filename: fileName }, (response) => {
+                const error = chrome.runtime.lastError?.message || response?.error || null;
+                if (error) console.error(`[BetterE-class] ${type} failed:`, error);
+                resolve(error);
+            });
+        });
     }
 
-    function createPreviewButton(icon, text, downloadUrl, fileName) {
-        // Use shared button factory from utils/button-factory.js
-        return window.BetterEclassUtils.createPreviewButton(
-            icon,
-            text,
-            () => {
-                try {
-                    const absoluteUrl = resolveAbsoluteUrl(downloadUrl);
-                    chrome.runtime.sendMessage(
-                        {
-                            type: "previewFile",
-                            url: absoluteUrl,
-                            filename: fileName,
-                        },
-                        (response) => {
-                            if (chrome.runtime.lastError) {
-                                console.error("[BetterE-class] Preview runtime error:", chrome.runtime.lastError);
-                                return;
-                            }
-                            if (response && response.error) {
-                                console.error("[BetterE-class] Preview error:", response.error);
-                            }
-                        },
-                    );
-                } catch (error) {
-                    console.error("[BetterE-class] Error triggering preview:", error);
-                }
-            },
-            true, // iconOnly mode
-        );
+    async function downloadFile(url, fileName) {
+        const absoluteUrl = resolveAbsoluteUrl(url);
+
+        // Intermediate pages return HTML, so let the background resolve the real file
+        if (needsHtmlExtraction(absoluteUrl)) return requestBackground("downloadDirect", url, fileName);
+
+        // Fetch the file with credentials to maintain session
+        const response = await fetch(absoluteUrl, { credentials: "include" });
+        if (!response.ok) return `HTTP ${response.status}`;
+
+        const objectUrl = URL.createObjectURL(await response.blob());
+        const link = document.createElement("a");
+        link.href = objectUrl;
+        link.download = fileName || "download";
+        link.hidden = true;
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        setTimeout(() => URL.revokeObjectURL(objectUrl), 100);
+        return null;
     }
 
     function resolveAbsoluteUrl(url) {

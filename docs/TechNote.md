@@ -158,15 +158,25 @@ Google Material Symbolsアイコンを生成。
 
 ---
 
-### utils/button-factory.js
+### utils/controls.js
 
-統一されたボタンを生成。
+e-class に埋め込むボタンを生成する共通部品。見た目は `bec-controls.css`、色やサイズは `bec-tokens.css` のトークンを使う。ボタンは `.bec-scope` を付けた要素の中に置く。
 
 ```javascript
-window.BetterEclassUtils.buttonFactory = {
-  createButton: (text, className, onClick) => {...}
+window.BetterEclassUtils.controls = {
+  createButton: ({ icon, label, title, variant, onClick }) => {...}, // variant: "default" | "primary" | "icon"
+  setButtonState: (button, state, { reason }) => {...},               // "idle" | "busy" | "disabled" | "error" | "success"
+  setButtonLabel: (button, label) => {...},
+  setMessage: (element, tone, text) => {...},                        // tone: "info" | "success" | "error"
 }
 ```
+
+- 結果はボタンの状態と `.bec-message` で伝え、`alert()` や `confirm()` は使わない
+- アイコンは `utils/icons.js` の線画 SVG
+
+### utils/quiz-text.js
+
+クイズの問題文を画面の表示どおりに読み取る。段落（`<p>`）ごとに1行とし、全角スペースの字下げは残す。「問題をコピー」と「全てコピー」「全て出力」で共有。
 
 ---
 
@@ -389,7 +399,7 @@ const observer = new IntersectionObserver(callback, {
 - プレビュー
 
 **実装方法**
-1. utils/button-factory.js でボタンを作成
+1. utils/controls.js でボタンを作成
 2. 各章のタイトル横に追加
 3. background.jsにメッセージを送信
    - `downloadFile` (ダウンロード)

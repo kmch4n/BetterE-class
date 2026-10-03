@@ -23,12 +23,25 @@
         });
     }
 
-    // Create toggle button
-    function createToggleButton(isCollapsed) {
-        const button = document.createElement("span");
-        button.className = "betterEclass-collapse-toggle";
-        button.innerHTML = isCollapsed ? "▶" : "▼";
+    // Turn the heading's contents into a disclosure button with the shared chevron
+    // (same look as the course page's timeline heading; styles in bec-controls.css).
+    function createToggleButton(headerElement, contentElement) {
+        const icons = window.BetterEclassUtils.icons;
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = "bec-heading-toggle betterEclass-collapse-toggle";
+        if (contentElement.id) button.setAttribute("aria-controls", contentElement.id);
+        if (icons) button.appendChild(icons.create("chevronRight", { size: 14, className: "bec-heading-chevron" }));
+        const label = document.createElement("span");
+        label.append(...headerElement.childNodes);
+        button.appendChild(label);
+        headerElement.appendChild(button);
         return button;
+    }
+
+    function setExpanded(headerElement, button, expanded) {
+        button.setAttribute("aria-expanded", String(expanded));
+        headerElement.classList.toggle("is-collapsed", !expanded);
     }
 
     // Make a section collapsible
@@ -44,13 +57,11 @@
 
         const isCollapsed = collapsedState[sectionId] === true;
 
-        // Add toggle button to header
-        const toggleButton = createToggleButton(isCollapsed);
-        headerElement.classList.add("betterEclass-collapsible-header");
-        headerElement.insertBefore(toggleButton, headerElement.firstChild);
-
-        // Setup content
+        contentElement.id = contentElement.id || `betterEclass-section-${sectionId}`;
         contentElement.classList.add("betterEclass-collapsible-content");
+        headerElement.classList.add("bec-scope", "bec-collapsible-heading", "betterEclass-collapsible-header");
+        const toggleButton = createToggleButton(headerElement, contentElement);
+        setExpanded(headerElement, toggleButton, !isCollapsed);
 
         // Expanded content has no height limit, so content that grows later is never clipped
         if (isCollapsed) {
@@ -59,8 +70,7 @@
             contentElement.style.maxHeight = "0px";
         }
 
-        // Toggle function
-        function toggle() {
+        toggleButton.addEventListener("click", () => {
             const { expand, collapse } = window.BetterEclassUtils.expandTransition;
             const isCurrentlyCollapsed = contentElement.classList.contains("collapsed");
 
@@ -68,18 +78,14 @@
                 // Expand - remove collapsed class first to get correct scrollHeight
                 contentElement.classList.remove("collapsed");
                 expand(contentElement);
-                toggleButton.textContent = "▼";
                 saveCollapsedState(sectionId, false);
             } else {
                 collapse(contentElement);
                 contentElement.classList.add("collapsed");
-                toggleButton.textContent = "▶";
                 saveCollapsedState(sectionId, true);
             }
-        }
-
-        // Add click event
-        headerElement.addEventListener("click", toggle);
+            setExpanded(headerElement, toggleButton, isCurrentlyCollapsed);
+        });
     }
 
     // Make admin notices collapsible

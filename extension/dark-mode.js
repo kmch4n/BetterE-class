@@ -1022,17 +1022,17 @@
       top: 10px;
       left: 50%;
       transform: translateX(-50%);
-      background-color: #d29922;
-      color: #0d1117;
-      padding: 12px 24px;
-      border-radius: 8px;
-      font-size: 14px;
-      font-weight: 500;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+      background-color: ${DARK_COLORS.bg.secondary};
+      color: ${DARK_COLORS.text.primary};
+      border: 1px solid ${DARK_COLORS.accent.yellow};
+      padding: 8px 16px;
+      border-radius: 4px;
+      font-size: 13px;
       z-index: 10000;
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      font-family: inherit;
     `;
-        banner.textContent = "⚠️ ダークモードはメッセージページに対応していません";
+        banner.setAttribute("role", "status");
+        banner.textContent = "ダークモードはメッセージページに対応していません";
 
         document.body.appendChild(banner);
 

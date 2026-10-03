@@ -1,23 +1,6 @@
 /* Collapsible sections styles */
 
-.betterEclass-collapse-toggle {
-    cursor: pointer;
-    user-select: none;
-    margin-right: 8px;
-    display: inline-block;
-    transition: transform 0.2s ease;
-    font-size: 0.8em;
-}
-
-.betterEclass-collapsible-header {
-    cursor: pointer;
-    user-select: none;
-    transition: background-color 0.2s ease;
-}
-
-.betterEclass-collapsible-header:hover {
-    background-color: rgba(0, 0, 0, 0.02);
-}
+/* The heading toggle (button + chevron) is styled in bec-controls.css. */
 
 .betterEclass-collapsible-content {
     overflow: hidden;
