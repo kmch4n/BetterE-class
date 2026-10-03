@@ -32,3 +32,42 @@
     background: var(--bec-color-new);
     border-radius: var(--bec-radius-control);
 }
+
+/* Unsubmitted tasks under each course: name, then remaining time and due date. */
+#betterEclassDeadlineList .bec-deadline-tasks {
+    flex-basis: 100%;
+    list-style: none;
+    margin: calc(var(--bec-space-2xs) * -1) 0 0;
+    padding: 0 0 var(--bec-space-xs);
+}
+
+#betterEclassDeadlineList .bec-deadline-task {
+    display: flex;
+    flex-direction: column;
+    padding: var(--bec-space-3xs) 0;
+    font-size: var(--bec-text-sm);
+    line-height: 1.45;
+}
+
+#betterEclassDeadlineList .bec-deadline-task-name {
+    color: var(--bec-color-ink);
+    overflow-wrap: anywhere;
+}
+
+#betterEclassDeadlineList .bec-deadline-task-due {
+    display: flex;
+    flex-wrap: wrap;
+    column-gap: var(--bec-space-xs);
+    color: var(--bec-color-muted);
+    font-variant-numeric: tabular-nums;
+}
+
+#betterEclassDeadlineList .bec-deadline-task-remaining {
+    font-weight: 700;
+    color: var(--bec-color-ink);
+}
+
+/* Under 24 hours left */
+#betterEclassDeadlineList .bec-deadline-task.is-urgent .bec-deadline-task-remaining {
+    color: var(--bec-color-error);
+}

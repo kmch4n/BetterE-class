@@ -35,6 +35,17 @@ class FakeElement {
         this.attributes = {};
         this.style = {};
         this.ownText = "";
+        this.dataset = {};
+        this.isConnected = true;
+        this.replacedWith = null;
+    }
+
+    replaceWith(node) {
+        this.replacedWith = node;
+    }
+
+    querySelectorAll() {
+        return [];
     }
 
     append(...nodes) {
@@ -70,7 +81,7 @@ function findByClass(element, className) {
     return element.children.filter((child) => child instanceof FakeElement).flatMap((child) => findByClass(child, className));
 }
 
-async function renderDeadlineList(deadlineElements) {
+async function renderDeadlineList(deadlineElements, deadlines = undefined) {
     let onDomContentLoaded = null;
     let insertedList = null;
     const sidebar = {
@@ -102,6 +113,7 @@ async function renderDeadlineList(deadlineElements) {
     };
     const context = {
         BetterEclassUtils: {
+            deadlines,
             settings: {
                 async getSettings() {
                     return { enableDeadlineHighlight: true };
@@ -123,6 +135,7 @@ async function renderDeadlineList(deadlineElements) {
             callback();
         },
         setTimeout,
+        setInterval() {},
     };
     context.window = context;
     vm.createContext(context);
@@ -204,5 +217,54 @@ test("renders course names and warnings as text instead of markup", async () => 
     assert.equal(link.attributes.href, "https://example.test/course/1");
     assert.equal(link.attributes.target, "_top");
     assert.match(warning.textContent, /<img src=x onerror=alert\(1\)> due$/);
+    assert.equal(countByClass(list, "bec-side-widget-item"), 1);
+});
+
+function fakeDeadlines(tasksByGroup) {
+    return {
+        URGENT_MS: 24 * 60 * 60 * 1000,
+        async fetchApproachingTasks(groupId) {
+            if (!(groupId in tasksByGroup)) throw new Error("request failed");
+            return tasksByGroup[groupId];
+        },
+        formatRemaining: () => "",
+        formatDue: (date) => date.toISOString(),
+    };
+}
+
+function task(name, due, submitted = false) {
+    return { id: name, name, due: new Date(due), submitted };
+}
+
+async function settle() {
+    await new Promise((resolve) => setImmediate(resolve));
+}
+
+test("replaces course rows with unsubmitted tasks, nearest course first", async () => {
+    const deadlines = fakeDeadlines({
+        1: [task("Report 1", "2026-10-09T03:00:00Z"), task("Done", "2026-10-05T03:00:00Z", true)],
+        2: [task("Quiz 2", "2026-10-04T03:00:00Z")],
+    });
+    const list = await renderDeadlineList(
+        [createDeadlineElement("https://example.test/webclass/course.php/1/login", "⚠ 締切が近い課題があります。"), createDeadlineElement("https://example.test/webclass/course.php/2/login", "⚠ 締切が近い課題があります。")],
+        deadlines,
+    );
+    await settle();
+
+    const enriched = list.replacedWith;
+    assert.ok(enriched);
+    assert.match(enriched.textContent, /2件/);
+    assert.deepEqual(
+        findByClass(enriched, "bec-deadline-task-name").map((element) => element.textContent),
+        ["Quiz 2", "Report 1"],
+    );
+    assert.doesNotMatch(enriched.textContent, /Done/);
+});
+
+test("keeps the plain row when a course's deadlines cannot be loaded", async () => {
+    const list = await renderDeadlineList([createDeadlineElement("https://example.test/webclass/course.php/9/login", "⚠ 締切が近い課題があります。")], fakeDeadlines({}));
+    await settle();
+
+    assert.equal(list.replacedWith, null);
     assert.equal(countByClass(list, "bec-side-widget-item"), 1);
 });

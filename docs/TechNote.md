@@ -283,12 +283,12 @@ const observer = new IntersectionObserver(callback, {
 締切が近い課題をサイドバーに一覧表示。
 
 **実装方法**
-1. ページ内のすべての課題を走査
-2. 締切日時をパース
-3. 現在時刻との差を計算
-4. 締切が近い順にソート
-5. サイドバーウィジェットを作成 (`position: fixed`)
-6. 色分け (24時間以内: 赤、3日以内: 黄色)
+1. e-class の締切警告（`.course-contents-info`）から対象科目と科目 ID を取得
+2. 科目名だけのウィジェットをサイドバー（e-class の side-block の枠）に先に挿入
+3. `utils/deadline-api.js` が「課題実施状況一覧」ダッシュボードの内部 API（同一オリジン・読み取りのみ）`/webclass/ip_mods.php/plugin/score_summary_table/contents?group_id=<科目ID>` から課題を取得
+4. 公開中・締切まで7日以内・未提出の課題を締切が近い順に並べ、ウィジェットを置き換え
+5. 残り時間を1分ごとに更新し、24時間を切ったら赤字に
+6. API の取得に失敗した科目は科目名だけの表示を維持（非公式 API のため）
 
 ---
 

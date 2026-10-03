@@ -106,7 +106,7 @@
                 "*://eclass.doshisha.ac.jp/webclass/?*",
                 "*://eclass.doshisha.ac.jp/webclass/index.php*"
             ],
-            "js": ["utils/icons.js", "deadline-list.js"],
+            "js": ["utils/icons.js", "utils/deadline-api.js", "deadline-list.js"],
             "css": ["bec-tokens.css", "side-widgets.css", "deadline-list.css"],
             "run_at": "document_idle"
         },
