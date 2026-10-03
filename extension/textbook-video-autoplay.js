@@ -10,6 +10,8 @@
         READY: "betterEclass_videoReady",
         ENDED: "betterEclass_videoEnded",
         PLAY: "betterEclass_videoPlay",
+        MUTE_STATE: "betterEclass_videoMuteState",
+        MUTE_SYNC: "betterEclass_videoMuteSync",
     };
     const CHAPTER_FRAME_NAME = "webclass_chapter";
     const CONTENT_FRAME_NAME = "webclass_content";
@@ -58,19 +60,39 @@
     }
 
     /**
-     * Mute videos that have not been handled yet, so a video the user unmuted stays audible.
-     * @param {HTMLVideoElement[]} videos
-     * @returns {number} how many videos were muted
+     * Change a video's mute state from script. The change is counted so the volumechange it
+     * causes is not mistaken for the user's choice.
+     * @param {HTMLVideoElement} video
+     * @param {boolean} muted
      */
-    function muteNewVideos(videos) {
-        let muted = 0;
-        videos.forEach((video) => {
-            if (video.dataset.betterEclassMuteApplied) return;
-            video.dataset.betterEclassMuteApplied = "true";
-            video.muted = true;
-            muted++;
-        });
-        return muted;
+    function setMutedByScript(video, muted) {
+        if (video.muted === muted) return;
+        video.dataset.betterEclassMutePending = String(Number(video.dataset.betterEclassMutePending || 0) + 1);
+        video.muted = muted;
+    }
+
+    /**
+     * @param {HTMLVideoElement} video
+     * @returns {boolean} true when the pending volumechange came from setMutedByScript
+     */
+    function consumeScriptMute(video) {
+        const pending = Number(video.dataset.betterEclassMutePending || 0);
+        if (pending <= 0) return false;
+        video.dataset.betterEclassMutePending = String(pending - 1);
+        return true;
+    }
+
+    /**
+     * Set a video's starting mute state once, so later changes by the user are left alone.
+     * @param {HTMLVideoElement} video
+     * @param {boolean} muted
+     * @returns {boolean} whether this call decided the video's state
+     */
+    function applyStartMute(video, muted) {
+        if (video.dataset.betterEclassMuteDecided) return false;
+        video.dataset.betterEclassMuteDecided = "true";
+        setMutedByScript(video, muted);
+        return true;
     }
 
     function findFrameByName(name) {
@@ -109,6 +131,9 @@
 
     function initChapterController() {
         let enabled = false;
+        let muteVideos = false;
+        // Last mute state the user chose; the chapter frame outlives section changes, so it carries it over.
+        let lastMuted = null;
         let pendingPage = null;
         let pendingTimer = null;
 
@@ -161,7 +186,14 @@
             if (!data || !Object.values(MESSAGE_TYPES).includes(data.type)) return;
             if (!isTrustedMessage(event, getContentWindow())) return;
 
+            if (data.type === MESSAGE_TYPES.MUTE_STATE) {
+                if (typeof data.muted === "boolean") lastMuted = data.muted;
+                return;
+            }
+
             if (data.type === MESSAGE_TYPES.READY) {
+                const muted = muteVideos ? true : lastMuted;
+                if (muted !== null) postToContent({ type: MESSAGE_TYPES.MUTE_SYNC, muted });
                 if (enabled && pendingPage !== null && pendingPage === getCurrentPageNumber()) {
                     clearPending();
                     postToContent({ type: MESSAGE_TYPES.PLAY, index: 0 });
@@ -187,8 +219,9 @@
             }
         });
 
-        settingsAPI.getSettings(["enableVideoAutoAdvance", "debugMode"]).then((items) => {
+        settingsAPI.getSettings(["enableVideoAutoAdvance", "enableVideoMute", "debugMode"]).then((items) => {
             enabled = Boolean(items.enableVideoAutoAdvance);
+            muteVideos = Boolean(items.enableVideoMute);
             DEBUG = Boolean(items.debugMode);
         });
 
@@ -197,6 +230,7 @@
                 enabled = Boolean(changes.enableVideoAutoAdvance.newValue);
                 if (!enabled) clearPending();
             }
+            if (changes.enableVideoMute) muteVideos = Boolean(changes.enableVideoMute.newValue);
             if (changes.debugMode) DEBUG = Boolean(changes.debugMode.newValue);
         });
     }
@@ -208,9 +242,15 @@
         const getVideos = () => Array.from(document.querySelectorAll("video"));
         let readySent = false;
         let muteVideos = false;
+        let rememberedMuted = null;
 
-        function applyMutePreference() {
-            if (muteVideos) muteNewVideos(getVideos());
+        // The "always muted" setting wins; otherwise new videos follow the user's last choice.
+        const startMuted = () => (muteVideos ? true : rememberedMuted);
+
+        function applyStartMuteToVideos() {
+            const muted = startMuted();
+            if (muted === null) return;
+            getVideos().forEach((video) => applyStartMute(video, muted));
         }
 
         function postToChapter(message) {
@@ -235,11 +275,13 @@
         }
 
         async function playVideo(video) {
+            const muted = startMuted();
+            if (muted !== null) applyStartMute(video, muted);
             try {
                 await video.play();
             } catch (error) {
                 if (error && error.name === "NotAllowedError") {
-                    video.muted = true;
+                    setMutedByScript(video, true);
                     try {
                         await video.play();
                         showMutedNotice(video);
@@ -260,7 +302,7 @@
 
         function bindVideos() {
             const videos = getVideos();
-            applyMutePreference();
+            applyStartMuteToVideos();
             videos.forEach((video) => {
                 if (video.dataset.betterEclassAutoplayBound) return;
                 video.dataset.betterEclassAutoplayBound = "true";
@@ -288,31 +330,60 @@
 
         window.addEventListener("message", (event) => {
             const data = event.data;
-            if (!data || data.type !== MESSAGE_TYPES.PLAY) return;
+            if (!data || (data.type !== MESSAGE_TYPES.PLAY && data.type !== MESSAGE_TYPES.MUTE_SYNC)) return;
             if (!isTrustedMessage(event, getChapterWindow())) return;
+
+            if (data.type === MESSAGE_TYPES.MUTE_SYNC) {
+                if (typeof data.muted === "boolean") {
+                    rememberedMuted = data.muted;
+                    applyStartMuteToVideos();
+                }
+                return;
+            }
 
             const video = getVideos()[data.index];
             if (video) playVideo(video);
         });
 
-        // Safety net for players inserted after the observer stops; "play" does not bubble.
+        // Media events do not bubble, so listen in the capture phase.
+        // "play" is a safety net for players inserted after the observer stops.
         document.addEventListener(
             "play",
             (event) => {
-                if (muteVideos && event.target instanceof HTMLVideoElement) muteNewVideos([event.target]);
+                const video = event.target;
+                if (!(video instanceof HTMLVideoElement)) return;
+                const muted = startMuted();
+                if (muted === null) {
+                    // Nothing to carry over yet; keep a late sync from changing a playing video.
+                    video.dataset.betterEclassMuteDecided = "true";
+                } else {
+                    applyStartMute(video, muted);
+                }
+            },
+            true,
+        );
+
+        document.addEventListener(
+            "volumechange",
+            (event) => {
+                const video = event.target;
+                if (!(video instanceof HTMLVideoElement) || consumeScriptMute(video)) return;
+                if (video.muted === rememberedMuted) return;
+                rememberedMuted = video.muted;
+                postToChapter({ type: MESSAGE_TYPES.MUTE_STATE, muted: video.muted });
             },
             true,
         );
 
         settingsAPI.getSettings(["enableVideoMute"]).then((items) => {
             muteVideos = Boolean(items.enableVideoMute);
-            applyMutePreference();
+            applyStartMuteToVideos();
         });
 
         settingsAPI.onSettingsChanged((changes) => {
             if (!changes.enableVideoMute) return;
             muteVideos = Boolean(changes.enableVideoMute.newValue);
-            applyMutePreference();
+            applyStartMuteToVideos();
         });
 
         if (bindVideos()) return;

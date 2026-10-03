@@ -7,7 +7,7 @@ function loadAutoplayHelpers() {
     const source = fs.readFileSync("extension/textbook-video-autoplay.js", "utf8");
     const exposedSource = source.replace(
         /\n\s*if \(!settingsAPI\) return;/,
-        "\n    window.__videoAutoplayTest = { findNextPageNumber, decideEndedAction, muteNewVideos };\n    if (!settingsAPI) return;",
+        "\n    window.__videoAutoplayTest = { findNextPageNumber, decideEndedAction, applyStartMute, setMutedByScript, consumeScriptMute };\n    if (!settingsAPI) return;",
     );
     const context = {
         Number,
@@ -63,16 +63,27 @@ test("stops after the last video of the last section", () => {
     assert.equal(result.action, "none");
 });
 
-test("mutes each video once so a video the user unmuted stays audible", () => {
-    const { muteNewVideos } = loadAutoplayHelpers();
-    const first = { muted: false, dataset: {} };
-    const second = { muted: false, dataset: {} };
+test("sets a video's starting mute state only once", () => {
+    const { applyStartMute } = loadAutoplayHelpers();
+    const video = { muted: false, dataset: {} };
 
-    assert.equal(muteNewVideos([first]), 1);
-    assert.equal(first.muted, true);
+    assert.equal(applyStartMute(video, true), true);
+    assert.equal(video.muted, true);
 
-    first.muted = false;
-    assert.equal(muteNewVideos([first, second]), 1);
-    assert.equal(first.muted, false);
-    assert.equal(second.muted, true);
+    video.muted = false;
+    assert.equal(applyStartMute(video, true), false);
+    assert.equal(video.muted, false);
+});
+
+test("tells script mute changes apart from the user's", () => {
+    const { setMutedByScript, consumeScriptMute } = loadAutoplayHelpers();
+    const video = { muted: false, dataset: {} };
+
+    setMutedByScript(video, false);
+    assert.equal(consumeScriptMute(video), false);
+
+    setMutedByScript(video, true);
+    assert.equal(video.muted, true);
+    assert.equal(consumeScriptMute(video), true);
+    assert.equal(consumeScriptMute(video), false);
 });
