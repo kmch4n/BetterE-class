@@ -152,7 +152,7 @@ test("keeps separate linkless deadlines with identical warning text", async () =
     ]);
 
     assert.match(list.textContent, /2件/);
-    assert.equal(countByClass(list, "deadline-item"), 2);
+    assert.equal(countByClass(list, "bec-side-widget-item"), 2);
 });
 
 test("removes repeated warnings with the same explicit assignment ID", async () => {
@@ -171,7 +171,7 @@ test("removes repeated warnings with the same explicit assignment ID", async () 
     const list = await renderDeadlineList([deadline, duplicate]);
 
     assert.match(list.textContent, /1件/);
-    assert.equal(countByClass(list, "deadline-item"), 1);
+    assert.equal(countByClass(list, "bec-side-widget-item"), 1);
 });
 
 test("keeps warnings with a shared link but no explicit assignment ID", async () => {
@@ -181,7 +181,7 @@ test("keeps warnings with a shared link but no explicit assignment ID", async ()
     ]);
 
     assert.match(list.textContent, /2件/);
-    assert.equal(countByClass(list, "deadline-item"), 2);
+    assert.equal(countByClass(list, "bec-side-widget-item"), 2);
 });
 
 test("keeps equal warning text when assignment links differ", async () => {
@@ -191,18 +191,18 @@ test("keeps equal warning text when assignment links differ", async () => {
     ]);
 
     assert.match(list.textContent, /2件/);
-    assert.equal(countByClass(list, "deadline-item"), 2);
+    assert.equal(countByClass(list, "bec-side-widget-item"), 2);
 });
 
 test("renders course names and warnings as text instead of markup", async () => {
     const deadline = createDeadlineElement("https://example.test/course/1", "⚠ <img src=x onerror=alert(1)> due");
     const list = await renderDeadlineList([deadline]);
-    const [link] = findByClass(list, "deadline-course-name");
-    const [warning] = findByClass(list, "deadline-warning");
+    const [link] = findByClass(list, "bec-side-widget-link");
+    const [warning] = findByClass(list, "bec-side-widget-meta");
 
     assert.equal(link.textContent, "Sample Course");
     assert.equal(link.attributes.href, "https://example.test/course/1");
     assert.equal(link.attributes.target, "_top");
     assert.match(warning.textContent, /<img src=x onerror=alert\(1\)> due$/);
-    assert.equal(countByClass(list, "deadline-item"), 1);
+    assert.equal(countByClass(list, "bec-side-widget-item"), 1);
 });

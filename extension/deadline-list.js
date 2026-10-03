@@ -88,30 +88,37 @@
     function createDeadlineListUI(courses) {
         if (courses.length === 0) return null;
 
-        const container = createElement("div", "side-block-outer");
+        // Reuses e-class's side-block shell so the widget sits in the sidebar like a native block
+        const container = createElement("div", "side-block-outer bec-scope bec-side-widget");
         container.id = "betterEclassDeadlineList";
 
         const block = createElement("div", "side-block");
-        const title = createElement("h4", "side-block-title");
-        title.append(createElement("span", "betterEclass-deadline-icon", "⚠"), "締切が近い課題", createElement("span", "deadline-count", `${courses.length}件`));
+        const title = createElement("h4", "side-block-title bec-side-widget-title");
+        const icons = window.BetterEclassUtils.icons;
+        if (icons) title.appendChild(icons.create("clock", { size: 14, className: "bec-side-widget-icon" }));
+        title.append(createElement("span", "bec-side-widget-label", "締切が近い課題"), createElement("span", "bec-side-widget-count", `${courses.length}件`));
 
         const content = createElement("div", "side-block-content");
+        const list = createElement("ul", "bec-side-widget-list");
         courses.forEach((course) => {
-            const item = createElement("div", "deadline-item");
+            const item = createElement("li", "bec-side-widget-item");
 
-            const link = createElement("a", "deadline-course-name", course.name);
+            const link = createElement("a", "bec-side-widget-link", course.name);
             link.setAttribute("href", course.url);
             link.setAttribute("target", "_top");
+            link.title = course.fullName;
+            item.appendChild(link);
 
-            const warning = createElement("div", "deadline-warning");
-            const pin = createElement("span", "", "📌");
-            pin.style.color = "#ff4444";
-            warning.append(pin, course.warning.replace("⚠ ", ""));
+            // The generic e-class notice only repeats the widget title; show anything more specific
+            const warning = course.warning.replace(/^⚠\s*/, "");
+            if (warning && !/^締切が近い課題があります。?$/.test(warning)) {
+                item.appendChild(createElement("span", "bec-side-widget-meta", warning));
+            }
 
-            item.append(link, warning);
-            content.appendChild(item);
+            list.appendChild(item);
         });
 
+        content.appendChild(list);
         block.append(title, content);
         container.appendChild(block);
         return container;
@@ -141,13 +148,11 @@
         const sidebar = document.querySelector(".col-sm-3");
 
         if (sidebar) {
-            // Insert at the top of the sidebar
+            // Insert at the top of the sidebar, before the direct child that holds the first block
+            // (e-class may wrap the blocks, e.g. in #plugin-links)
             const firstBlock = sidebar.querySelector(".side-block-outer");
-            if (firstBlock) {
-                sidebar.insertBefore(deadlineListUI, firstBlock);
-            } else {
-                sidebar.insertBefore(deadlineListUI, sidebar.firstChild);
-            }
+            const anchor = firstBlock && Array.from(sidebar.children).find((child) => child.contains(firstBlock));
+            sidebar.insertBefore(deadlineListUI, anchor || sidebar.firstChild);
         } else {
             // Fallback: insert after UserTopInfo
             const userTopInfo = document.getElementById("UserTopInfo");

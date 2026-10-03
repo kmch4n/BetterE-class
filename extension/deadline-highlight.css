@@ -1,0 +1,30 @@
+/* Hallmark · component: deadline notice chip (e-class's "締切が近い課題があります。") · genre: modern-minimal · tone: utilitarian
+ * theme: custom (host-matched; tokens in bec-tokens.css, dark values via html.betterEclass-dark)
+ * states: default only (static notice, not interactive) · off (class removed when the setting is disabled)
+ * deadline-highlight.js adds .bec-deadline-chip to the host element, so nothing here applies with the setting off.
+ */
+
+.course-contents-info.bec-deadline-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--bec-space-2xs);
+    margin-top: var(--bec-space-2xs);
+    padding: 1px var(--bec-space-sm) 1px var(--bec-space-xs);
+    font-size: var(--bec-text-sm);
+    font-weight: 700;
+    line-height: 1.6;
+    color: var(--bec-color-error);
+    background: var(--bec-color-error-wash);
+    border: 1px solid var(--bec-color-new-rule);
+    border-radius: var(--bec-radius-control);
+}
+
+/* Clock mark, painted with the text colour (Lucide "clock" outline). */
+.course-contents-info.bec-deadline-chip::before {
+    content: "";
+    flex: none;
+    width: 12px;
+    height: 12px;
+    background: currentColor;
+    mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='10'/%3E%3Cpath d='M12 6v6l4 2'/%3E%3C/svg%3E") center / contain no-repeat;
+}

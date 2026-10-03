@@ -266,67 +266,8 @@
         border-color: ${DARK_COLORS.border.primary} !important;
       }
 
-      /* BetterE-class Deadline List Widget - Dark Mode */
-      #betterEclassDeadlineList .side-block {
-        background-color: ${DARK_COLORS.bg.secondary} !important;
-        border-color: ${DARK_COLORS.accent.red} !important;
-      }
-      #betterEclassDeadlineList .side-block-content {
-        background-color: ${DARK_COLORS.bg.secondary} !important;
-      }
-      #betterEclassDeadlineList .deadline-item {
-        border-bottom-color: ${DARK_COLORS.border.primary} !important;
-      }
-      #betterEclassDeadlineList .deadline-item:hover {
-        background-color: ${DARK_COLORS.bg.tertiary} !important;
-      }
-      #betterEclassDeadlineList .deadline-course-name {
-        color: ${DARK_COLORS.text.primary} !important;
-      }
-      #betterEclassDeadlineList .deadline-course-name:hover {
-        color: ${DARK_COLORS.accent.red} !important;
-      }
-      #betterEclassDeadlineList .deadline-warning {
-        color: ${DARK_COLORS.text.secondary} !important;
-      }
-      #betterEclassDeadlineList .deadline-count {
-        background-color: ${DARK_COLORS.bg.tertiary} !important;
-        color: ${DARK_COLORS.accent.red} !important;
-      }
-
-      /* BetterE-class Pinned Courses Widget - Dark Mode */
-      #betterEclassPinnedCourses .side-block {
-        background-color: ${DARK_COLORS.bg.secondary} !important;
-        border-color: ${DARK_COLORS.accent.blue} !important;
-      }
-      #betterEclassPinnedCourses .side-block-content {
-        background-color: ${DARK_COLORS.bg.secondary} !important;
-      }
-      #betterEclassPinnedCourses .pinned-item {
-        border-bottom-color: ${DARK_COLORS.border.primary} !important;
-      }
-      #betterEclassPinnedCourses .pinned-item:hover {
-        background-color: ${DARK_COLORS.bg.tertiary} !important;
-      }
-      #betterEclassPinnedCourses .pinned-course-name {
-        color: ${DARK_COLORS.text.primary} !important;
-      }
-      #betterEclassPinnedCourses .pinned-course-name:hover {
-        color: ${DARK_COLORS.accent.blue} !important;
-      }
-      #betterEclassPinnedCourses .unpin-button {
-        color: ${DARK_COLORS.text.secondary} !important;
-      }
-      #betterEclassPinnedCourses .unpin-button:hover {
-        color: ${DARK_COLORS.accent.red} !important;
-      }
-      #betterEclassPinnedCourses .pinned-count {
-        background-color: ${DARK_COLORS.bg.tertiary} !important;
-        color: ${DARK_COLORS.accent.blue} !important;
-      }
-
-      /* Deadline warning - keep red emphasis */
-      .course-contents-info {
+      /* Deadline warning - keep red emphasis (the highlight chip is themed through bec-tokens.css) */
+      .course-contents-info:not(.bec-deadline-chip) {
         color: ${DARK_COLORS.accent.red} !important;
         font-weight: bold !important;
         background-color: rgba(255, 123, 114, 0.15) !important;

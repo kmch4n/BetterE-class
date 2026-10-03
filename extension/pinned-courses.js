@@ -3,6 +3,7 @@
     const LEGACY_STORAGE_KEY = "betterEclassPinnedCourses";
     const STATE_KEY = "pinnedCourses";
     const uiState = window.BetterEclassUtils.uiState;
+    const icons = window.BetterEclassUtils.icons;
 
     // Pinned courses data
     let pinnedCourses = [];
@@ -60,40 +61,56 @@
         }
     }
 
+    // "福祉経済１-000(2026-秋学期…)" -> "福祉経済１", matching the deadline widget
+    function shortCourseName(name) {
+        return name.replace(/^△/, "").split("-")[0].trim() || name;
+    }
+
     // Create pinned courses UI. Stored names are set with textContent, never parsed as HTML.
     function createPinnedCoursesUI() {
         if (pinnedCourses.length === 0) return null;
 
-        const container = createElement("div", "side-block-outer");
+        // Reuses e-class's side-block shell so the widget sits in the sidebar like a native block
+        const container = createElement("div", "side-block-outer bec-scope bec-side-widget");
         container.id = "betterEclassPinnedCourses";
 
         const block = createElement("div", "side-block");
-        const title = createElement("h4", "side-block-title");
-        title.append(createElement("span", "betterEclass-pin-icon", "📌"), "ピン留め科目", createElement("span", "pinned-count", `${pinnedCourses.length}件`));
+        const title = createElement("h4", "side-block-title bec-side-widget-title");
+        if (icons) title.appendChild(icons.create("pin", { size: 14, className: "bec-side-widget-icon" }));
+        title.append(createElement("span", "bec-side-widget-label", "ピン留め科目"), createElement("span", "bec-side-widget-count", `${pinnedCourses.length}件`));
 
         const content = createElement("div", "side-block-content");
+        const list = createElement("ul", "bec-side-widget-list");
         pinnedCourses.forEach((course, index) => {
-            const item = createElement("div", "pinned-item");
+            const item = createElement("li", "bec-side-widget-item has-action");
+            const fullName = String(course.name ?? "");
 
-            const link = createElement("a", "pinned-course-name", String(course.name ?? ""));
+            const link = createElement("a", "bec-side-widget-link", shortCourseName(fullName));
             if (isWebUrl(course.url)) link.setAttribute("href", course.url);
             link.setAttribute("target", "_top");
+            link.title = fullName;
 
-            const unpinButton = createElement("button", "unpin-button", "✕");
-            unpinButton.setAttribute("data-index", String(index));
+            const unpinButton = createElement("button", "bec-side-widget-action");
+            unpinButton.type = "button";
             unpinButton.title = "ピン留めを解除";
+            unpinButton.setAttribute("aria-label", `${fullName} のピン留めを解除`);
+            if (icons) unpinButton.appendChild(icons.create("close", { size: 14 }));
             unpinButton.addEventListener("click", (e) => {
                 e.preventDefault();
                 pinnedCourses.splice(index, 1);
                 void savePinnedCourses();
                 syncPinButtons();
                 refreshPinnedCoursesUI();
+                // Keep keyboard focus in the widget after the row disappears
+                const next = document.querySelectorAll("#betterEclassPinnedCourses .bec-side-widget-action")[Math.min(index, pinnedCourses.length - 1)];
+                if (next) next.focus();
             });
 
             item.append(link, unpinButton);
-            content.appendChild(item);
+            list.appendChild(item);
         });
 
+        content.appendChild(list);
         block.append(title, content);
         container.appendChild(block);
         return container;
@@ -120,13 +137,11 @@
             // Insert after deadline list
             deadlineList.after(widget);
         } else if (sidebar) {
-            // Insert at top of sidebar
+            // Insert at top of sidebar, before the direct child that holds the first block
+            // (e-class may wrap the blocks, e.g. in #plugin-links)
             const firstBlock = sidebar.querySelector(".side-block-outer");
-            if (firstBlock) {
-                sidebar.insertBefore(widget, firstBlock);
-            } else {
-                sidebar.insertBefore(widget, sidebar.firstChild);
-            }
+            const anchor = firstBlock && Array.from(sidebar.children).find((child) => child.contains(firstBlock));
+            sidebar.insertBefore(widget, anchor || sidebar.firstChild);
         }
     }
 
@@ -149,7 +164,8 @@
     function syncPinButtons() {
         document.querySelectorAll(".betterEclass-pin-button").forEach((pinButton) => {
             const isPinned = isCoursePinned(pinButton.dataset.courseUrl);
-            pinButton.textContent = isPinned ? "📌" : "📍";
+            pinButton.classList.toggle("is-pinned", isPinned);
+            pinButton.setAttribute("aria-pressed", String(isPinned));
             pinButton.title = isPinned ? "ピン留めを解除" : "ピン留めする";
         });
     }
@@ -160,16 +176,21 @@
 
         const url = link.href;
 
-        const pinButton = document.createElement("span");
-        pinButton.className = "betterEclass-pin-button";
+        // The .bec-scope wrapper carries the design tokens and keeps dark-mode button rules off the button
+        const wrapper = createElement("span", "bec-scope betterEclass-pin");
+        const pinButton = createElement("button", "betterEclass-pin-button");
+        pinButton.type = "button";
         pinButton.dataset.courseUrl = url;
+        pinButton.setAttribute("aria-label", `${link.textContent.trim().replace(/^»\s*/, "")} をピン留め`);
+        if (icons) pinButton.appendChild(icons.create("pin", { size: 14 }));
+        wrapper.appendChild(pinButton);
 
         // Add course-item class to parent for CSS hover effect
         if (!link.parentElement.classList.contains("betterEclass-course-item")) {
             link.parentElement.classList.add("betterEclass-course-item");
         }
 
-        link.after(pinButton);
+        link.after(wrapper);
 
         pinButton.addEventListener("click", (e) => {
             e.preventDefault();
@@ -190,6 +211,16 @@
         syncPinButtons();
     }
 
+    // Render the widget and pin buttons independently so a widget failure keeps the buttons
+    function render() {
+        try {
+            refreshPinnedCoursesUI();
+        } catch (error) {
+            console.error("[BetterE-class] Failed to render pinned courses:", error);
+        }
+        addPinButtons();
+    }
+
     // Initialize
     async function init() {
         await loadPinnedCourses();
@@ -198,19 +229,13 @@
             document.addEventListener("DOMContentLoaded", () => {
                 // Small delay to ensure deadline list is inserted first
                 requestAnimationFrame(() => {
-                    setTimeout(() => {
-                        refreshPinnedCoursesUI();
-                        addPinButtons();
-                    }, 100);
+                    setTimeout(render, 100);
                 });
             });
         } else {
             // Small delay to ensure deadline list is inserted first
             requestAnimationFrame(() => {
-                setTimeout(() => {
-                    refreshPinnedCoursesUI();
-                    addPinButtons();
-                }, 100);
+                setTimeout(render, 100);
             });
         }
     }

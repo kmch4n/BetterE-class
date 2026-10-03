@@ -69,6 +69,7 @@
         {
             "matches": ["*://eclass.doshisha.ac.jp/*"],
             "js": ["deadline-highlight.js"],
+            "css": ["bec-tokens.css", "deadline-highlight.css"],
             "run_at": "document_start"
         },
         {
@@ -105,8 +106,8 @@
                 "*://eclass.doshisha.ac.jp/webclass/?*",
                 "*://eclass.doshisha.ac.jp/webclass/index.php*"
             ],
-            "js": ["deadline-list.js"],
-            "css": ["deadline-list.css"],
+            "js": ["utils/icons.js", "deadline-list.js"],
+            "css": ["bec-tokens.css", "side-widgets.css", "deadline-list.css"],
             "run_at": "document_idle"
         },
         {
@@ -125,8 +126,8 @@
                 "*://eclass.doshisha.ac.jp/webclass/?*",
                 "*://eclass.doshisha.ac.jp/webclass/index.php*"
             ],
-            "js": ["pinned-courses.js"],
-            "css": ["pinned-courses.css"],
+            "js": ["utils/icons.js", "pinned-courses.js"],
+            "css": ["bec-tokens.css", "side-widgets.css", "pinned-courses.css"],
             "run_at": "document_idle"
         },
         {

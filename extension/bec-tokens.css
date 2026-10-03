@@ -20,6 +20,8 @@
     --bec-color-accent-wash: oklch(95.5% 0.025 253);
     --bec-color-focus: oklch(50.5% 0.146 253);
     --bec-color-new: oklch(57.9% 0.232 30);
+    --bec-color-new-ink: oklch(99.5% 0 0);
+    --bec-color-new-rule: oklch(86% 0.07 27);
     --bec-color-error: oklch(51% 0.19 27);
     --bec-color-error-wash: oklch(96% 0.025 27);
     --bec-color-success: oklch(48% 0.11 150);
@@ -65,6 +67,8 @@ html.betterEclass-dark .bec-scope {
     --bec-color-accent-wash: oklch(30% 0.06 253);
     --bec-color-focus: oklch(71.5% 0.152 253);
     --bec-color-new: oklch(73.4% 0.163 26);
+    --bec-color-new-ink: oklch(17.6% 0.014 258);
+    --bec-color-new-rule: oklch(42% 0.09 26);
     --bec-color-error: oklch(73.4% 0.163 26);
     --bec-color-error-wash: oklch(28% 0.05 26);
     --bec-color-success: oklch(84.2% 0.164 146);

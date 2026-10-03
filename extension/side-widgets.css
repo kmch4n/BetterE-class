@@ -1,0 +1,122 @@
+/* Hallmark · component: top-page sidebar widget (締切が近い課題 · ピン留め科目) · genre: modern-minimal · tone: utilitarian
+ * theme: custom (host-matched; tokens in bec-tokens.css, dark values via html.betterEclass-dark)
+ * states: default · hover · focus · active · empty (widget omitted) · removed (focus moves to next row)
+ * The widgets reuse e-class's .side-block-outer/.side-block/.side-block-title shell, so the frame,
+ * title band and dark-mode colours come from the host; only the inner list is styled here.
+ */
+
+.bec-side-widget-title {
+    display: flex;
+    align-items: center;
+    gap: var(--bec-space-xs);
+}
+
+.bec-side-widget-icon {
+    flex: none;
+    color: var(--bec-color-muted);
+}
+
+.bec-side-widget-label {
+    flex: 1;
+    min-width: 0;
+}
+
+.bec-side-widget-count {
+    flex: none;
+    font-size: var(--bec-text-sm);
+    font-weight: 400;
+    color: var(--bec-color-muted);
+}
+
+.bec-side-widget .side-block-content {
+    padding: var(--bec-space-2xs) 0;
+}
+
+.bec-side-widget-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.bec-side-widget-item {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    column-gap: var(--bec-space-2xs);
+    padding: 0 var(--bec-space-2xs) 0 var(--bec-space-sm);
+}
+
+.bec-side-widget-link {
+    flex: 1;
+    min-width: 0;
+    padding: var(--bec-space-xs) 0;
+    font-size: var(--bec-text-md);
+    line-height: 1.45;
+    color: var(--bec-color-accent);
+    text-decoration: none;
+    overflow-wrap: anywhere;
+}
+
+.bec-side-widget-link:focus-visible,
+.bec-side-widget-action:focus-visible {
+    outline: 2px solid var(--bec-color-focus);
+    outline-offset: 1px;
+}
+
+.bec-side-widget-meta {
+    flex-basis: 100%;
+    margin-top: calc(var(--bec-space-xs) * -1);
+    padding-bottom: var(--bec-space-xs);
+    font-size: var(--bec-text-sm);
+    color: var(--bec-color-muted);
+}
+
+/* Trailing icon button (e.g. unpin); stays visible on touch screens, appears on hover/focus otherwise. */
+.bec-side-widget-action {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: none;
+    width: 24px;
+    height: 24px;
+    padding: 0;
+    color: var(--bec-color-faint);
+    background: transparent;
+    border: none;
+    border-radius: var(--bec-radius-control);
+    cursor: pointer;
+}
+
+.bec-side-widget-action:active {
+    background: var(--bec-color-paper-3);
+}
+
+@media (hover: hover) {
+    .bec-side-widget-item:hover {
+        background: var(--bec-color-paper-2);
+    }
+
+    .bec-side-widget-link:hover {
+        text-decoration: underline;
+    }
+
+    .bec-side-widget-action {
+        opacity: 0;
+        transition: opacity var(--bec-dur-short) var(--bec-ease-out);
+    }
+
+    .bec-side-widget-item:is(:hover, :focus-within) .bec-side-widget-action {
+        opacity: 1;
+    }
+
+    .bec-side-widget-action:hover {
+        color: var(--bec-color-ink);
+        background: var(--bec-color-paper-3);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .bec-side-widget-action {
+        transition: none;
+    }
+}
