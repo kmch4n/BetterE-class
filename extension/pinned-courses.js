@@ -8,10 +8,28 @@
     // Pinned courses data
     let pinnedCourses = [];
 
+    // Course links carry a per-login token ("…/course.php/<id>/login?acs_=…"), so a course is
+    // identified by its ID; the full URL only serves as a fallback for unexpected link shapes.
+    function courseKey(url) {
+        const match = /\/course\.php\/(\d+)/.exec(String(url ?? ""));
+        return match ? match[1] : String(url ?? "").split("?")[0];
+    }
+
+    // One entry per course; earlier versions could pin the same course again after a new login.
+    function dedupe(courses) {
+        const seen = new Set();
+        return courses.filter((course) => {
+            const key = courseKey(course && course.url);
+            if (seen.has(key)) return false;
+            seen.add(key);
+            return true;
+        });
+    }
+
     async function loadPinnedCourses() {
         try {
             const saved = await uiState.migrateFromLocalStorage(LEGACY_STORAGE_KEY, STATE_KEY, []);
-            pinnedCourses = Array.isArray(saved) ? saved : [];
+            pinnedCourses = Array.isArray(saved) ? dedupe(saved) : [];
             return pinnedCourses;
         } catch (error) {
             console.error("Failed to load pinned courses:", error);
@@ -30,7 +48,7 @@
     // Add course to pinned list
     function pinCourse(name, url) {
         // Check if already pinned
-        if (pinnedCourses.some((course) => course.url === url)) {
+        if (isCoursePinned(url)) {
             return false;
         }
 
@@ -41,7 +59,7 @@
 
     // Remove course from pinned list
     function unpinCourse(url) {
-        pinnedCourses = pinnedCourses.filter((course) => course.url !== url);
+        pinnedCourses = pinnedCourses.filter((course) => courseKey(course.url) !== courseKey(url));
         void savePinnedCourses();
     }
 
@@ -157,7 +175,27 @@
     }
 
     function isCoursePinned(url) {
-        return pinnedCourses.some((course) => course.url === url);
+        const key = courseKey(url);
+        return pinnedCourses.some((course) => courseKey(course.url) === key);
+    }
+
+    // Point stored links at this login's URLs so the widget links keep working after the token changes.
+    function refreshStoredUrls() {
+        const current = new Map();
+        // Only e-class's own course links: the widget's links still hold the stored URLs.
+        document.querySelectorAll('#schedule-table a[href*="/course.php/"], .courseTree a[href*="/course.php/"]').forEach((link) => {
+            const key = courseKey(link.href);
+            if (!current.has(key)) current.set(key, link.href);
+        });
+        let changed = false;
+        pinnedCourses.forEach((course) => {
+            const url = current.get(courseKey(course.url));
+            if (url && url !== course.url) {
+                course.url = url;
+                changed = true;
+            }
+        });
+        if (changed) void savePinnedCourses();
     }
 
     // Reflect the current pinned state on every pin button, including duplicates of the same course
@@ -214,6 +252,7 @@
     // Render the widget and pin buttons independently so a widget failure keeps the buttons
     function render() {
         try {
+            refreshStoredUrls();
             refreshPinnedCoursesUI();
         } catch (error) {
             console.error("[BetterE-class] Failed to render pinned courses:", error);
