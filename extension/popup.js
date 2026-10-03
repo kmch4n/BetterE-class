@@ -12,7 +12,6 @@ const popupSettingKeys = [
     "hideSaturday",
     "hide67thPeriod",
     "enableTocSidebar",
-    "enableAvailableMaterials",
     "debugMode",
 ];
 
@@ -35,7 +34,6 @@ async function loadSettings() {
             hideSaturday: false,
             hide67thPeriod: false,
             enableTocSidebar: true,
-            enableAvailableMaterials: true,
             debugMode: false,
         };
     }
@@ -84,7 +82,6 @@ function setupEventListeners() {
     const hideSaturdayEl = document.getElementById("hideSaturday");
     const hide67thPeriodEl = document.getElementById("hide67thPeriod");
     const enableTocSidebarEl = document.getElementById("enableTocSidebar");
-    const enableAvailableMaterialsEl = document.getElementById("enableAvailableMaterials");
     const debugModeEl = document.getElementById("debugMode");
 
     ["enableNewTab", "enableAttachmentTab", "enableDirectDownload", "preventMessagePopup", "enableDeadlineHighlight"].forEach((key) => {
@@ -134,19 +131,6 @@ function setupEventListeners() {
     enableTocSidebarEl.addEventListener("change", async (e) => {
         const settings = await loadSettings();
         settings.enableTocSidebar = e.target.checked;
-
-        const success = await saveSettings(settings);
-        showStatus(success ? "設定を保存しました" : "設定の保存に失敗しました", success);
-
-        // Reload course pages to apply the change
-        if (success) {
-            reloadCoursePages();
-        }
-    });
-
-    enableAvailableMaterialsEl.addEventListener("change", async (e) => {
-        const settings = await loadSettings();
-        settings.enableAvailableMaterials = e.target.checked;
 
         const success = await saveSettings(settings);
         showStatus(success ? "設定を保存しました" : "設定の保存に失敗しました", success);

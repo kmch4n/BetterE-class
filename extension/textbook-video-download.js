@@ -64,28 +64,28 @@
         return parts.join("_");
     }
 
-    function setButtonProgress(button, text) {
-        if (!button) return;
-        const label = button.querySelector("span:last-child") || button;
-        if (!button.dataset.betterEclassOriginalLabel) {
-            button.dataset.betterEclassOriginalLabel = label.textContent;
-        }
-        label.textContent = text;
-        button.disabled = true;
-        button.style.opacity = "0.7";
-        button.style.cursor = "progress";
+    function getPanel() {
+        return (window.BetterEclassUtils && window.BetterEclassUtils.textbookPanel) || null;
     }
 
-    function resetButton(button) {
-        if (!button) return;
-        const label = button.querySelector("span:last-child") || button;
-        if (button.dataset.betterEclassOriginalLabel) {
-            label.textContent = button.dataset.betterEclassOriginalLabel;
-            delete button.dataset.betterEclassOriginalLabel;
+    function notify(tone, text) {
+        const panel = getPanel();
+        if (panel) {
+            panel.showMessage(tone, text);
+        } else if (tone === "error") {
+            alert(text);
         }
-        button.disabled = false;
-        button.style.opacity = "";
-        button.style.cursor = "pointer";
+    }
+
+    function reportProgress({ phase, ratio }, sectionCount) {
+        const panel = getPanel();
+        if (!panel) return;
+        if (phase === "convert") {
+            panel.showProgress({ text: "MP4に変換して検証しています…" });
+        } else {
+            const target = sectionCount > 1 ? `動画${sectionCount}本` : "動画";
+            panel.showProgress({ ratio, text: `${target}を取得しています ${Math.floor(ratio * 100)}%` });
+        }
     }
 
     async function pickSaveTarget(filename) {
@@ -103,11 +103,11 @@
      */
     async function downloadPages(pages, { filename, button, saveAs = false }) {
         if (busy) {
-            alert("動画を変換中です。完了してから再度お試しください。");
+            notify("error", "別の動画を保存しています。完了してから再度お試しください。");
             return;
         }
         if (!hlsMp4 || pages.length === 0) {
-            alert("ダウンロードできる動画が見つかりませんでした。");
+            notify("error", "ダウンロードできる動画が見つかりませんでした。");
             return;
         }
 
@@ -123,14 +123,18 @@
             }
         }
 
+        const panel = getPanel();
         busy = true;
+        if (panel) {
+            panel.clearMessage();
+            panel.setButtonState(button, "busy");
+        }
+        let outcome = "idle";
         try {
-            setButtonProgress(button, "0%");
+            reportProgress({ phase: "fetch", ratio: 0 }, pages.length);
             const blob = await hlsMp4.downloadAsMp4(
                 pages.map((page) => page.manifestUrl),
-                ({ phase, ratio }) => {
-                    setButtonProgress(button, phase === "convert" ? "変換中" : `${Math.floor(ratio * 100)}%`);
-                },
+                (progress) => reportProgress(progress, pages.length),
             );
 
             if (fileHandle) {
@@ -140,12 +144,18 @@
             } else {
                 hlsMp4.saveBlob(blob, mp4Name);
             }
+            outcome = "success";
+            notify("success", `保存しました: ${mp4Name}`);
         } catch (error) {
             console.error("[BetterE-class] Video download failed:", error);
-            alert(`動画のダウンロードに失敗しました: ${error && error.message ? error.message : error}`);
+            outcome = "error";
+            notify("error", `動画を保存できませんでした。${error && error.message ? error.message : error}`);
         } finally {
             busy = false;
-            resetButton(button);
+            if (panel) {
+                panel.hideProgress();
+                panel.setButtonState(button, outcome);
+            }
         }
     }
 
@@ -163,35 +173,28 @@
     }
 
     function removeMergeButton() {
-        const existing = document.getElementById(MERGE_BUTTON_ID);
-        if (existing) existing.closest(".betterEclass-video-merge")?.remove();
+        const panel = getPanel();
+        if (panel) panel.setMergeAction(null);
     }
 
     function ensureMergeButton() {
-        if (document.getElementById(MERGE_BUTTON_ID)) return;
+        const panel = getPanel();
+        if (!panel || document.getElementById(MERGE_BUTTON_ID)) return;
         const videoPages = getVideoPages();
         if (videoPages.length < 2) return;
 
-        const button = window.BetterEclassUtils.createDownloadButton("🎞️", "全動画を結合して保存", () => {
-            const pages = getVideoPages();
-            downloadPages(pages, { filename: getMaterialTitle() || pages[0].title, button });
+        const button = panel.createButton({
+            icon: "merge",
+            label: `全${videoPages.length}本を結合して保存`,
+            title: `この教材の動画${videoPages.length}本を順番に結合し、1つのMP4として保存します`,
+            variant: "primary",
+            onClick: () => {
+                const pages = getVideoPages();
+                downloadPages(pages, { filename: getMaterialTitle() || pages[0].title, button });
+            },
         });
         button.id = MERGE_BUTTON_ID;
-        button.title = `この教材の動画${videoPages.length}本を順番に結合し、1つのMP4として保存します`;
-
-        const wrapper = document.createElement("div");
-        wrapper.className = "betterEclass-video-merge";
-        wrapper.style.cssText = "margin:6px 4px;";
-        wrapper.appendChild(button);
-
-        const nextButton = document.querySelector('button[onclick^="nextPage"]');
-        const anchor = nextButton ? nextButton.parentElement : null;
-        const tocTable = document.querySelector("#TOCLayout");
-        if (anchor) {
-            anchor.appendChild(wrapper);
-        } else if (tocTable && tocTable.parentElement) {
-            tocTable.parentElement.insertBefore(wrapper, tocTable);
-        }
+        panel.setMergeAction(button);
     }
 
     window.BetterEclassUtils = window.BetterEclassUtils || {};

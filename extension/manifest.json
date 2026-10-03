@@ -38,11 +38,14 @@
             "matches": ["*://eclass.doshisha.ac.jp/webclass/course.php/*"],
             "js": [
                 "utils/material-icons.js",
+                "utils/icons.js",
+                "utils/ui-state.js",
                 "utils/expand-transition.js",
                 "eclass-top-button.js",
                 "course-toc-sidebar.js",
-                "course-available-materials.js"
+                "course-timeline-toggle.js"
             ],
+            "css": ["bec-tokens.css", "course-sidebars.css"],
             "run_at": "document_end"
         },
         {
@@ -132,11 +135,14 @@
             ],
             "js": [
                 "utils/button-factory.js",
+                "utils/icons.js",
+                "textbook-panel.js",
                 "vendor/mux.js/mux-mp4.min.js",
                 "utils/hls-mp4.js",
                 "textbook-video-download.js",
                 "textbook-chapter-buttons.js"
             ],
+            "css": ["bec-tokens.css", "textbook-panel.css"],
             "run_at": "document_end",
             "all_frames": true
         },

@@ -46,17 +46,18 @@
       }
 
       /* Links - GitHub style with subtle underline for accessibility */
-      a,
-      a:link,
-      a:visited {
+      /* .bec-scope UI is themed through bec-tokens.css instead */
+      a:not(.bec-scope *),
+      a:link:not(.bec-scope *),
+      a:visited:not(.bec-scope *) {
         color: ${DARK_COLORS.text.primary} !important;
         text-decoration: none !important;
         border-bottom: 1px dotted ${DARK_COLORS.text.secondary} !important;
         transition: all 0.2s ease !important;
       }
-      a:hover,
-      a:focus,
-      a:active {
+      a:hover:not(.bec-scope *),
+      a:focus:not(.bec-scope *),
+      a:active:not(.bec-scope *) {
         color: ${DARK_COLORS.accent.blue} !important;
         border-bottom-style: solid !important;
         border-bottom-color: ${DARK_COLORS.accent.blue} !important;
@@ -185,12 +186,12 @@
       }
 
       /* Buttons */
-      .btn, button {
+      .btn:not(.bec-scope *), button:not(.bec-scope *) {
         background-color: ${DARK_COLORS.bg.hover} !important;
         color: ${DARK_COLORS.text.primary} !important;
         border-color: ${DARK_COLORS.border.primary} !important;
       }
-      .btn:hover, button:hover {
+      .btn:hover:not(.bec-scope *), button:hover:not(.bec-scope *) {
         background-color: ${DARK_COLORS.border.primary} !important;
       }
       .btn-primary {
@@ -630,233 +631,9 @@
         opacity: 1 !important;
       }
 
-      /* BetterE-class TOC Sidebar - Dark Mode */
-      #betterEclass-toc-sidebar {
-        background-color: ${DARK_COLORS.bg.secondary} !important;
-        border-color: ${DARK_COLORS.border.primary} !important;
-      }
-      #betterEclass-toc-sidebar .toc-sidebar-header {
-        background-color: ${DARK_COLORS.bg.tertiary} !important;
-        color: ${DARK_COLORS.text.primary} !important;
-        border-bottom-color: ${DARK_COLORS.border.primary} !important;
-      }
-      #betterEclass-toc-sidebar .toc-sidebar-header h4 {
-        color: ${DARK_COLORS.text.primary} !important;
-      }
-      #betterEclass-toc-sidebar .toc-toggle-btn {
-        background: none !important;
-        color: ${DARK_COLORS.text.secondary} !important;
-      }
-      #betterEclass-toc-sidebar .toc-toggle-btn:hover {
-        color: ${DARK_COLORS.text.primary} !important;
-      }
-      #betterEclass-toc-sidebar .toc-expand-controls {
-        background-color: ${DARK_COLORS.bg.secondary} !important;
-      }
-      #betterEclass-toc-sidebar .toc-expand-all-btn,
-      #betterEclass-toc-sidebar .toc-collapse-all-btn {
-        background-color: ${DARK_COLORS.bg.hover} !important;
-        color: ${DARK_COLORS.text.primary} !important;
-        border-color: ${DARK_COLORS.border.primary} !important;
-      }
-      #betterEclass-toc-sidebar .toc-expand-all-btn:hover,
-      #betterEclass-toc-sidebar .toc-collapse-all-btn:hover {
-        background-color: ${DARK_COLORS.accent.blue} !important;
-        color: ${DARK_COLORS.bg.primary} !important;
-      }
-      #betterEclass-toc-sidebar .toc-sidebar-content {
-        background-color: ${DARK_COLORS.bg.secondary} !important;
-      }
-      #betterEclass-toc-sidebar .toc-list {
-        background-color: transparent !important;
-      }
-      #betterEclass-toc-sidebar .toc-item {
-        background-color: transparent !important;
-        color: ${DARK_COLORS.text.primary} !important;
-        border-bottom-color: ${DARK_COLORS.border.primary} !important;
-      }
-      #betterEclass-toc-sidebar .toc-item-header {
-        background-color: transparent !important;
-      }
-      #betterEclass-toc-sidebar .toc-item.active-section > .toc-item-header {
-        background-color: ${DARK_COLORS.bg.tertiary} !important;
-      }
-      #betterEclass-toc-sidebar .toc-link,
-      #betterEclass-toc-sidebar .toc-item-link {
-        color: ${DARK_COLORS.text.primary} !important;
-        background-color: transparent !important;
-      }
-      #betterEclass-toc-sidebar .toc-link:hover,
-      #betterEclass-toc-sidebar .toc-item-link:hover {
-        background-color: ${DARK_COLORS.bg.tertiary} !important;
-        color: ${DARK_COLORS.accent.blue} !important;
-        border-left-color: ${DARK_COLORS.accent.blue} !important;
-      }
-      #betterEclass-toc-sidebar .toc-link.active,
-      #betterEclass-toc-sidebar .toc-item-link.active {
-        background-color: ${DARK_COLORS.bg.hover} !important;
-        color: ${DARK_COLORS.accent.blue} !important;
-        border-left-color: ${DARK_COLORS.accent.blue} !important;
-      }
-      #betterEclass-toc-sidebar .toc-link.locked,
-      #betterEclass-toc-sidebar .toc-item-link.locked {
-        color: ${DARK_COLORS.text.secondary} !important;
-      }
-      #betterEclass-toc-sidebar .toc-link.locked:hover,
-      #betterEclass-toc-sidebar .toc-item-link.locked:hover {
-        background-color: ${DARK_COLORS.bg.tertiary} !important;
-      }
-
-      /* Sublist (expanded items) */
-      #betterEclass-toc-sidebar .toc-sublist {
-        background-color: ${DARK_COLORS.bg.primary} !important;
-      }
-      #betterEclass-toc-sidebar .toc-subitem {
-        background-color: transparent !important;
-      }
-      #betterEclass-toc-sidebar .toc-sublink {
-        color: ${DARK_COLORS.text.secondary} !important;
-        background-color: transparent !important;
-        border-left-color: transparent !important;
-      }
-      #betterEclass-toc-sidebar .toc-sublink:hover {
-        background-color: ${DARK_COLORS.bg.tertiary} !important;
-        color: ${DARK_COLORS.accent.blue} !important;
-      }
-      #betterEclass-toc-sidebar .toc-sublink.active {
-        background-color: ${DARK_COLORS.bg.hover} !important;
-        color: ${DARK_COLORS.accent.blue} !important;
-      }
-      #betterEclass-toc-sidebar .toc-sublink.locked {
-        color: ${DARK_COLORS.text.secondary} !important;
-      }
-      #betterEclass-toc-sidebar .toc-sublink.locked:hover {
-        background-color: ${DARK_COLORS.bg.tertiary} !important;
-      }
-
-      /* Flat list */
-      #betterEclass-toc-sidebar .flat-list .toc-item {
-        border-bottom-color: ${DARK_COLORS.border.primary} !important;
-      }
-      #betterEclass-toc-sidebar .flat-list .toc-link.locked:hover {
-        background-color: ${DARK_COLORS.bg.tertiary} !important;
-      }
-
-      /* Other elements */
-      #betterEclass-toc-sidebar .toc-sub-list {
-        background-color: ${DARK_COLORS.bg.primary} !important;
-      }
-      #betterEclass-toc-sidebar .toc-sub-item-link {
-        color: ${DARK_COLORS.text.secondary} !important;
-        background-color: transparent !important;
-      }
-      #betterEclass-toc-sidebar .toc-sub-item-link:hover {
-        background-color: ${DARK_COLORS.bg.tertiary} !important;
-        color: ${DARK_COLORS.accent.blue} !important;
-      }
-      #betterEclass-toc-sidebar .toc-sub-item-link.active {
-        background-color: ${DARK_COLORS.bg.hover} !important;
-        color: ${DARK_COLORS.accent.blue} !important;
-      }
-      #betterEclass-toc-sidebar .material-type-badge {
-        background-color: ${DARK_COLORS.bg.hover} !important;
-        color: ${DARK_COLORS.text.secondary} !important;
-      }
-      #betterEclass-toc-sidebar .material-type-icon {
-        color: ${DARK_COLORS.text.secondary} !important;
-      }
-      #betterEclass-toc-sidebar .new-badge {
-        color: ${DARK_COLORS.accent.orange} !important;
-      }
-      #betterEclass-toc-sidebar .toc-expand-icon {
-        color: ${DARK_COLORS.text.secondary} !important;
-      }
-      #betterEclass-toc-sidebar .lock-icon {
-        color: ${DARK_COLORS.text.secondary} !important;
-      }
-
       /* Navbar active items - fix blue text */
       .navbar-default .navbar-nav > .active > a {
         color: ${DARK_COLORS.text.primary} !important;
-      }
-
-      /* BetterE-class Available Materials Widget - Dark Mode */
-      #betterEclass-available-materials {
-        background-color: transparent !important;
-        border-color: ${DARK_COLORS.border.primary} !important;
-      }
-      #betterEclass-available-materials .widget-header {
-        background-color: transparent !important;
-        color: ${DARK_COLORS.text.primary} !important;
-      }
-      #betterEclass-available-materials .widget-header h4,
-      #betterEclass-available-materials .page-header {
-        color: ${DARK_COLORS.text.primary} !important;
-        border-bottom-color: ${DARK_COLORS.accent.blue} !important;
-      }
-      #betterEclass-available-materials .material-count {
-        background-color: ${DARK_COLORS.accent.blue} !important;
-        color: ${DARK_COLORS.bg.primary} !important;
-      }
-      #betterEclass-available-materials .materials-list {
-        background-color: transparent !important;
-      }
-      #betterEclass-available-materials .material-section {
-        background-color: ${DARK_COLORS.bg.secondary} !important;
-        border-color: ${DARK_COLORS.border.primary} !important;
-      }
-      #betterEclass-available-materials .section-header {
-        background-color: ${DARK_COLORS.bg.tertiary} !important;
-        color: ${DARK_COLORS.text.primary} !important;
-      }
-      #betterEclass-available-materials .section-header:hover {
-        background-color: ${DARK_COLORS.bg.hover} !important;
-      }
-      #betterEclass-available-materials .section-toggle {
-        color: ${DARK_COLORS.text.secondary} !important;
-      }
-      #betterEclass-available-materials .section-title {
-        color: ${DARK_COLORS.text.primary} !important;
-      }
-      #betterEclass-available-materials .section-count {
-        color: ${DARK_COLORS.text.secondary} !important;
-        background-color: ${DARK_COLORS.bg.hover} !important;
-      }
-      #betterEclass-available-materials .section-content {
-        background-color: ${DARK_COLORS.bg.primary} !important;
-      }
-      #betterEclass-available-materials .material-item {
-        background-color: transparent !important;
-        border-top-color: ${DARK_COLORS.border.primary} !important;
-      }
-      #betterEclass-available-materials .material-item:hover {
-        background-color: ${DARK_COLORS.bg.tertiary} !important;
-      }
-      #betterEclass-available-materials .material-link {
-        color: ${DARK_COLORS.text.primary} !important;
-        background-color: transparent !important;
-      }
-      #betterEclass-available-materials .material-link:hover {
-        color: ${DARK_COLORS.accent.blue} !important;
-      }
-      #betterEclass-available-materials .material-title {
-        color: ${DARK_COLORS.text.primary} !important;
-      }
-      #betterEclass-available-materials .material-type-icon {
-        color: ${DARK_COLORS.text.secondary} !important;
-      }
-      #betterEclass-available-materials .new-badge,
-      #betterEclass-available-materials .new-badge-prefix {
-        background-color: ${DARK_COLORS.accent.orange} !important;
-        color: ${DARK_COLORS.bg.primary} !important;
-      }
-      #betterEclass-available-materials .unread-dot {
-        background-color: ${DARK_COLORS.accent.red} !important;
-      }
-      #betterEclass-available-materials .material-deadline,
-      #betterEclass-available-materials .deadline-badge {
-        background-color: ${DARK_COLORS.accent.red} !important;
-        color: ${DARK_COLORS.bg.primary} !important;
       }
 
       /* Scroll highlight animation - use dark yellow instead of light yellow */
@@ -1275,6 +1052,8 @@
         }
 
         darkModeActive = true;
+        // Lets bec-tokens.css switch the extension's own UI to its dark palette
+        document.documentElement.classList.add("betterEclass-dark");
 
         // Inject styles immediately to prevent white flash
         if (!document.getElementById("betterEclassDarkMode")) {
@@ -1337,6 +1116,7 @@
 
     function removeDarkMode() {
         darkModeActive = false;
+        document.documentElement.classList.remove("betterEclass-dark");
 
         // Stop observing first so the restore below does not schedule another scan
         if (window.betterEclassDarkModeObserver) {

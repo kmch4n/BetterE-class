@@ -1,5 +1,6 @@
 // course-toc-sidebar.js
-// Creates a fixed sidebar for course table of contents navigation
+// Shows the course table of contents in the left column, below the timeline.
+// Styles live in course-sidebars.css; colours and spacing come from bec-tokens.css.
 
 (function () {
     "use strict";
@@ -11,6 +12,9 @@
     };
 
     const settingsAPI = window.BetterEclassUtils.settings;
+    const icons = window.BetterEclassUtils.icons;
+    const getMaterialTypeIconName = window.BetterEclassUtils.getMaterialTypeIconName;
+    const FLASH_MS = 1600;
 
     settingsAPI.getSettings(["enableTocSidebar"]).then((items) => {
         settings = items;
@@ -35,14 +39,145 @@
             } else {
                 // Remove sidebar if disabled
                 const sidebar = document.getElementById("betterEclass-toc-sidebar");
-                const styles = document.getElementById("betterEclass-toc-sidebar-styles");
                 const hideOriginalStyles = document.getElementById("betterEclass-hide-original-toc");
                 if (sidebar) sidebar.remove();
-                if (styles) styles.remove();
                 if (hideOriginalStyles) hideOriginalStyles.remove();
             }
         }
     });
+
+    function createElement(tag, className, text) {
+        const element = document.createElement(tag);
+        if (className) element.className = className;
+        if (text) element.textContent = text;
+        return element;
+    }
+
+    function createIcon(name, className) {
+        return icons ? icons.create(name, { size: 14, className }) : document.createTextNode("");
+    }
+
+    /**
+     * Build the TOC block: a page-header title like e-class's own "タイムライン", optional
+     * expand/collapse-all links, and the list container.
+     * @param {string} title
+     * @param {boolean} withExpandControls
+     */
+    function createSidebarShell(title, withExpandControls) {
+        const sidebar = createElement("section", "bec-scope bec-toc");
+        sidebar.id = "betterEclass-toc-sidebar";
+        sidebar.setAttribute("aria-label", title);
+
+        const header = createElement("div", "toc-sidebar-header");
+        header.appendChild(createElement("h3", "page-header toc-sidebar-title", title));
+
+        if (withExpandControls) {
+            const controls = createElement("div", "toc-expand-controls");
+            const expandAll = createElement("button", "toc-expand-all-btn", "すべて展開");
+            const collapseAll = createElement("button", "toc-collapse-all-btn", "すべて閉じる");
+            expandAll.type = "button";
+            collapseAll.type = "button";
+            controls.append(expandAll, collapseAll);
+            header.appendChild(controls);
+        }
+        sidebar.appendChild(header);
+
+        const content = createElement("div", "toc-sidebar-content");
+        content.appendChild(createElement("ul", "toc-list"));
+        sidebar.appendChild(content);
+        return sidebar;
+    }
+
+    /**
+     * Put the TOC at the end of the left column (after the timeline). Pages without that column
+     * fall back to a panel fixed to the right edge.
+     * @param {HTMLElement} sidebar
+     */
+    function placeSidebar(sidebar) {
+        const column = document.querySelector(".col-sm-4.col-md-3");
+        if (column) {
+            column.appendChild(sidebar);
+        } else {
+            sidebar.classList.add("is-floating");
+            document.body.appendChild(sidebar);
+        }
+    }
+
+    /**
+     * Read one e-class material row.
+     * @param {Element} material - .list-group-item
+     */
+    function readMaterial(material) {
+        const titleElement = material.querySelector("h4");
+        if (!titleElement) return null;
+
+        const hasLink = !!titleElement.querySelector("a");
+        const isNew = !!titleElement.querySelector(".cl-contentsList_new");
+        // Materials never opened have no "利用回数" (use count) line
+        const isUnread = hasLink && !material.textContent.includes("利用回数");
+        const categoryLabel = material.querySelector(".cl-contentsList_categoryLabel");
+        const materialType = categoryLabel ? categoryLabel.textContent.trim() : "";
+
+        let title = titleElement.textContent.trim();
+        if (isNew && title.startsWith("New")) {
+            title = title.replace(/^New\s*/, "").trim();
+        }
+        return { element: material, hasLink, isNew, isUnread, materialType, title };
+    }
+
+    function flash(element) {
+        element.classList.add("bec-flash");
+        setTimeout(() => element.classList.remove("bec-flash"), FLASH_MS);
+    }
+
+    /**
+     * Build the sidebar link for a material. Locked materials stay readable but inert.
+     * @param {ReturnType<typeof readMaterial>} material
+     * @param {string} className - "toc-link" (flat list) or "toc-sublink" (inside a section)
+     * @param {() => void} onActivate
+     */
+    function createMaterialLink(material, className, onActivate) {
+        const link = createElement("a", className);
+        link.href = "javascript:void(0)";
+
+        const typeIcon = createIcon(getMaterialTypeIconName ? getMaterialTypeIconName(material.materialType) : "file", "toc-type-icon");
+        if (material.materialType && typeIcon.setAttribute) {
+            typeIcon.setAttribute("aria-hidden", "false");
+            typeIcon.setAttribute("role", "img");
+            typeIcon.setAttribute("aria-label", material.materialType);
+        }
+        link.appendChild(typeIcon);
+
+        const titleSpan = createElement("span", "toc-title", material.title);
+        link.appendChild(titleSpan);
+
+        if (material.isUnread) {
+            const unreadDot = createElement("span", "unread-dot");
+            unreadDot.title = "未読";
+            unreadDot.setAttribute("role", "img");
+            unreadDot.setAttribute("aria-label", "未読");
+            link.appendChild(unreadDot);
+        }
+        if (material.isNew) {
+            link.appendChild(createElement("span", "new-badge", "New"));
+        }
+
+        if (material.hasLink) {
+            link.addEventListener("click", (event) => {
+                event.preventDefault();
+                material.element.scrollIntoView({ behavior: "smooth", block: "center" });
+                flash(material.element);
+                onActivate(link);
+            });
+        } else {
+            link.classList.add("locked");
+            link.setAttribute("aria-disabled", "true");
+            link.title = "現在は利用できません";
+            link.appendChild(createIcon("lock", "toc-lock-icon"));
+            link.addEventListener("click", (event) => event.preventDefault());
+        }
+        return link;
+    }
 
     function init() {
         // Find the TOC list in the modal
@@ -59,163 +194,96 @@
             return;
         }
 
-        // Create sidebar container
-        const sidebar = document.createElement("div");
-        sidebar.id = "betterEclass-toc-sidebar";
-        sidebar.innerHTML = `
-      <div class="toc-sidebar-header">
-        <h4>目次</h4>
-        <button class="toc-toggle-btn" title="折りたたむ">
-          <span class="toggle-icon">◀</span>
-        </button>
-      </div>
-      <div class="toc-expand-controls">
-        <button class="toc-expand-all-btn" title="すべて展開">すべて展開</button>
-        <button class="toc-collapse-all-btn" title="すべて折りたたむ">すべて折りたたむ</button>
-      </div>
-      <div class="toc-sidebar-content">
-        <ul class="toc-list"></ul>
-      </div>
-    `;
-
-        // Clone the TOC items and add sub-items
-        const originalItems = tocList.querySelectorAll("li");
+        const sidebar = createSidebarShell("目次", true);
         const newList = sidebar.querySelector(".toc-list");
 
-        originalItems.forEach((item) => {
+        tocList.querySelectorAll("li").forEach((item) => {
             const link = item.querySelector("a");
             if (!link) return;
 
-            const newItem = document.createElement("li");
-            newItem.className = "toc-item";
-
-            // Create header with toggle button
-            const header = document.createElement("div");
-            header.className = "toc-item-header";
-
-            const toggleBtn = document.createElement("span");
-            toggleBtn.className = "toc-toggle";
-            toggleBtn.textContent = "▶";
-
-            const newLink = document.createElement("a");
+            const newItem = createElement("li", "toc-item");
+            const header = createElement("div", "toc-item-header");
+            const newLink = createElement("a", "toc-link", link.textContent);
             newLink.href = "javascript:void(0)";
-            newLink.textContent = link.textContent;
-            newLink.className = "toc-link";
 
-            // Copy the onclick behavior
             const onclickMatch = link.getAttribute("href").match(/switchQuestion\('([^']+)'\)/);
-            if (onclickMatch) {
-                const targetId = onclickMatch[1];
-
-                // Add sub-items (materials within each section)
-                const subListResult = createSubItems(targetId);
-
-                if (subListResult) {
-                    const { subList, hasAvailable, hasNew, allLocked } = subListResult;
-
-                    // Add status icons (can show multiple)
-                    const statusIcon = document.createElement("span");
-                    statusIcon.className = "toc-status-icon";
-
-                    let icons = [];
-                    let titles = [];
-
-                    if (hasNew) {
-                        icons.push("✨");
-                        titles.push("New content available");
-                    }
-
-                    // Only show ✅ if ALL items are available
-                    if (hasAvailable) {
-                        icons.push("✅");
-                        titles.push("All content available");
-                    } else if (allLocked) {
-                        // Show lock icon only if ALL items are locked
-                        icons.push("🔒");
-                        titles.push("All items locked");
-                    }
-                    // Show nothing if some items are available and some are locked
-
-                    if (icons.length > 0) {
-                        statusIcon.textContent = " " + icons.join(" ");
-                        statusIcon.title = titles.join(", ");
-                    }
-
-                    header.appendChild(toggleBtn);
-                    header.appendChild(newLink);
-                    header.appendChild(statusIcon);
-
-                    newItem.appendChild(header);
-                    newItem.appendChild(subList);
-
-                    // Toggle functionality
-                    toggleBtn.addEventListener("click", (e) => {
-                        e.stopPropagation();
-                        setItemExpanded(newItem, !newItem.classList.contains("expanded"));
-                    });
-
-                    // Click on link also toggles
-                    newLink.addEventListener("click", (e) => {
-                        e.preventDefault();
-                        setItemExpanded(newItem, !newItem.classList.contains("expanded"));
-                    });
-
-                    newList.appendChild(newItem);
-                } else {
-                    // No sub-items, just add the link
-                    newLink.addEventListener("click", (e) => {
-                        e.preventDefault();
-                        const targetElement = document.getElementById(targetId.replace("#", ""));
-                        if (targetElement) {
-                            targetElement.scrollIntoView({
-                                behavior: "smooth",
-                                block: "start",
-                            });
-
-                            // Highlight active item
-                            document.querySelectorAll(".toc-link").forEach((l) => l.classList.remove("active"));
-                            newLink.classList.add("active");
-                        }
-                    });
-
-                    header.appendChild(newLink);
-                    newItem.appendChild(header);
-                    newList.appendChild(newItem);
-                }
-            } else {
+            if (!onclickMatch) {
                 header.appendChild(newLink);
                 newItem.appendChild(header);
                 newList.appendChild(newItem);
+                return;
             }
+
+            const targetId = onclickMatch[1];
+            const subListResult = createSubItems(targetId);
+
+            if (!subListResult) {
+                // No sub-items, just add the link
+                newLink.addEventListener("click", (e) => {
+                    e.preventDefault();
+                    const targetElement = document.getElementById(targetId.replace("#", ""));
+                    if (targetElement) {
+                        targetElement.scrollIntoView({ behavior: "smooth", block: "start" });
+                        sidebar.querySelectorAll(".toc-link").forEach((l) => l.classList.remove("active"));
+                        newLink.classList.add("active");
+                    }
+                });
+                header.appendChild(newLink);
+                newItem.appendChild(header);
+                newList.appendChild(newItem);
+                return;
+            }
+
+            const { subList, hasNew, allLocked } = subListResult;
+            const subListId = `betterEclass-toc-${targetId.replace(/[^\w-]/g, "")}`;
+            subList.id = subListId;
+
+            const toggleBtn = createElement("button", "toc-toggle");
+            toggleBtn.type = "button";
+            toggleBtn.setAttribute("aria-expanded", "false");
+            toggleBtn.setAttribute("aria-controls", subListId);
+            toggleBtn.setAttribute("aria-label", `${link.textContent.trim()}の教材を表示`);
+            toggleBtn.appendChild(createIcon("chevronRight"));
+
+            // Quiet status: "available" is the normal case and shows nothing.
+            const status = createElement("span", "toc-status");
+            if (hasNew) status.appendChild(createElement("span", "new-badge", "New"));
+            if (allLocked) {
+                newItem.classList.add("locked");
+                const lock = createIcon("lock", "toc-lock-icon");
+                if (lock.setAttribute) {
+                    lock.setAttribute("aria-hidden", "false");
+                    lock.setAttribute("role", "img");
+                    lock.setAttribute("aria-label", "すべての教材が利用できません");
+                }
+                status.appendChild(lock);
+                status.title = "すべての教材が利用できません";
+            }
+
+            header.append(toggleBtn, newLink, status);
+            newItem.append(header, subList);
+
+            toggleBtn.addEventListener("click", (e) => {
+                e.stopPropagation();
+                setItemExpanded(newItem, !newItem.classList.contains("expanded"));
+            });
+            newLink.addEventListener("click", (e) => {
+                e.preventDefault();
+                setItemExpanded(newItem, !newItem.classList.contains("expanded"));
+            });
+
+            newList.appendChild(newItem);
         });
 
-        // Add to page
-        document.body.appendChild(sidebar);
-
-        // Styles must apply before the scroll spy measures sub-lists for its first auto-expand
-        addStyles();
+        placeSidebar(sidebar);
 
         // Setup scroll spy to highlight active section
         setupScrollSpy(sidebar);
 
-        // Add toggle functionality
-        const toggleBtn = sidebar.querySelector(".toc-toggle-btn");
-        const toggleIcon = sidebar.querySelector(".toggle-icon");
-
-        toggleBtn.addEventListener("click", () => {
-            sidebar.classList.toggle("collapsed");
-            toggleIcon.textContent = sidebar.classList.contains("collapsed") ? "▶" : "◀";
-        });
-
-        // Add expand/collapse all functionality
-        const expandAllBtn = sidebar.querySelector(".toc-expand-all-btn");
-        const collapseAllBtn = sidebar.querySelector(".toc-collapse-all-btn");
-
-        expandAllBtn.addEventListener("click", () => {
+        sidebar.querySelector(".toc-expand-all-btn").addEventListener("click", () => {
             sidebar.querySelectorAll(".toc-item").forEach((item) => setItemExpanded(item, true));
         });
-
-        collapseAllBtn.addEventListener("click", () => {
+        sidebar.querySelector(".toc-collapse-all-btn").addEventListener("click", () => {
             sidebar.querySelectorAll(".toc-item").forEach((item) => setItemExpanded(item, false));
         });
 
@@ -229,7 +297,7 @@
         item.classList.toggle("expanded", expanded);
 
         const toggle = item.querySelector(".toc-toggle");
-        if (toggle) toggle.textContent = expanded ? "▼" : "▶";
+        if (toggle) toggle.setAttribute("aria-expanded", String(expanded));
 
         const subList = item.querySelector(".toc-sublist");
         if (!subList) return;
@@ -344,291 +412,59 @@
         });
     }
 
-    // Use shared utility function from utils/material-icons.js
-    const getMaterialTypeIcon = window.BetterEclassUtils.getMaterialTypeIcon;
-
     function createFlatSidebar() {
         // Find all materials directly on the page (no parent sections)
-        const allMaterials = document.querySelectorAll("section.panel-default .list-group-item");
-
-        if (allMaterials.length === 0) {
+        const materials = Array.from(document.querySelectorAll("section.panel-default .list-group-item")).map(readMaterial).filter(Boolean);
+        if (materials.length === 0) {
             return;
         }
 
-        // Create sidebar container
-        const sidebar = document.createElement("div");
-        sidebar.id = "betterEclass-toc-sidebar";
-        sidebar.innerHTML = `
-      <div class="toc-sidebar-header">
-        <h4>教材一覧</h4>
-        <button class="toc-toggle-btn" title="折りたたむ">
-          <span class="toggle-icon">◀</span>
-        </button>
-      </div>
-      <div class="toc-sidebar-content">
-        <ul class="toc-list flat-list"></ul>
-      </div>
-    `;
-
+        const sidebar = createSidebarShell("教材一覧", false);
         const list = sidebar.querySelector(".toc-list");
+        list.classList.add("flat-list");
 
-        // Add each material as a flat list item
-        allMaterials.forEach((material) => {
-            const titleElement = material.querySelector("h4");
-            if (!titleElement) return;
-
-            // Check if there's a link (available item)
-            const linkElement = titleElement.querySelector("a");
-            const hasLink = !!linkElement;
-
-            // Check for New badge
-            const newBadge = titleElement.querySelector(".cl-contentsList_new");
-            const isNew = !!newBadge;
-
-            // Check if unread (no "利用回数" text)
-            const itemText = material.textContent;
-            const isUnread = hasLink && !itemText.includes("利用回数");
-
-            // Get material type
-            const categoryLabel = material.querySelector(".cl-contentsList_categoryLabel");
-            const materialType = categoryLabel ? categoryLabel.textContent.trim() : "";
-
-            // Get title text (remove New text if present)
-            let title = titleElement.textContent.trim();
-            if (isNew && title.startsWith("New")) {
-                title = title.replace(/^New\s*/, "").trim();
-            }
-
-            const item = document.createElement("li");
-            item.className = "toc-item flat-item";
-
-            const link = document.createElement("a");
-            link.href = "javascript:void(0)";
-            link.className = "toc-link";
-
-            // Add material type icon
-            const typeIcon = getMaterialTypeIcon(materialType);
-            if (typeIcon) {
-                const iconSpan = document.createElement("span");
-                iconSpan.className = "material-type-icon";
-                iconSpan.textContent = typeIcon + " ";
-                iconSpan.title = materialType;
-                link.appendChild(iconSpan);
-            }
-
-            // Add lock icon if not available
-            if (!hasLink) {
-                link.classList.add("locked");
-                const lockIcon = document.createElement("span");
-                lockIcon.textContent = "🔏 ";
-                lockIcon.className = "lock-icon";
-                link.appendChild(lockIcon);
-            }
-
-            // Add unread indicator
-            if (isUnread) {
-                const unreadDot = document.createElement("span");
-                unreadDot.className = "unread-dot";
-                unreadDot.title = "未読";
-                link.appendChild(unreadDot);
-            }
-
-            // Add title text
-            const titleSpan = document.createElement("span");
-            titleSpan.textContent = title;
-            link.appendChild(titleSpan);
-
-            // Add New badge if present
-            if (isNew) {
-                const newSpan = document.createElement("span");
-                newSpan.textContent = " ✨";
-                newSpan.className = "new-badge";
-                newSpan.title = "New";
-                link.appendChild(newSpan);
-            }
-
-            // Only add click handler if item is available
-            if (hasLink) {
-                link.addEventListener("click", (e) => {
-                    e.preventDefault();
-                    material.scrollIntoView({
-                        behavior: "smooth",
-                        block: "center",
-                    });
-
-                    // Highlight the material briefly
-                    material.style.transition = "background-color 0.5s";
-                    material.style.backgroundColor = "#fff3cd";
-                    setTimeout(() => {
-                        material.style.backgroundColor = "";
-                    }, 2000);
-
-                    // Highlight active item
-                    document.querySelectorAll(".toc-link").forEach((l) => l.classList.remove("active"));
+        materials.forEach((material) => {
+            const item = createElement("li", "toc-item");
+            item.appendChild(
+                createMaterialLink(material, "toc-link", (link) => {
+                    sidebar.querySelectorAll(".toc-link").forEach((l) => l.classList.remove("active"));
                     link.classList.add("active");
-                });
-            } else {
-                // Disabled style for locked items
-                link.style.cursor = "not-allowed";
-            }
-
-            item.appendChild(link);
+                }),
+            );
             list.appendChild(item);
         });
 
-        // Add to page
-        document.body.appendChild(sidebar);
-
-        // Add toggle functionality
-        const toggleBtn = sidebar.querySelector(".toc-toggle-btn");
-        const toggleIcon = sidebar.querySelector(".toggle-icon");
-
-        toggleBtn.addEventListener("click", () => {
-            sidebar.classList.toggle("collapsed");
-            toggleIcon.textContent = sidebar.classList.contains("collapsed") ? "▶" : "◀";
-        });
-
-        // Add styles
-        addStyles();
+        placeSidebar(sidebar);
 
         // Hide the original TOC modal button
         hideOriginalToc();
     }
 
     function createSubItems(sectionId) {
-        // Find the section element
-        // Remove the # prefix and use getElementById or escape the selector
-        const id = sectionId.replace("#", "");
-        const section = document.getElementById(id);
+        // Remove the # prefix and use getElementById instead of escaping the selector
+        const section = document.getElementById(sectionId.replace("#", ""));
         if (!section) return null;
 
-        // Find all materials within this section
-        const materials = section.querySelectorAll(".list-group-item");
+        const materials = Array.from(section.querySelectorAll(".list-group-item")).map(readMaterial).filter(Boolean);
         if (materials.length === 0) return null;
 
-        // Create sub-list
-        const subList = document.createElement("ul");
-        subList.className = "toc-sublist";
-
-        // Track status
-        let totalCount = 0;
-        let availableCount = 0;
-        let hasNew = false;
-
-        materials.forEach((material, index) => {
-            const titleElement = material.querySelector("h4");
-            if (!titleElement) return;
-
-            totalCount++;
-
-            // Check if there's a link (available item)
-            const linkElement = titleElement.querySelector("a");
-            const hasLink = !!linkElement;
-
-            // Check for New badge
-            const newBadge = titleElement.querySelector(".cl-contentsList_new");
-            const isNew = !!newBadge;
-
-            // Check if unread (no "利用回数" text)
-            const itemText = material.textContent;
-            const isUnread = hasLink && !itemText.includes("利用回数");
-
-            // Get material type
-            const categoryLabel = material.querySelector(".cl-contentsList_categoryLabel");
-            const materialType = categoryLabel ? categoryLabel.textContent.trim() : "";
-
-            // Update status flags
-            if (hasLink) availableCount++;
-            if (isNew) hasNew = true;
-
-            // Get title text (remove New text if present)
-            let title = titleElement.textContent.trim();
-            if (isNew && title.startsWith("New")) {
-                title = title.replace(/^New\s*/, "").trim();
-            }
-
-            const subItem = document.createElement("li");
-            subItem.className = "toc-subitem";
-
-            const subLink = document.createElement("a");
-            subLink.href = "javascript:void(0)";
-            subLink.className = "toc-sublink";
-
-            // Add material type icon
-            const typeIcon = getMaterialTypeIcon(materialType);
-            if (typeIcon) {
-                const iconSpan = document.createElement("span");
-                iconSpan.className = "material-type-icon";
-                iconSpan.textContent = typeIcon + " ";
-                iconSpan.title = materialType;
-                subLink.appendChild(iconSpan);
-            }
-
-            // Add lock icon if not available
-            if (!hasLink) {
-                subLink.classList.add("locked");
-                const lockIcon = document.createElement("span");
-                lockIcon.textContent = "🔏 ";
-                lockIcon.className = "lock-icon";
-                subLink.appendChild(lockIcon);
-            }
-
-            // Add unread indicator
-            if (isUnread) {
-                const unreadDot = document.createElement("span");
-                unreadDot.className = "unread-dot";
-                unreadDot.title = "未読";
-                subLink.appendChild(unreadDot);
-            }
-
-            // Add title text
-            const titleSpan = document.createElement("span");
-            titleSpan.textContent = title;
-            subLink.appendChild(titleSpan);
-
-            // Add New badge if present
-            if (isNew) {
-                const newSpan = document.createElement("span");
-                newSpan.textContent = " ✨";
-                newSpan.className = "new-badge";
-                newSpan.title = "New";
-                subLink.appendChild(newSpan);
-            }
-
-            // Only add click handler if item is available
-            if (hasLink) {
-                subLink.addEventListener("click", (e) => {
-                    e.preventDefault();
-                    material.scrollIntoView({
-                        behavior: "smooth",
-                        block: "center",
-                    });
-
-                    // Highlight active item
-                    document.querySelectorAll(".toc-sublink").forEach((l) => l.classList.remove("active"));
-                    subLink.classList.add("active");
-                });
-            } else {
-                // Disabled style for locked items
-                subLink.style.cursor = "not-allowed";
-            }
-
-            subItem.appendChild(subLink);
+        const subList = createElement("ul", "toc-sublist");
+        materials.forEach((material) => {
+            const subItem = createElement("li", "toc-subitem");
+            subItem.appendChild(
+                createMaterialLink(material, "toc-sublink", (link) => {
+                    document.querySelectorAll("#betterEclass-toc-sidebar .toc-sublink").forEach((l) => l.classList.remove("active"));
+                    link.classList.add("active");
+                }),
+            );
             subList.appendChild(subItem);
         });
 
-        // Check if ALL items are available (not just some)
-        const allAvailable = totalCount > 0 && availableCount === totalCount;
-        const allLocked = availableCount === 0;
-
-        return subList.children.length > 0
-            ? {
-                  subList,
-                  hasAvailable: allAvailable, // Only true if ALL items are available
-                  hasNew,
-                  allLocked, // All items are locked
-              }
-            : null;
+        return {
+            subList,
+            hasNew: materials.some((material) => material.isNew),
+            allLocked: materials.every((material) => !material.hasLink),
+        };
     }
 
     function hideOriginalToc() {
@@ -657,322 +493,5 @@
       }
     `;
         document.head.appendChild(hideStyle);
-    }
-
-    function addStyles() {
-        const style = document.createElement("style");
-        style.id = "betterEclass-toc-sidebar-styles";
-        style.textContent = `
-      #betterEclass-toc-sidebar {
-        position: fixed;
-        top: 60px;
-        right: 0;
-        width: 250px;
-        max-height: calc(100vh - 80px);
-        background: white;
-        border-left: 2px solid #ddd;
-        box-shadow: -2px 0 8px rgba(0, 0, 0, 0.1);
-        z-index: 1000;
-        display: flex;
-        flex-direction: column;
-        transition: transform 0.3s ease;
-      }
-
-      #betterEclass-toc-sidebar.collapsed {
-        width: 40px;
-      }
-
-      #betterEclass-toc-sidebar.collapsed .toc-sidebar-content {
-        display: none;
-      }
-
-      #betterEclass-toc-sidebar.collapsed .toc-sidebar-header h4 {
-        display: none;
-      }
-
-      #betterEclass-toc-sidebar.collapsed .toc-sidebar-header {
-        justify-content: center;
-        padding: 12px 8px;
-      }
-
-      #betterEclass-toc-sidebar.collapsed .toc-expand-controls {
-        display: none;
-      }
-
-      .toc-sidebar-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding: 12px 16px;
-        background: #f5f5f5;
-        border-bottom: 1px solid #ddd;
-      }
-
-      .toc-sidebar-header h4 {
-        margin: 0;
-        font-size: 16px;
-        font-weight: 600;
-        color: #333;
-      }
-
-      .toc-toggle-btn {
-        background: none;
-        border: none;
-        cursor: pointer;
-        padding: 4px 8px;
-        font-size: 14px;
-        color: #666;
-        transition: color 0.2s;
-      }
-
-      .toc-toggle-btn:hover {
-        color: #333;
-      }
-
-      .toc-expand-controls {
-        display: flex;
-        gap: 4px;
-        padding: 8px 12px;
-        background: #f9f9f9;
-        border-bottom: 1px solid #e0e0e0;
-      }
-
-      .toc-expand-all-btn,
-      .toc-collapse-all-btn {
-        flex: 1;
-        padding: 6px 8px;
-        font-size: 11px;
-        background: white;
-        border: 1px solid #ddd;
-        border-radius: 4px;
-        cursor: pointer;
-        transition: all 0.2s;
-        color: #555;
-      }
-
-      .toc-expand-all-btn:hover {
-        background: #4a90e2;
-        color: white;
-        border-color: #4a90e2;
-      }
-
-      .toc-collapse-all-btn:hover {
-        background: #999;
-        color: white;
-        border-color: #999;
-      }
-
-      .toc-sidebar-content {
-        flex: 1;
-        overflow-y: auto;
-        padding: 8px 0;
-      }
-
-      .toc-list {
-        list-style: none;
-        margin: 0;
-        padding: 0;
-      }
-
-      .toc-item {
-        margin: 0;
-      }
-
-      .toc-item-header {
-        display: flex;
-        align-items: center;
-        gap: 6px;
-      }
-
-      .toc-toggle {
-        font-size: 10px;
-        color: #666;
-        cursor: pointer;
-        padding: 10px 4px 10px 12px;
-        user-select: none;
-        transition: transform 0.2s ease;
-      }
-
-      .toc-status-icon {
-        margin-left: auto;
-        padding-right: 12px;
-        font-size: 14px;
-      }
-
-      .toc-link {
-        display: block;
-        padding: 10px 4px;
-        color: #555;
-        text-decoration: none;
-        font-size: 14px;
-        transition: all 0.2s ease;
-        border-left: 3px solid transparent;
-        flex: 1;
-      }
-
-      .toc-link:hover {
-        background: #f8f8f8;
-        color: #4a90e2;
-        border-left-color: #4a90e2;
-      }
-
-      .toc-link.active {
-        background: #e8f4ff;
-        color: #4a90e2;
-        font-weight: 600;
-        border-left-color: #4a90e2;
-      }
-
-      /* Active section highlighting */
-      .toc-item.active-section {
-        background: #f0f8ff;
-      }
-
-      .toc-item.active-section > .toc-item-header {
-        background: #e3f2fd;
-      }
-
-      .toc-item.active-section > .toc-item-header .toc-link {
-        color: #1976d2;
-        font-weight: 600;
-      }
-
-      /* Flat list items (for courses without parent groups) */
-      .flat-list .toc-item {
-        border-bottom: 1px solid #f0f0f0;
-      }
-
-      .flat-list .toc-item:last-child {
-        border-bottom: none;
-      }
-
-      .flat-list .toc-link {
-        padding-left: 12px;
-      }
-
-      .flat-list .toc-link.locked {
-        color: #999;
-        cursor: not-allowed;
-      }
-
-      .flat-list .toc-link.locked:hover {
-        background: #fafafa;
-        padding-left: 12px;
-      }
-
-      /* Collapsible sub-items */
-      .toc-sublist {
-        list-style: none;
-        margin: 0;
-        padding: 0;
-        background: #fafafa;
-        max-height: 0;
-        overflow: hidden;
-        transition: max-height 0.3s ease;
-      }
-
-      .toc-subitem {
-        margin: 0;
-      }
-
-      .toc-sublink {
-        display: block;
-        padding: 8px 16px 8px 32px;
-        color: #666;
-        text-decoration: none;
-        font-size: 13px;
-        transition: all 0.2s ease;
-        border-left: 3px solid transparent;
-      }
-
-      .toc-sublink:hover {
-        background: #f0f0f0;
-        color: #4a90e2;
-        padding-left: 34px;
-      }
-
-      .toc-sublink.active {
-        background: #e8f4ff;
-        color: #4a90e2;
-        font-weight: 500;
-      }
-
-      /* Locked items */
-      .toc-sublink.locked {
-        color: #999;
-        cursor: not-allowed;
-      }
-
-      .toc-sublink.locked:hover {
-        background: #fafafa;
-        padding-left: 32px;
-      }
-
-      .lock-icon {
-        opacity: 0.6;
-      }
-
-      /* New badge */
-      .new-badge {
-        color: #ff9800;
-        font-weight: bold;
-        font-size: 14px;
-        margin-left: 4px;
-      }
-
-      /* Material type icon */
-      .material-type-icon {
-        font-size: 14px;
-        opacity: 0.8;
-      }
-
-      /* Unread indicator */
-      .unread-dot {
-        display: inline-block;
-        width: 8px;
-        height: 8px;
-        background: #ff4444;
-        border-radius: 50%;
-        margin-right: 6px;
-        animation: pulse 2s infinite;
-      }
-
-      @keyframes pulse {
-        0%, 100% {
-          opacity: 1;
-          transform: scale(1);
-        }
-        50% {
-          opacity: 0.6;
-          transform: scale(0.9);
-        }
-      }
-
-      /* Scrollbar styling */
-      .toc-sidebar-content::-webkit-scrollbar {
-        width: 6px;
-      }
-
-      .toc-sidebar-content::-webkit-scrollbar-track {
-        background: #f1f1f1;
-      }
-
-      .toc-sidebar-content::-webkit-scrollbar-thumb {
-        background: #ccc;
-        border-radius: 3px;
-      }
-
-      .toc-sidebar-content::-webkit-scrollbar-thumb:hover {
-        background: #999;
-      }
-
-      /* Responsive: hide on small screens */
-      @media (max-width: 768px) {
-        #betterEclass-toc-sidebar {
-          display: none;
-        }
-      }
-    `;
-        document.head.appendChild(style);
     }
 })();

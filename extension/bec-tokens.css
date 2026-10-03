@@ -1,0 +1,81 @@
+/* Hallmark · design tokens for BetterE-class injected UI · genre: modern-minimal · tone: utilitarian
+ * theme: custom (host-matched to e-class: link blue accent, New red, #ddd rules, 4px radii, inherited host font)
+ * dark: mirrors dark-mode.js (GitHub-dark palette); applied when <html> has .betterEclass-dark
+ */
+
+/* Tokens are scoped to the extension's own UI (.bec-scope) so e-class styles stay untouched. */
+.bec-scope {
+    --bec-color-paper: oklch(99.5% 0.002 253);
+    --bec-color-paper-2: oklch(97% 0.004 253);
+    --bec-color-paper-3: oklch(93.5% 0.008 253);
+    --bec-color-ink: oklch(32% 0.01 253);
+    --bec-color-muted: oklch(51% 0.01 253);
+    --bec-color-faint: oklch(66% 0.008 253);
+    --bec-color-rule: oklch(89.8% 0.004 253);
+    --bec-color-rule-soft: oklch(94.9% 0.002 253);
+    --bec-color-rule-strong: oklch(76% 0.01 253);
+    --bec-color-accent: oklch(50.5% 0.146 253);
+    --bec-color-accent-2: oklch(44% 0.14 253);
+    --bec-color-accent-ink: oklch(99.5% 0 0);
+    --bec-color-accent-wash: oklch(95.5% 0.025 253);
+    --bec-color-focus: oklch(50.5% 0.146 253);
+    --bec-color-new: oklch(57.9% 0.232 30);
+    --bec-color-error: oklch(51% 0.19 27);
+    --bec-color-error-wash: oklch(96% 0.025 27);
+    --bec-color-success: oklch(48% 0.11 150);
+
+    --bec-space-3xs: 2px;
+    --bec-space-2xs: 4px;
+    --bec-space-xs: 6px;
+    --bec-space-sm: 8px;
+    --bec-space-md: 12px;
+    --bec-space-lg: 16px;
+
+    --bec-text-2xs: 10px;
+    --bec-text-xs: 11px;
+    --bec-text-sm: 12px;
+    --bec-text-md: 13px;
+    --bec-text-lg: 14px;
+
+    --bec-radius-control: 4px;
+    --bec-radius-panel: 4px;
+    --bec-control-height: 32px;
+
+    --bec-ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+    --bec-dur-short: 160ms;
+    --bec-dur-progress: 240ms;
+
+    font-family: inherit;
+    color: var(--bec-color-ink);
+}
+
+html.betterEclass-dark .bec-scope {
+    --bec-color-paper: oklch(22% 0.016 257);
+    --bec-color-paper-2: oklch(26.7% 0.015 257);
+    --bec-color-paper-3: oklch(33% 0.015 252);
+    --bec-color-ink: oklch(85.7% 0.014 248);
+    --bec-color-muted: oklch(66.2% 0.018 251);
+    --bec-color-faint: oklch(52% 0.016 251);
+    --bec-color-rule: oklch(33% 0.015 252);
+    --bec-color-rule-soft: oklch(33% 0.015 252);
+    --bec-color-rule-strong: oklch(44% 0.015 252);
+    --bec-color-accent: oklch(71.5% 0.152 253);
+    --bec-color-accent-2: oklch(78% 0.12 253);
+    --bec-color-accent-ink: oklch(17.6% 0.014 258);
+    --bec-color-accent-wash: oklch(30% 0.06 253);
+    --bec-color-focus: oklch(71.5% 0.152 253);
+    --bec-color-new: oklch(73.4% 0.163 26);
+    --bec-color-error: oklch(73.4% 0.163 26);
+    --bec-color-error-wash: oklch(28% 0.05 26);
+    --bec-color-success: oklch(84.2% 0.164 146);
+}
+
+/* Brief highlight on the e-class element a sidebar link scrolled to. */
+.bec-flash {
+    background-color: oklch(95.5% 0.025 253) !important;
+    transition: background-color 600ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+html.betterEclass-dark .bec-flash {
+    background-color: oklch(30% 0.06 253) !important;
+}

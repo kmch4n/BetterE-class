@@ -1,0 +1,315 @@
+/* Hallmark · component: course left column — timeline toggle, TOC · genre: modern-minimal · tone: utilitarian
+ * theme: custom (host-matched; tokens in bec-tokens.css, dark values via html.betterEclass-dark)
+ * states: default · hover · focus · active (current section/material) · disabled (locked) · new · unread
+ * Every selector is scoped to the extension's own containers (the sticky left column only
+ * applies when it contains the TOC).
+ */
+
+/* ---- Shared pieces -------------------------------------------------------- */
+
+#betterEclass-toc-sidebar .new-badge {
+    flex: none;
+    font-size: var(--bec-text-2xs);
+    font-weight: 700;
+    line-height: 1;
+    letter-spacing: 0.02em;
+    color: var(--bec-color-new);
+}
+
+#betterEclass-toc-sidebar .unread-dot {
+    flex: none;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--bec-color-accent);
+}
+
+#betterEclass-toc-sidebar svg {
+    flex: none;
+}
+
+#betterEclass-toc-sidebar :is(a, button):focus-visible {
+    outline: 2px solid var(--bec-color-focus);
+    outline-offset: -2px;
+}
+
+/* ---- Left column --------------------------------------------------------- */
+
+/* With the TOC below the timeline, keep the whole left column in view while the materials
+ * scroll; it scrolls internally when taller than the viewport. Only applies when the TOC is
+ * there, and not on narrow screens where e-class stacks the columns. */
+@media (min-width: 768px) {
+    .col-sm-4.col-md-3:has(> #betterEclass-toc-sidebar) {
+        position: sticky;
+        top: var(--bec-sticky-top, 16px);
+        max-height: calc(100vh - 32px);
+        overflow-y: auto;
+        overscroll-behavior: contain;
+        scrollbar-width: thin;
+    }
+}
+
+/* "タイムライン" heading turned into a disclosure button; keeps e-class's .page-header look. */
+.bec-collapsible-heading .bec-heading-toggle {
+    display: flex;
+    align-items: center;
+    gap: var(--bec-space-xs);
+    width: 100%;
+    padding: 0;
+    font: inherit;
+    color: inherit;
+    text-align: left;
+    background: none;
+    border: none;
+    cursor: pointer;
+}
+
+.bec-collapsible-heading .bec-heading-chevron {
+    flex: none;
+    color: var(--bec-color-muted);
+    transform: rotate(90deg);
+    transition: transform var(--bec-dur-short) var(--bec-ease-out);
+}
+
+.bec-collapsible-heading.is-collapsed .bec-heading-chevron {
+    transform: rotate(0deg);
+}
+
+.bec-collapsible-heading .bec-heading-toggle:focus-visible {
+    outline: 2px solid var(--bec-color-focus);
+    outline-offset: 2px;
+}
+
+@media (hover: hover) {
+    .bec-collapsible-heading .bec-heading-toggle:hover .bec-heading-chevron {
+        color: var(--bec-color-ink);
+    }
+}
+
+/* ---- Course TOC (left column, below the timeline) -------------------------- */
+
+#betterEclass-toc-sidebar {
+    margin-top: var(--bec-space-lg);
+    color: var(--bec-color-ink);
+    font-size: var(--bec-text-md);
+}
+
+/* Heading row with trailing expand links. The e-class .page-header rule
+ * (8px top margin, 9px bottom padding, #eee line) moves from the heading to the whole row so the
+ * line runs full width like the "タイムライン" heading. */
+#betterEclass-toc-sidebar .toc-sidebar-header {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--bec-space-sm);
+    margin: 8px 0 var(--bec-space-sm);
+    padding-bottom: 9px;
+    border-bottom: 1px solid var(--bec-color-rule-soft);
+}
+
+#betterEclass-toc-sidebar .toc-sidebar-header .page-header {
+    flex: 1;
+    min-width: 0;
+    margin: 0;
+    padding: 0;
+    border: none;
+}
+
+#betterEclass-toc-sidebar .toc-toggle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: none;
+    width: 28px;
+    height: 28px;
+    padding: 0;
+    color: var(--bec-color-muted);
+    background: transparent;
+    border: none;
+    border-radius: var(--bec-radius-control);
+    cursor: pointer;
+}
+
+#betterEclass-toc-sidebar .toc-expand-controls {
+    display: flex;
+    flex: none;
+    gap: var(--bec-space-sm);
+}
+
+#betterEclass-toc-sidebar :is(.toc-expand-all-btn, .toc-collapse-all-btn) {
+    padding: var(--bec-space-3xs) 0;
+    font: inherit;
+    font-size: var(--bec-text-xs);
+    color: var(--bec-color-accent);
+    background: none;
+    border: none;
+    cursor: pointer;
+}
+
+/* Fallback for pages without the left column: a panel fixed to the right edge. */
+#betterEclass-toc-sidebar.is-floating {
+    position: fixed;
+    top: 60px;
+    right: 0;
+    z-index: 1000;
+    box-sizing: border-box;
+    width: 256px;
+    max-height: calc(100vh - 80px);
+    margin: 0;
+    padding: 0 var(--bec-space-sm) var(--bec-space-sm);
+    overflow-y: auto;
+    background: var(--bec-color-paper);
+    border: 1px solid var(--bec-color-rule);
+    border-right: none;
+}
+
+#betterEclass-toc-sidebar .toc-sidebar-content {
+    overflow: hidden;
+    padding: var(--bec-space-2xs) 0;
+    background: var(--bec-color-paper);
+    border: 1px solid var(--bec-color-rule);
+    border-radius: var(--bec-radius-panel);
+}
+
+#betterEclass-toc-sidebar :is(.toc-list, .toc-sublist) {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+#betterEclass-toc-sidebar .toc-item-header {
+    display: flex;
+    align-items: center;
+    gap: var(--bec-space-3xs);
+    padding: 0 var(--bec-space-md) 0 var(--bec-space-2xs);
+    box-shadow: inset 2px 0 0 transparent;
+}
+
+#betterEclass-toc-sidebar .toc-toggle svg {
+    transition: transform var(--bec-dur-short) var(--bec-ease-out);
+}
+
+#betterEclass-toc-sidebar .toc-item.expanded .toc-toggle svg {
+    transform: rotate(90deg);
+}
+
+#betterEclass-toc-sidebar .toc-link {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    align-items: center;
+    gap: var(--bec-space-xs);
+    padding: var(--bec-space-sm) 0;
+    color: var(--bec-color-ink);
+    text-decoration: none;
+    overflow-wrap: anywhere;
+}
+
+#betterEclass-toc-sidebar .toc-status {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--bec-space-xs);
+    flex: none;
+    color: var(--bec-color-faint);
+}
+
+/* Current section: accent edge and wash instead of a filled block. */
+#betterEclass-toc-sidebar .toc-item.active-section > .toc-item-header {
+    background: var(--bec-color-accent-wash);
+    box-shadow: inset 2px 0 0 var(--bec-color-accent);
+}
+
+#betterEclass-toc-sidebar .toc-item.active-section > .toc-item-header .toc-link {
+    font-weight: 700;
+}
+
+#betterEclass-toc-sidebar .toc-item.locked > .toc-item-header .toc-link {
+    color: var(--bec-color-muted);
+}
+
+#betterEclass-toc-sidebar .toc-sublist {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 240ms var(--bec-ease-out);
+}
+
+#betterEclass-toc-sidebar :is(.toc-sublink, .flat-list .toc-link) {
+    display: flex;
+    align-items: center;
+    gap: var(--bec-space-xs);
+    padding: var(--bec-space-xs) var(--bec-space-md) var(--bec-space-xs) 34px;
+    font-size: var(--bec-text-sm);
+    line-height: 1.5;
+    color: var(--bec-color-ink);
+    text-decoration: none;
+    box-shadow: inset 2px 0 0 transparent;
+}
+
+#betterEclass-toc-sidebar .flat-list .toc-link {
+    padding-left: var(--bec-space-md);
+}
+
+#betterEclass-toc-sidebar .toc-title {
+    flex: 1;
+    min-width: 0;
+    overflow-wrap: anywhere;
+}
+
+#betterEclass-toc-sidebar .toc-type-icon {
+    color: var(--bec-color-muted);
+}
+
+#betterEclass-toc-sidebar .toc-lock-icon {
+    color: var(--bec-color-faint);
+}
+
+#betterEclass-toc-sidebar :is(.toc-sublink, .flat-list .toc-link).active {
+    background: var(--bec-color-accent-wash);
+    box-shadow: inset 2px 0 0 var(--bec-color-accent);
+}
+
+#betterEclass-toc-sidebar :is(.toc-sublink, .toc-link).locked {
+    color: var(--bec-color-muted);
+    cursor: not-allowed;
+}
+
+@media (hover: hover) {
+    #betterEclass-toc-sidebar .toc-toggle:hover {
+        color: var(--bec-color-ink);
+        background: var(--bec-color-paper-3);
+    }
+
+    #betterEclass-toc-sidebar :is(.toc-expand-all-btn, .toc-collapse-all-btn):hover {
+        text-decoration: underline;
+    }
+
+    #betterEclass-toc-sidebar .toc-item-header:hover {
+        background: var(--bec-color-paper-2);
+    }
+
+    #betterEclass-toc-sidebar .toc-item.active-section > .toc-item-header:hover {
+        background: var(--bec-color-accent-wash);
+    }
+
+    #betterEclass-toc-sidebar :is(.toc-sublink, .flat-list .toc-link):not(.locked):hover {
+        color: var(--bec-color-accent);
+        background: var(--bec-color-paper-2);
+    }
+
+    #betterEclass-toc-sidebar :is(.toc-sublink, .flat-list .toc-link).active:hover {
+        background: var(--bec-color-accent-wash);
+    }
+}
+
+@media (max-width: 768px) {
+    #betterEclass-toc-sidebar.is-floating {
+        display: none;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    #betterEclass-toc-sidebar :is(.toc-toggle svg, .toc-sublist),
+    .bec-collapsible-heading .bec-heading-chevron {
+        transition: none;
+    }
+}

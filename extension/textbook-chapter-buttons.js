@@ -30,6 +30,29 @@
     let pageInfo = null;
     const settingsAPI = window.BetterEclassUtils.settings;
 
+    function getPanel() {
+        return window.BetterEclassUtils.textbookPanel || null;
+    }
+
+    // Report problems inside the action panel instead of blocking the page with alert().
+    function notifyError(text) {
+        const panel = getPanel();
+        if (panel) {
+            panel.showMessage("error", text);
+        } else {
+            alert(text);
+        }
+    }
+
+    /**
+     * Create a button styled by textbook-panel.css.
+     * @param {{icon: string, label: string, title?: string, variant?: string}} options
+     * @param {(event: MouseEvent) => void} onClick
+     */
+    function createPanelButton(options, onClick) {
+        return getPanel().createButton({ ...options, onClick });
+    }
+
     // Load settings and initialize
     settingsAPI.getSettings(["enableDirectDownload", "debugMode"]).then((items) => {
             settings = items;
@@ -110,7 +133,7 @@
     }
 
     function showStreamOnlyNotice() {
-        alert("この動画はストリーミング配信のため、動画ファイルとしてダウンロードできません。");
+        notifyError("この動画はストリーミング配信のため、動画ファイルとしてダウンロードできません。");
     }
 
     /**
@@ -264,8 +287,8 @@
         return null;
     }
 
-    // Rebuild the current page buttons, then restore the per-row attachment buttons that the
-    // rebuild removed (both use the same container class)
+    // Refresh the action panel for the current page, then add any per-row attachment buttons that
+    // are still missing (the attachment pass skips rows that already have them)
     function updateButtonsForCurrentPage() {
         renderCurrentPageButtons();
         processFileDownAttachments();
@@ -283,45 +306,37 @@
             return;
         }
 
+        const panel = getPanel();
+        if (!panel) return;
+
         const pageData = pageInfo[currentPage];
         if (!pageData || !pageData.hasFile) {
-            if (DEBUG) console.log(`[BetterE-class] Current page ${currentPage} has no file, removing buttons`);
-            // Remove all buttons if current page has no file
-            document.querySelectorAll(".betterEclass-chapter-download-btns").forEach((btn) => btn.remove());
+            if (DEBUG) console.log(`[BetterE-class] Current page ${currentPage} has no file, hiding actions`);
+            panel.setCurrentActions(null, []);
             return;
         }
 
-        // Remove all existing buttons
-        document.querySelectorAll(".betterEclass-chapter-download-btns").forEach((btn) => btn.remove());
+        panel.setCurrentActions(getSectionTitle(currentPage), [createDownloadButton(), createSaveAsButton(), createPreviewButton()]);
 
-        // Find the row for the current page
-        const currentRow = document.querySelector(`#TOCLayout tr[data-page="${currentPage}"]`);
-        if (!currentRow) {
-            if (DEBUG) console.warn(`[BetterE-class] Could not find row for page ${currentPage}`);
-            return;
-        }
+        if (DEBUG) console.log(`[BetterE-class] Showing actions for page ${currentPage}`);
+    }
 
-        // Find the title cell
-        const cells = currentRow.querySelectorAll("td");
-        if (cells.length < 3) {
-            return;
-        }
-
-        const titleCell = cells[2];
-
-        // Create button container
-        const buttonContainer = document.createElement("div");
-        buttonContainer.className = "betterEclass-chapter-download-btns";
-        buttonContainer.style.cssText = "margin-top: 6px; display: flex; gap: 4px; flex-wrap: wrap; justify-content: flex-end;";
-
-        // Add buttons
-        buttonContainer.appendChild(createDownloadButton());
-        buttonContainer.appendChild(createSaveAsButton());
-        buttonContainer.appendChild(createPreviewButton());
-
-        titleCell.appendChild(buttonContainer);
-
-        if (DEBUG) console.log(`[BetterE-class] Added buttons for page ${currentPage}`);
+    /**
+     * Read the TOC row label, e.g. "第1節 2-1-2026福祉経済1-1-1再掲".
+     * @param {string} page
+     * @returns {string}
+     */
+    function getSectionTitle(page) {
+        const row = document.querySelector(`#TOCLayout tr[data-page="${page}"]`);
+        if (!row) return "";
+        return Array.from(row.querySelectorAll("td"))
+            .slice(0, 3)
+            .map((cell) => {
+                const label = cell.querySelector("span");
+                return (label || cell).textContent.replace(/\s+/g, " ").trim();
+            })
+            .filter(Boolean)
+            .join(" ");
     }
 
     // Observe page changes using MutationObserver
@@ -378,13 +393,12 @@
 
     // Create download button
     function createDownloadButton() {
-        const button = window.BetterEclassUtils.createDownloadButton(
-            "⬇️",
-            "ダウンロード",
+        const button = createPanelButton(
+            { icon: "download", label: "保存", title: "この節の資料をダウンロードします" },
             () => {
                 const currentPage = getCurrentPageNumber();
                 if (!currentPage || !pageInfo[currentPage]) {
-                    alert("ページ情報が取得できませんでした。");
+                    notifyError("ページ情報が取得できませんでした。");
                     return;
                 }
 
@@ -407,7 +421,7 @@
                         if (!downloadStreamPage(currentPage, button, false)) showStreamOnlyNotice();
                         return;
                     }
-                    alert("ファイルURLが取得できませんでした。");
+                    notifyError("ファイルURLが取得できませんでした。");
                     if (DEBUG) console.error("[BetterE-class] No URL available for download");
                     return;
                 }
@@ -432,25 +446,23 @@
                         }
                         if (response && response.error) {
                             console.error("[BetterE-class] Download error:", response.error);
-                            alert(`ダウンロードエラー: ${response.error}`);
+                            notifyError(`ダウンロードエラー: ${response.error}`);
                         }
                     },
                 );
             },
-            true, // iconOnly mode
         );
         return button;
     }
 
     // Create save as button
     function createSaveAsButton() {
-        const button = window.BetterEclassUtils.createSaveAsButton(
-            "💾",
-            "名前を付けて保存",
+        const button = createPanelButton(
+            { icon: "saveAs", label: "保存先", title: "保存先と名前を選んで保存します" },
             () => {
                 const currentPage = getCurrentPageNumber();
                 if (!currentPage || !pageInfo[currentPage]) {
-                    alert("ページ情報が取得できませんでした。");
+                    notifyError("ページ情報が取得できませんでした。");
                     return;
                 }
 
@@ -464,7 +476,7 @@
                         if (!downloadStreamPage(currentPage, button, true)) showStreamOnlyNotice();
                         return;
                     }
-                    alert("ファイルURLが取得できませんでした。");
+                    notifyError("ファイルURLが取得できませんでした。");
                     if (DEBUG) console.error("[BetterE-class] No URL available for save");
                     return;
                 }
@@ -489,12 +501,11 @@
                         }
                         if (response && response.error) {
                             console.error("[BetterE-class] Download error:", response.error);
-                            alert(`保存エラー: ${response.error}`);
+                            notifyError(`保存エラー: ${response.error}`);
                         }
                     },
                 );
             },
-            true, // iconOnly mode
         );
         return button;
     }
@@ -507,17 +518,16 @@
         // Disable preview for non-PDF files
         const isDisabled = pageData && !pageData.isPdf;
 
-        const button = window.BetterEclassUtils.createPreviewButton(
-            "👁️",
-            isDisabled ? "プレビュー（PDFのみ）" : "プレビュー",
+        const button = createPanelButton(
+            { icon: "preview", label: "表示", title: "新しいタブでプレビューします" },
             () => {
                 if (isDisabled) {
-                    alert("プレビューはPDFファイルのみ対応しています。");
+                    notifyError("プレビューはPDFファイルのみ対応しています。");
                     return;
                 }
 
                 if (!currentPage || !pageInfo[currentPage]) {
-                    alert("ページ情報が取得できませんでした。");
+                    notifyError("ページ情報が取得できませんでした。");
                     return;
                 }
 
@@ -529,7 +539,7 @@
                 const downloadUrl = pageData.fileDownloadUrl || currentPdfUrl || pageData.fileUrl;
 
                 if (!downloadUrl) {
-                    alert("ファイルURLが取得できませんでした。");
+                    notifyError("ファイルURLが取得できませんでした。");
                     if (DEBUG) console.error("[BetterE-class] No URL available for preview");
                     return;
                 }
@@ -560,18 +570,15 @@
                     (response) => {
                         if (response && response.error) {
                             console.error("[BetterE-class] Preview error:", response.error);
-                            alert(`プレビューエラー: ${response.error}`);
+                            notifyError(`プレビューエラー: ${response.error}`);
                         }
                     },
                 );
             },
-            true, // iconOnly mode
         );
 
-        // Apply disabled styling
         if (isDisabled) {
-            button.style.opacity = "0.5";
-            button.style.cursor = "not-allowed";
+            getPanel().setButtonState(button, "disabled", { reason: "プレビューはPDFファイルのみ対応しています" });
         }
 
         return button;
@@ -623,7 +630,7 @@
                 }
 
                 // Check if buttons already exist
-                if (row.querySelector(".betterEclass-chapter-download-btns")) {
+                if (row.querySelector(".betterEclass-attachment-btns")) {
                     return;
                 }
 
@@ -635,8 +642,9 @@
 
                 // Create button container
                 const buttonContainer = document.createElement("div");
-                buttonContainer.className = "betterEclass-chapter-download-btns";
-                buttonContainer.style.cssText = "margin-top: 6px; display: flex; gap: 4px; flex-wrap: wrap; justify-content: flex-end;";
+                buttonContainer.className = "bec-scope bec-row-actions betterEclass-attachment-btns";
+                buttonContainer.setAttribute("role", "group");
+                buttonContainer.setAttribute("aria-label", decodedFilename);
 
                 // Add buttons (use absolute URL for save/preview)
                 buttonContainer.appendChild(createDownloadButtonForAttachment(absoluteUrl, decodedFilename));
@@ -652,9 +660,8 @@
 
     function createDownloadButtonForAttachment(url, filename) {
         // Use shared button factory from utils/button-factory.js
-        return window.BetterEclassUtils.createDownloadButton(
-            "⬇️",
-            "ダウンロード",
+        return createPanelButton(
+            { icon: "download", label: `${filename || "添付ファイル"}をダウンロード`, variant: "icon" },
             () => {
                 chrome.runtime.sendMessage(
                     {
@@ -669,15 +676,13 @@
                     },
                 );
             },
-            true, // iconOnly mode
         );
     }
 
     function createSaveAsButtonForAttachment(url, filename) {
         // Use shared button factory from utils/button-factory.js
-        return window.BetterEclassUtils.createSaveAsButton(
-            "💾",
-            "名前を付けて保存",
+        return createPanelButton(
+            { icon: "saveAs", label: `${filename || "添付ファイル"}を保存先を選んで保存`, variant: "icon" },
             () => {
                 chrome.runtime.sendMessage(
                     {
@@ -692,15 +697,13 @@
                     },
                 );
             },
-            true, // iconOnly mode
         );
     }
 
     function createPreviewButtonForAttachment(url, filename) {
         // Use shared button factory from utils/button-factory.js
-        return window.BetterEclassUtils.createPreviewButton(
-            "👁️",
-            "プレビュー",
+        return createPanelButton(
+            { icon: "preview", label: `${filename || "添付ファイル"}をプレビュー`, variant: "icon" },
             () => {
                 chrome.runtime.sendMessage(
                     {
@@ -715,7 +718,6 @@
                     },
                 );
             },
-            true, // iconOnly mode
         );
     }
 

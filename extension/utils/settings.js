@@ -23,7 +23,6 @@
 
         // Course page features
         enableTocSidebar: true,
-        enableAvailableMaterials: true,
 
         // Schedule customization
         hideSaturday: false,

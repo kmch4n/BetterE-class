@@ -13,7 +13,6 @@ test("popup exposes every user-facing default setting", () => {
         "preventMessagePopup",
         "enableDeadlineHighlight",
         "enableTocSidebar",
-        "enableAvailableMaterials",
         "hideSaturday",
         "hide67thPeriod",
         "enableDarkMode",

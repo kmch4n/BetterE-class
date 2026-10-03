@@ -116,7 +116,6 @@ window.BetterEclassUtils.settings = {
 - `hideSaturday: false`
 - `hide67thPeriod: false`
 - `enableTocSidebar: true`
-- `enableAvailableMaterials: true`
 
 **使用技術**
 - chrome.storage.local API
@@ -233,7 +232,7 @@ e-classトップページへ戻るボタンを追加。
 #### course-toc-sidebar.js
 **対象**: `*/webclass/course.php/*`
 
-固定目次サイドバーを表示。
+コースページの左の列（タイムラインの下）に目次を表示。
 
 **実装方法**
 1. タイムライン内のセクションと教材を走査
@@ -258,18 +257,6 @@ const observer = new IntersectionObserver(callback, {
 - utils/material-icons.js
 
 ---
-
-#### course-available-materials.js
-**対象**: `*/webclass/course.php/*`
-
-タイムライン上部に教材リストを表示。
-
-**実装方法**
-1. タイムライン内の教材を収集
-2. セクションごとにグループ化
-3. 教材タイプ、未読・新規フラグを判定
-4. タイムライン上部に挿入
-5. クリックでスクロール
 
 ---
 
