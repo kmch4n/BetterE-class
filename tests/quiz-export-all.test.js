@@ -460,6 +460,13 @@ test("source keeps the UI guard and removes fixed polling from the controller", 
     assert.ok(manifest.permissions.includes("clipboardWrite"));
 });
 
+test("describeStart keeps the note short for a single question", () => {
+    const harness = createHarness({ initialQuestion: 1, activeQuestion: null });
+    harness.buttons.splice(0, harness.buttons.length, harness.buttons.find((button) => button.value === "Q1"));
+
+    assert.equal(harness.controller.describeStart().notice, "1問を集めます。");
+});
+
 test("button controls render before sibling quiz frames are ready", () => {
     let insertedContainer = null;
     const buttonStates = new Map();

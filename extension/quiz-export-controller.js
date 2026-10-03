@@ -602,9 +602,10 @@
         if (navigationButtons.length === 0) return { error: "問題が見つかりませんでした。" };
         const activeNavigation = navigationButtons.find(({ button }) => isQuestionButtonActive(button));
         const firstQuestionNumber = navigationButtons[0].questionNumber;
-        const notice = activeNavigation
-            ? `${navigationButtons.length}問を最初から順番に表示して集めます。`
-            : `${navigationButtons.length}問を集めます。現在の位置がわからないため、先に${firstQuestionNumber}番の問題を表示しておくと確実です。`;
+        // With a single question there is no position to worry about.
+        let notice = `${navigationButtons.length}問を最初から順番に表示して集めます。`;
+        if (navigationButtons.length === 1) notice = "1問を集めます。";
+        else if (!activeNavigation) notice = `${navigationButtons.length}問を集めます。現在の位置がわからないため、先に${firstQuestionNumber}番の問題を表示しておくと確実です。`;
         return { count: navigationButtons.length, notice };
     }
 
