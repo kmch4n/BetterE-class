@@ -57,6 +57,22 @@
         return { action: "none" };
     }
 
+    /**
+     * Mute videos that have not been handled yet, so a video the user unmuted stays audible.
+     * @param {HTMLVideoElement[]} videos
+     * @returns {number} how many videos were muted
+     */
+    function muteNewVideos(videos) {
+        let muted = 0;
+        videos.forEach((video) => {
+            if (video.dataset.betterEclassMuteApplied) return;
+            video.dataset.betterEclassMuteApplied = "true";
+            video.muted = true;
+            muted++;
+        });
+        return muted;
+    }
+
     function findFrameByName(name) {
         try {
             const sibling = window.parent && window.parent !== window ? window.parent.frames[name] : null;
@@ -191,6 +207,11 @@
         const getChapterWindow = () => findFrameByName(CHAPTER_FRAME_NAME);
         const getVideos = () => Array.from(document.querySelectorAll("video"));
         let readySent = false;
+        let muteVideos = false;
+
+        function applyMutePreference() {
+            if (muteVideos) muteNewVideos(getVideos());
+        }
 
         function postToChapter(message) {
             const chapterWindow = getChapterWindow();
@@ -239,6 +260,7 @@
 
         function bindVideos() {
             const videos = getVideos();
+            applyMutePreference();
             videos.forEach((video) => {
                 if (video.dataset.betterEclassAutoplayBound) return;
                 video.dataset.betterEclassAutoplayBound = "true";
@@ -271,6 +293,26 @@
 
             const video = getVideos()[data.index];
             if (video) playVideo(video);
+        });
+
+        // Safety net for players inserted after the observer stops; "play" does not bubble.
+        document.addEventListener(
+            "play",
+            (event) => {
+                if (muteVideos && event.target instanceof HTMLVideoElement) muteNewVideos([event.target]);
+            },
+            true,
+        );
+
+        settingsAPI.getSettings(["enableVideoMute"]).then((items) => {
+            muteVideos = Boolean(items.enableVideoMute);
+            applyMutePreference();
+        });
+
+        settingsAPI.onSettingsChanged((changes) => {
+            if (!changes.enableVideoMute) return;
+            muteVideos = Boolean(changes.enableVideoMute.newValue);
+            applyMutePreference();
         });
 
         if (bindVideos()) return;

@@ -5,6 +5,7 @@ const popupSettingKeys = [
     "enableAttachmentTab",
     "enableDirectDownload",
     "enableVideoAutoAdvance",
+    "enableVideoMute",
     "enableVideoMergeDownload",
     "preventMessagePopup",
     "enableDeadlineHighlight",
@@ -27,6 +28,7 @@ async function loadSettings() {
             enableAttachmentTab: true,
             enableDirectDownload: true,
             enableVideoAutoAdvance: false,
+            enableVideoMute: false,
             enableVideoMergeDownload: false,
             preventMessagePopup: true,
             enableDeadlineHighlight: true,
@@ -142,7 +144,7 @@ function setupEventListeners() {
     });
 
     // Read by content scripts through onSettingsChanged, so no reload is needed.
-    ["enableVideoAutoAdvance", "enableVideoMergeDownload"].forEach((key) => {
+    ["enableVideoAutoAdvance", "enableVideoMute", "enableVideoMergeDownload"].forEach((key) => {
         document.getElementById(key).addEventListener("change", async (e) => {
             const settings = await loadSettings();
             settings[key] = e.target.checked;

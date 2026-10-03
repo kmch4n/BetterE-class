@@ -13,6 +13,7 @@
 
         // Textbook video features
         enableVideoAutoAdvance: false,
+        enableVideoMute: false,
         enableVideoMergeDownload: false,
 
         // Message tool features

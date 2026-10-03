@@ -7,7 +7,7 @@ function loadAutoplayHelpers() {
     const source = fs.readFileSync("extension/textbook-video-autoplay.js", "utf8");
     const exposedSource = source.replace(
         /\n\s*if \(!settingsAPI\) return;/,
-        "\n    window.__videoAutoplayTest = { findNextPageNumber, decideEndedAction };\n    if (!settingsAPI) return;",
+        "\n    window.__videoAutoplayTest = { findNextPageNumber, decideEndedAction, muteNewVideos };\n    if (!settingsAPI) return;",
     );
     const context = {
         Number,
@@ -61,4 +61,18 @@ test("stops after the last video of the last section", () => {
     const result = decideEndedAction({ enabled: true, index: 0, count: 1, nextPage: null });
 
     assert.equal(result.action, "none");
+});
+
+test("mutes each video once so a video the user unmuted stays audible", () => {
+    const { muteNewVideos } = loadAutoplayHelpers();
+    const first = { muted: false, dataset: {} };
+    const second = { muted: false, dataset: {} };
+
+    assert.equal(muteNewVideos([first]), 1);
+    assert.equal(first.muted, true);
+
+    first.muted = false;
+    assert.equal(muteNewVideos([first, second]), 1);
+    assert.equal(first.muted, false);
+    assert.equal(second.muted, true);
 });
