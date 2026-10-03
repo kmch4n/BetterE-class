@@ -159,7 +159,7 @@ window.BetterEclassUtils.buttonFactory = {
 
 **実装方法**
 1. イベントキャプチャリングでクリックを捕捉
-2. 特定URLパターンをチェック
+2. 特定URLパターンをチェック（`openMessageWindow` / `openMessage` の onclick、メッセージページ `messages.php` 同士の移動。旧 `msg_editor.php` / `msg_viewer.php` も判定に残す）
 3. `preventDefault()` でデフォルト動作を停止
 4. `chrome.runtime.sendMessage()` で新しいタブを開く
 5. `window.open()` をオーバーライド

@@ -17,6 +17,11 @@
         }
     }
 
+    // Message tool pages: messages.php (current e-class) and the legacy msg_editor/msg_viewer pages
+    function isMessageToolUrl(url) {
+        return /\/messages\.php(?:[/?#]|$)|msg_editor\.php|msg_viewer\.php/.test(String(url));
+    }
+
     // Intercept clicks that explicitly invoke message popup helpers.
     function interceptOnclickHandlers() {
         document.addEventListener(
@@ -31,8 +36,8 @@
                     const linkTarget = link.getAttribute("target");
 
                     // Check if this is a message tool navigation (msg_editor.php <-> msg_viewer.php)
-                    const currentIsMessagePage = window.location.href.includes("msg_editor.php") || window.location.href.includes("msg_viewer.php");
-                    const targetIsMessagePage = href.includes("msg_editor.php") || href.includes("msg_viewer.php");
+                    const currentIsMessagePage = isMessageToolUrl(window.location.href);
+                    const targetIsMessagePage = isMessageToolUrl(href);
 
                     if (currentIsMessagePage && targetIsMessagePage) {
                         // Intercept msg_viewer.php links and open in same tab
@@ -61,8 +66,8 @@
                     const url = messageWindowMatch ? messageWindowMatch[1] : messageMatch[1];
 
                     // Check if this is a message tool navigation (msg_editor.php <-> msg_viewer.php)
-                    const currentIsMessagePage = window.location.href.includes("msg_editor.php") || window.location.href.includes("msg_viewer.php");
-                    const targetIsMessagePage = url.includes("msg_editor.php") || url.includes("msg_viewer.php");
+                    const currentIsMessagePage = isMessageToolUrl(window.location.href);
+                    const targetIsMessagePage = isMessageToolUrl(url);
 
                     if (currentIsMessagePage && targetIsMessagePage) {
                         // Open in the current tab to avoid multiple tabs

@@ -123,3 +123,33 @@ test("does not intercept quiz filedownload handlers", async () => {
     assert.equal(click.wasStopped(), false);
     assert.equal(harness.opened.length, 0);
 });
+
+test("keeps navigation inside the new messages.php inbox in the current tab", async () => {
+    const harness = await createHarness("https://eclass.doshisha.ac.jp/webclass/messages.php/inbox");
+    const targetUrl = "https://eclass.doshisha.ac.jp/webclass/messages.php/inbox/abc?page=1";
+    const click = createClickEvent({ href: targetUrl });
+
+    harness.click(click.event);
+
+    assert.equal(click.wasPrevented(), true);
+    assert.equal(harness.context.location.href, targetUrl);
+});
+
+test("opens the top-page message window helper for messages.php in a normal tab", async () => {
+    const harness = await createHarness("https://eclass.doshisha.ac.jp/webclass/");
+    const click = createClickEvent({ onclick: "return openMessageWindow('/webclass/messages.php/inbox')" });
+
+    harness.click(click.event);
+
+    assert.equal(click.wasPrevented(), true);
+    assert.deepEqual(harness.opened, [{ url: "/webclass/messages.php/inbox", target: "_blank" }]);
+});
+
+test("does not treat other pages as message pages", async () => {
+    const harness = await createHarness("https://eclass.doshisha.ac.jp/webclass/messages.php/inbox");
+    const click = createClickEvent({ href: "https://eclass.doshisha.ac.jp/webclass/information.php/post/1/" });
+
+    harness.click(click.event);
+
+    assert.equal(click.wasPrevented(), false);
+});
