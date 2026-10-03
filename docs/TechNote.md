@@ -123,6 +123,28 @@ window.BetterEclassUtils.settings = {
 
 ---
 
+### utils/deadline-api.js
+
+課題の締切情報を取得・整形。
+
+**提供API**
+```javascript
+window.BetterEclassUtils.deadlines = {
+  fetchApproachingTasks: async (groupId) => [...], // 公開中・7日以内の課題（提出済みフラグ付き）
+  selectApproachingTasks: (contents, now) => [...],
+  parseServerDate: (value) => Date,               // e-class の日時（JST）
+  formatRemaining: (ms) => "あと6日",
+  formatDue: (date) => "10/9(金) 12:00",
+  URGENT_MS
+}
+```
+
+**注意**
+- 取得元は「課題実施状況一覧」ダッシュボードの内部 API（同一オリジン・読み取りのみ・5秒でタイムアウト）
+- 公式に公開された API ではないため、失敗時は呼び出し側で元の表示に戻す
+
+---
+
 ### utils/material-icons.js
 
 Google Material Symbolsアイコンを生成。
@@ -169,14 +191,13 @@ window.BetterEclassUtils.buttonFactory = {
 #### deadline-highlight.js
 **実行**: `document_start`
 
-締切が近い課題を赤色で強調表示。
+e-class の締切警告（`.course-contents-info`）を札（チップ）の見た目で強調表示。
 
 **実装方法**
-1. `<style>` タグを動的に挿入
-2. DOM内の日時テキストをパース
-3. 現在時刻との差を計算
-4. 指定時間以内なら `.deadline-warning` クラスを付与
-5. MutationObserverで動的追加に対応
+1. 設定 `enableDeadlineHighlight` を読み込み
+2. 有効なら警告要素に `bec-scope bec-deadline-chip` クラスを付与し、`deadline-highlight.css`（`bec-tokens.css` の配色、ダークモード対応）で装飾
+3. 無効ならクラスを外して e-class 本来の表示に戻す
+4. MutationObserver で後から追加された警告にも対応
 
 ---
 
@@ -280,7 +301,7 @@ const observer = new IntersectionObserver(callback, {
 #### deadline-list.js + deadline-list.css
 **対象**: `/webclass/` または `/webclass/index.php*`
 
-締切が近い課題をサイドバーに一覧表示。
+締切が近い課題をサイドバーに一覧表示。共通の見た目は `side-widgets.css`（e-class の side-block の枠に「» 」付きの下線リンク）。
 
 **実装方法**
 1. e-class の締切警告（`.course-contents-info`）から対象科目と科目 ID を取得
@@ -310,7 +331,7 @@ const observer = new IntersectionObserver(callback, {
 #### pinned-courses.js + pinned-courses.css
 **対象**: `/webclass/` または `/webclass/index.php*`
 
-科目をピン留めして素早くアクセス。
+科目をピン留めして素早くアクセス。ウィジェットの見た目は締切課題リストと共通の `side-widgets.css`。
 
 **実装方法**
 1. 各科目リンクにピン留めボタンを追加
