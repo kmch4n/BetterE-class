@@ -16,151 +16,223 @@ const popupSettingKeys = [
     "debugMode",
 ];
 
+const fallbackSettings = {
+    enableNewTab: true,
+    enableAttachmentTab: true,
+    enableDirectDownload: true,
+    enableVideoAutoAdvance: false,
+    enableVideoMute: false,
+    enableVideoMergeDownload: false,
+    preventMessagePopup: true,
+    enableDeadlineHighlight: true,
+    enableDarkMode: false,
+    hideSaturday: false,
+    hide67thPeriod: false,
+    enableTocSidebar: true,
+    debugMode: false,
+};
+
+// How each setting reaches open e-class tabs after it is saved.
+// Keys not listed here are read by content scripts through onSettingsChanged.
+const applySettingChange = {
+    enableNewTab: reloadEclassPages,
+    enableAttachmentTab: reloadEclassPages,
+    enableDirectDownload: reloadEclassPages,
+    preventMessagePopup: reloadEclassPages,
+    enableDeadlineHighlight: reloadEclassPages,
+    enableTocSidebar: reloadCoursePages,
+    enableDarkMode: notifyDarkMode,
+    hideSaturday: notifyScheduleCustomizer,
+    hide67thPeriod: notifyScheduleCustomizer,
+};
+
+const LAST_CATEGORY_KEY = "betterEclass_popupCategory";
+
 // Load settings
 async function loadSettings() {
     try {
-        const result = await settingsAPI.getSettings(popupSettingKeys);
-        return result;
+        return await settingsAPI.getSettings(popupSettingKeys);
     } catch (error) {
         console.error("Failed to load settings:", error);
-        return {
-            enableNewTab: true,
-            enableAttachmentTab: true,
-            enableDirectDownload: true,
-            enableVideoAutoAdvance: false,
-            enableVideoMute: false,
-            enableVideoMergeDownload: false,
-            preventMessagePopup: true,
-            enableDeadlineHighlight: true,
-            enableDarkMode: false,
-            hideSaturday: false,
-            hide67thPeriod: false,
-            enableTocSidebar: true,
-            debugMode: false,
-        };
+        return { ...fallbackSettings };
     }
 }
 
-// Save settings
-async function saveSettings(settings) {
-    try {
-        return await settingsAPI.setSettings(settings);
-    } catch (error) {
-        console.error("Failed to save settings:", error);
-        return false;
-    }
-}
-
-// Show status message
-function showStatus(message, isSuccess = true) {
+// Show an error; success stays silent because the switch already shows the new state.
+function showError(message) {
     const statusEl = document.getElementById("status");
     statusEl.textContent = message;
-    statusEl.className = `status ${isSuccess ? "success" : "error"} show`;
+    clearTimeout(showError.timer);
+    showError.timer = setTimeout(() => {
+        statusEl.textContent = "";
+    }, 4000);
+}
 
-    setTimeout(() => {
-        statusEl.classList.remove("show");
-    }, 2000);
+// Categories
+
+const tabs = () => Array.from(document.querySelectorAll('.category[role="tab"]'));
+const panels = () => Array.from(document.querySelectorAll('.panel[role="tabpanel"]'));
+
+function selectCategory(category, { focus = false } = {}) {
+    let found = false;
+    tabs().forEach((tab) => {
+        const selected = tab.dataset.category === category;
+        found = found || selected;
+        tab.setAttribute("aria-selected", String(selected));
+        tab.tabIndex = selected ? 0 : -1;
+        if (selected && focus) tab.focus();
+    });
+    if (!found) return selectCategory(tabs()[0].dataset.category, { focus });
+
+    panels().forEach((panel) => {
+        panel.hidden = panel.dataset.category !== category;
+    });
+    try {
+        localStorage.setItem(LAST_CATEGORY_KEY, category);
+    } catch (_) {
+        // Remembering the category is only a convenience.
+    }
+}
+
+function restoreCategory() {
+    let category = null;
+    try {
+        category = localStorage.getItem(LAST_CATEGORY_KEY);
+    } catch (_) {
+        // Fall back to the first category.
+    }
+    selectCategory(category || tabs()[0].dataset.category);
+}
+
+function currentCategory() {
+    const tab = tabs().find((t) => t.getAttribute("aria-selected") === "true");
+    return tab ? tab.dataset.category : tabs()[0].dataset.category;
+}
+
+function updateCounts() {
+    panels().forEach((panel) => {
+        const switches = Array.from(panel.querySelectorAll(".switch"));
+        const on = switches.filter((input) => input.checked).length;
+        const countEl = document.querySelector(`[data-count-for="${panel.dataset.category}"]`);
+        if (!countEl) return;
+        countEl.textContent = `${on}/${switches.length}`;
+        countEl.title = `${switches.length}項目中${on}項目がオン`;
+    });
+}
+
+function setupCategories() {
+    const list = tabs();
+    list.forEach((tab, index) => {
+        tab.addEventListener("click", () => {
+            clearSearch();
+            selectCategory(tab.dataset.category);
+        });
+        tab.addEventListener("keydown", (event) => {
+            const moves = {
+                ArrowDown: (index + 1) % list.length,
+                ArrowUp: (index - 1 + list.length) % list.length,
+                Home: 0,
+                End: list.length - 1,
+            };
+            if (!(event.key in moves)) return;
+            event.preventDefault();
+            clearSearch();
+            selectCategory(list[moves[event.key]].dataset.category, { focus: true });
+        });
+    });
+}
+
+// Search
+
+const normalize = (text) => text.normalize("NFKC").toLowerCase().replace(/\s+/g, "");
+
+function applySearch(query) {
+    const needle = normalize(query);
+    const searching = needle.length > 0;
+    document.querySelector(".categories").classList.toggle("is-searching", searching);
+
+    if (!searching) {
+        document.querySelectorAll(".setting").forEach((item) => {
+            item.hidden = false;
+        });
+        document.getElementById("searchEmpty").hidden = true;
+        selectCategory(currentCategory());
+        return;
+    }
+
+    let matches = 0;
+    panels().forEach((panel) => {
+        let panelMatches = 0;
+        panel.querySelectorAll(".setting").forEach((item) => {
+            const hit = normalize(item.textContent).includes(needle);
+            item.hidden = !hit;
+            if (hit) panelMatches++;
+        });
+        panel.hidden = panelMatches === 0;
+        matches += panelMatches;
+    });
+
+    const emptyEl = document.getElementById("searchEmpty");
+    emptyEl.hidden = matches > 0;
+    emptyEl.textContent = matches > 0 ? "" : `「${query.trim()}」に一致する設定はありません`;
+}
+
+function clearSearch() {
+    const input = document.getElementById("settingSearch");
+    if (!input.value) return;
+    input.value = "";
+    applySearch("");
+}
+
+function setupSearch() {
+    const input = document.getElementById("settingSearch");
+    input.addEventListener("input", () => applySearch(input.value));
+    input.addEventListener("keydown", (event) => {
+        if (event.key === "Escape" && input.value) {
+            event.preventDefault();
+            clearSearch();
+        }
+    });
+}
+
+// Settings
+
+function setupSwitches() {
+    popupSettingKeys.forEach((key) => {
+        const input = document.getElementById(key);
+        input.addEventListener("change", async () => {
+            const checked = input.checked;
+            input.removeAttribute("aria-invalid");
+            updateCounts();
+
+            const success = await settingsAPI.setSettings({ [key]: checked });
+            if (!success) {
+                input.checked = !checked;
+                input.setAttribute("aria-invalid", "true");
+                updateCounts();
+                showError("設定を保存できませんでした。もう一度切り替えてください");
+                return;
+            }
+
+            const apply = applySettingChange[key];
+            if (apply) apply(await loadSettings());
+        });
+    });
 }
 
 // Initialize UI
 async function initializeUI() {
-    // Set version from manifest
     const manifest = chrome.runtime.getManifest();
     document.getElementById("version").textContent = `v${manifest.version}`;
 
     // Migrate old settings from sync storage to local storage (one-time migration)
     await settingsAPI.migrateFromSync();
 
-    // Load and set settings
     const settings = await loadSettings();
     popupSettingKeys.forEach((key) => {
         document.getElementById(key).checked = Boolean(settings[key]);
     });
-}
-
-// Setup event listeners
-function setupEventListeners() {
-    const enableDarkModeEl = document.getElementById("enableDarkMode");
-    const hideSaturdayEl = document.getElementById("hideSaturday");
-    const hide67thPeriodEl = document.getElementById("hide67thPeriod");
-    const enableTocSidebarEl = document.getElementById("enableTocSidebar");
-    const debugModeEl = document.getElementById("debugMode");
-
-    ["enableNewTab", "enableAttachmentTab", "enableDirectDownload", "preventMessagePopup", "enableDeadlineHighlight"].forEach((key) => {
-        document.getElementById(key).addEventListener("change", async (e) => {
-            const settings = await loadSettings();
-            settings[key] = e.target.checked;
-
-            const success = await saveSettings(settings);
-            showStatus(success ? "設定を保存しました" : "設定の保存に失敗しました", success);
-            if (success) reloadEclassPages();
-        });
-    });
-
-    enableDarkModeEl.addEventListener("change", async (e) => {
-        const settings = await loadSettings();
-        settings.enableDarkMode = e.target.checked;
-
-        const success = await saveSettings(settings);
-        showStatus(success ? "設定を保存しました" : "設定の保存に失敗しました", success);
-
-        // Notify dark mode script
-        notifyDarkMode(settings);
-    });
-
-    hideSaturdayEl.addEventListener("change", async (e) => {
-        const settings = await loadSettings();
-        settings.hideSaturday = e.target.checked;
-
-        const success = await saveSettings(settings);
-        showStatus(success ? "Settings saved" : "Failed to save settings", success);
-
-        // Notify schedule customizer
-        notifyScheduleCustomizer(settings);
-    });
-
-    hide67thPeriodEl.addEventListener("change", async (e) => {
-        const settings = await loadSettings();
-        settings.hide67thPeriod = e.target.checked;
-
-        const success = await saveSettings(settings);
-        showStatus(success ? "Settings saved" : "Failed to save settings", success);
-
-        // Notify schedule customizer
-        notifyScheduleCustomizer(settings);
-    });
-
-    enableTocSidebarEl.addEventListener("change", async (e) => {
-        const settings = await loadSettings();
-        settings.enableTocSidebar = e.target.checked;
-
-        const success = await saveSettings(settings);
-        showStatus(success ? "設定を保存しました" : "設定の保存に失敗しました", success);
-
-        // Reload course pages to apply the change
-        if (success) {
-            reloadCoursePages();
-        }
-    });
-
-    // Read by content scripts through onSettingsChanged, so no reload is needed.
-    ["enableVideoAutoAdvance", "enableVideoMute", "enableVideoMergeDownload"].forEach((key) => {
-        document.getElementById(key).addEventListener("change", async (e) => {
-            const settings = await loadSettings();
-            settings[key] = e.target.checked;
-
-            const success = await saveSettings(settings);
-            showStatus(success ? "設定を保存しました" : "設定の保存に失敗しました", success);
-        });
-    });
-
-    debugModeEl.addEventListener("change", async (e) => {
-        const settings = await loadSettings();
-        settings.debugMode = e.target.checked;
-
-        const success = await saveSettings(settings);
-        showStatus(success ? "設定を保存しました" : "設定の保存に失敗しました", success);
-    });
+    updateCounts();
 }
 
 // Helper: send a message without throwing on older Chrome (Promise/callback safe)
@@ -216,7 +288,7 @@ async function notifyScheduleCustomizer(settings) {
     }
 }
 
-// Reload course pages to apply TOC sidebar and available materials changes
+// Reload course pages to apply TOC sidebar changes
 async function reloadCoursePages() {
     try {
         const tabs = await chrome.tabs.query({
@@ -246,6 +318,9 @@ async function reloadEclassPages() {
 
 // Initialize
 document.addEventListener("DOMContentLoaded", () => {
+    restoreCategory();
+    setupCategories();
+    setupSearch();
+    setupSwitches();
     initializeUI();
-    setupEventListeners();
 });

@@ -7,230 +7,239 @@
         <link rel="stylesheet" href="popup.css" />
     </head>
     <body>
-        <div class="container">
-            <h1>BetterE-class <span class="version" id="version"></span></h1>
-
-            <div class="settings-section">
-                <h2 class="section-title">時間割表示オプション</h2>
-
-                <div class="setting-item">
-                    <label class="toggle-label">
-                        <input
-                            type="checkbox"
-                            id="hideSaturday"
-                            class="toggle-checkbox"
-                        />
-                        <span class="toggle-slider"></span>
-                        <span class="toggle-text">土曜日を非表示</span>
-                    </label>
-                    <p class="description">
-                        時間割表の土曜日列を非表示にします
-                    </p>
+        <div class="shell">
+            <aside class="rail">
+                <div class="brand">
+                    <span class="brand-name">BetterE-class</span>
+                    <span class="brand-version" id="version"></span>
                 </div>
 
-                <div class="setting-item">
-                    <label class="toggle-label">
-                        <input
-                            type="checkbox"
-                            id="hide67thPeriod"
-                            class="toggle-checkbox"
-                        />
-                        <span class="toggle-slider"></span>
-                        <span class="toggle-text">6・7限を非表示</span>
-                    </label>
-                    <p class="description">
-                        時間割表の6限と7限の行を非表示にします
-                    </p>
-                </div>
-            </div>
-
-            <div class="settings-section">
-                <h2 class="section-title">リンク・添付ファイル</h2>
-
-                <div class="setting-item">
-                    <label class="toggle-label">
-                        <input
-                            type="checkbox"
-                            id="enableNewTab"
-                            class="toggle-checkbox"
-                        />
-                        <span class="toggle-slider"></span>
-                        <span class="toggle-text">レポートを新しいタブで開く</span>
-                    </label>
-                    <p class="description">
-                        レポート一覧のファイルを現在の画面から離れずに開きます
-                    </p>
+                <div class="search">
+                    <label class="visually-hidden" for="settingSearch">設定を検索</label>
+                    <input
+                        type="search"
+                        id="settingSearch"
+                        class="search-input"
+                        placeholder="設定を検索"
+                        autocomplete="off"
+                        spellcheck="false"
+                    />
                 </div>
 
-                <div class="setting-item">
-                    <label class="toggle-label">
-                        <input
-                            type="checkbox"
-                            id="enableAttachmentTab"
-                            class="toggle-checkbox"
-                        />
-                        <span class="toggle-slider"></span>
-                        <span class="toggle-text">添付ファイルを新しいタブで開く</span>
-                    </label>
-                    <p class="description">
-                        添付ファイルの小さな別ウインドウ表示を新しいタブに置き換えます
-                    </p>
+                <nav class="categories" role="tablist" aria-orientation="vertical" aria-label="設定のカテゴリ">
+                    <button type="button" class="category" role="tab" id="tab-video" aria-controls="panel-video" data-category="video">
+                        <span class="category-name">動画</span>
+                        <span class="category-count" data-count-for="video"></span>
+                    </button>
+                    <button type="button" class="category" role="tab" id="tab-files" aria-controls="panel-files" data-category="files">
+                        <span class="category-name">ファイル・リンク</span>
+                        <span class="category-count" data-count-for="files"></span>
+                    </button>
+                    <button type="button" class="category" role="tab" id="tab-top" aria-controls="panel-top" data-category="top">
+                        <span class="category-name">トップページ</span>
+                        <span class="category-count" data-count-for="top"></span>
+                    </button>
+                    <button type="button" class="category" role="tab" id="tab-course" aria-controls="panel-course" data-category="course">
+                        <span class="category-name">コース</span>
+                        <span class="category-count" data-count-for="course"></span>
+                    </button>
+                    <button type="button" class="category" role="tab" id="tab-appearance" aria-controls="panel-appearance" data-category="appearance">
+                        <span class="category-name">外観</span>
+                        <span class="category-count" data-count-for="appearance"></span>
+                    </button>
+                    <button type="button" class="category" role="tab" id="tab-developer" aria-controls="panel-developer" data-category="developer">
+                        <span class="category-name">開発者向け</span>
+                        <span class="category-count" data-count-for="developer"></span>
+                    </button>
+                </nav>
+
+                <div class="rail-links">
+                    <a href="https://github.com/kmch4n/BetterE-class/blob/main/docs/BetterE-class.md" target="_blank" rel="noopener">使い方</a>
+                    <a href="https://github.com/kmch4n/BetterE-class/issues" target="_blank" rel="noopener">不具合の報告</a>
                 </div>
+            </aside>
 
-                <div class="setting-item">
-                    <label class="toggle-label">
-                        <input
-                            type="checkbox"
-                            id="enableDirectDownload"
-                            class="toggle-checkbox"
-                        />
-                        <span class="toggle-slider"></span>
-                        <span class="toggle-text">ダウンロードボタンを表示</span>
-                    </label>
-                    <p class="description">
-                        教材や添付ファイルにダウンロード・保存ボタンを追加します
-                    </p>
-                </div>
+            <main class="content" id="content">
+                <section class="panel" role="tabpanel" id="panel-video" aria-labelledby="tab-video" data-category="video">
+                    <header class="panel-head">
+                        <h2 class="panel-title">動画</h2>
+                        <p class="panel-summary">教材ページの動画の再生と保存</p>
+                    </header>
+                    <ul class="settings">
+                        <li class="setting">
+                            <label class="setting-row" for="enableVideoAutoAdvance">
+                                <span class="setting-text">
+                                    <span class="setting-name">教材の動画を連続再生</span>
+                                    <span class="setting-desc">動画が終わったら次の節へ進み、続けて再生します</span>
+                                </span>
+                                <input type="checkbox" id="enableVideoAutoAdvance" class="switch" role="switch" />
+                            </label>
+                        </li>
+                        <li class="setting">
+                            <label class="setting-row" for="enableVideoMute">
+                                <span class="setting-text">
+                                    <span class="setting-name">教材の動画をミュートで再生</span>
+                                    <span class="setting-desc">動画を常に消音で始めます。字幕で視聴するときに便利です</span>
+                                </span>
+                                <input type="checkbox" id="enableVideoMute" class="switch" role="switch" />
+                            </label>
+                        </li>
+                        <li class="setting">
+                            <label class="setting-row" for="enableVideoMergeDownload">
+                                <span class="setting-text">
+                                    <span class="setting-name">全動画の結合保存ボタンを表示</span>
+                                    <span class="setting-desc">動画が複数ある教材の目次に、全動画を1つのMP4に結合して保存するボタンを追加します</span>
+                                </span>
+                                <input type="checkbox" id="enableVideoMergeDownload" class="switch" role="switch" />
+                            </label>
+                        </li>
+                    </ul>
+                </section>
 
-                <div class="setting-item">
-                    <label class="toggle-label">
-                        <input
-                            type="checkbox"
-                            id="enableVideoAutoAdvance"
-                            class="toggle-checkbox"
-                        />
-                        <span class="toggle-slider"></span>
-                        <span class="toggle-text">教材の動画を連続再生</span>
-                    </label>
-                    <p class="description">
-                        動画が終わったら次の節へ進み、続けて再生します
-                    </p>
-                </div>
+                <section class="panel" role="tabpanel" id="panel-files" aria-labelledby="tab-files" data-category="files" hidden>
+                    <header class="panel-head">
+                        <h2 class="panel-title">ファイル・リンク</h2>
+                        <p class="panel-summary">レポートや添付ファイル、メッセージの開き方と保存</p>
+                    </header>
+                    <ul class="settings">
+                        <li class="setting">
+                            <label class="setting-row" for="enableDirectDownload">
+                                <span class="setting-text">
+                                    <span class="setting-name">ダウンロードボタンを表示</span>
+                                    <span class="setting-desc">教材や添付ファイルにダウンロード・保存ボタンを追加します</span>
+                                    <span class="setting-note">切り替えると、開いている e-class のページを再読み込みします</span>
+                                </span>
+                                <input type="checkbox" id="enableDirectDownload" class="switch" role="switch" />
+                            </label>
+                        </li>
+                        <li class="setting">
+                            <label class="setting-row" for="enableNewTab">
+                                <span class="setting-text">
+                                    <span class="setting-name">レポートを新しいタブで開く</span>
+                                    <span class="setting-desc">レポート一覧のファイルを現在の画面から離れずに開きます</span>
+                                    <span class="setting-note">切り替えると、開いている e-class のページを再読み込みします</span>
+                                </span>
+                                <input type="checkbox" id="enableNewTab" class="switch" role="switch" />
+                            </label>
+                        </li>
+                        <li class="setting">
+                            <label class="setting-row" for="enableAttachmentTab">
+                                <span class="setting-text">
+                                    <span class="setting-name">添付ファイルを新しいタブで開く</span>
+                                    <span class="setting-desc">添付ファイルの小さな別ウインドウ表示を新しいタブに置き換えます</span>
+                                    <span class="setting-note">切り替えると、開いている e-class のページを再読み込みします</span>
+                                </span>
+                                <input type="checkbox" id="enableAttachmentTab" class="switch" role="switch" />
+                            </label>
+                        </li>
+                        <li class="setting">
+                            <label class="setting-row" for="preventMessagePopup">
+                                <span class="setting-text">
+                                    <span class="setting-name">メッセージのポップアップを抑止</span>
+                                    <span class="setting-desc">メッセージ画面を小さな別ウインドウではなく通常のタブで開きます</span>
+                                    <span class="setting-note">切り替えると、開いている e-class のページを再読み込みします</span>
+                                </span>
+                                <input type="checkbox" id="preventMessagePopup" class="switch" role="switch" />
+                            </label>
+                        </li>
+                    </ul>
+                </section>
 
-                <div class="setting-item">
-                    <label class="toggle-label">
-                        <input
-                            type="checkbox"
-                            id="enableVideoMute"
-                            class="toggle-checkbox"
-                        />
-                        <span class="toggle-slider"></span>
-                        <span class="toggle-text">教材の動画をミュートで再生</span>
-                    </label>
-                    <p class="description">
-                        動画を常に消音で始めます。字幕で視聴するときに便利です
-                    </p>
-                </div>
+                <section class="panel" role="tabpanel" id="panel-top" aria-labelledby="tab-top" data-category="top" hidden>
+                    <header class="panel-head">
+                        <h2 class="panel-title">トップページ</h2>
+                        <p class="panel-summary">科目一覧の締切と時間割表の表示</p>
+                    </header>
+                    <ul class="settings">
+                        <li class="setting">
+                            <label class="setting-row" for="enableDeadlineHighlight">
+                                <span class="setting-text">
+                                    <span class="setting-name">締切の強調表示</span>
+                                    <span class="setting-desc">締切が近い課題を強調し、トップページに一覧表示します</span>
+                                    <span class="setting-note">切り替えると、開いている e-class のページを再読み込みします</span>
+                                </span>
+                                <input type="checkbox" id="enableDeadlineHighlight" class="switch" role="switch" />
+                            </label>
+                        </li>
+                        <li class="setting">
+                            <label class="setting-row" for="hideSaturday">
+                                <span class="setting-text">
+                                    <span class="setting-name">土曜日を非表示</span>
+                                    <span class="setting-desc">時間割表の土曜日列を非表示にします</span>
+                                </span>
+                                <input type="checkbox" id="hideSaturday" class="switch" role="switch" />
+                            </label>
+                        </li>
+                        <li class="setting">
+                            <label class="setting-row" for="hide67thPeriod">
+                                <span class="setting-text">
+                                    <span class="setting-name">6・7限を非表示</span>
+                                    <span class="setting-desc">時間割表の6限と7限の行を非表示にします</span>
+                                </span>
+                                <input type="checkbox" id="hide67thPeriod" class="switch" role="switch" />
+                            </label>
+                        </li>
+                    </ul>
+                </section>
 
-                <div class="setting-item">
-                    <label class="toggle-label">
-                        <input
-                            type="checkbox"
-                            id="enableVideoMergeDownload"
-                            class="toggle-checkbox"
-                        />
-                        <span class="toggle-slider"></span>
-                        <span class="toggle-text">全動画の結合保存ボタンを表示</span>
-                    </label>
-                    <p class="description">
-                        動画が複数ある教材の目次に、全動画を1つのMP4に結合して保存するボタンを追加します
-                    </p>
-                </div>
+                <section class="panel" role="tabpanel" id="panel-course" aria-labelledby="tab-course" data-category="course" hidden>
+                    <header class="panel-head">
+                        <h2 class="panel-title">コース</h2>
+                        <p class="panel-summary">各科目のコースページの表示</p>
+                    </header>
+                    <ul class="settings">
+                        <li class="setting">
+                            <label class="setting-row" for="enableTocSidebar">
+                                <span class="setting-text">
+                                    <span class="setting-name">目次を表示</span>
+                                    <span class="setting-desc">コースページの左の列（タイムラインの下）に目次を表示します</span>
+                                    <span class="setting-note">切り替えると、開いているコースページを再読み込みします</span>
+                                </span>
+                                <input type="checkbox" id="enableTocSidebar" class="switch" role="switch" />
+                            </label>
+                        </li>
+                    </ul>
+                </section>
 
-                <div class="setting-item">
-                    <label class="toggle-label">
-                        <input
-                            type="checkbox"
-                            id="preventMessagePopup"
-                            class="toggle-checkbox"
-                        />
-                        <span class="toggle-slider"></span>
-                        <span class="toggle-text">メッセージのポップアップを抑止</span>
-                    </label>
-                    <p class="description">
-                        メッセージ画面を小さな別ウインドウではなく通常のタブで開きます
-                    </p>
-                </div>
-            </div>
+                <section class="panel" role="tabpanel" id="panel-appearance" aria-labelledby="tab-appearance" data-category="appearance" hidden>
+                    <header class="panel-head">
+                        <h2 class="panel-title">外観</h2>
+                        <p class="panel-summary">e-class 全体の見た目</p>
+                    </header>
+                    <ul class="settings">
+                        <li class="setting">
+                            <label class="setting-row" for="enableDarkMode">
+                                <span class="setting-text">
+                                    <span class="setting-name">ダークモード <span class="tag">Beta</span></span>
+                                    <span class="setting-desc">e-classをダークテーマで表示します</span>
+                                </span>
+                                <input type="checkbox" id="enableDarkMode" class="switch" role="switch" />
+                            </label>
+                        </li>
+                    </ul>
+                </section>
 
-            <div class="settings-section">
-                <h2 class="section-title">締切表示</h2>
+                <section class="panel" role="tabpanel" id="panel-developer" aria-labelledby="tab-developer" data-category="developer" hidden>
+                    <header class="panel-head">
+                        <h2 class="panel-title">開発者向け</h2>
+                        <p class="panel-summary">不具合を調べるときの設定</p>
+                    </header>
+                    <ul class="settings">
+                        <li class="setting">
+                            <label class="setting-row" for="debugMode">
+                                <span class="setting-text">
+                                    <span class="setting-name">デバッグモード</span>
+                                    <span class="setting-desc">コンソールに詳細なデバッグ情報を表示します</span>
+                                </span>
+                                <input type="checkbox" id="debugMode" class="switch" role="switch" />
+                            </label>
+                        </li>
+                    </ul>
+                </section>
 
-                <div class="setting-item">
-                    <label class="toggle-label">
-                        <input
-                            type="checkbox"
-                            id="enableDeadlineHighlight"
-                            class="toggle-checkbox"
-                        />
-                        <span class="toggle-slider"></span>
-                        <span class="toggle-text">締切の強調表示</span>
-                    </label>
-                    <p class="description">
-                        締切が近い課題を強調し、トップページに一覧表示します
-                    </p>
-                </div>
-            </div>
-
-            <div class="settings-section">
-                <h2 class="section-title">コース表示オプション</h2>
-
-                <div class="setting-item">
-                    <label class="toggle-label">
-                        <input
-                            type="checkbox"
-                            id="enableTocSidebar"
-                            class="toggle-checkbox"
-                        />
-                        <span class="toggle-slider"></span>
-                        <span class="toggle-text">目次を表示</span>
-                    </label>
-                    <p class="description">
-                        コースページの左の列（タイムラインの下）に目次を表示します
-                    </p>
-                </div>
-            </div>
-
-            <div class="settings-section">
-                <h2 class="section-title">外観設定</h2>
-
-                <div class="setting-item">
-                    <label class="toggle-label">
-                        <input
-                            type="checkbox"
-                            id="enableDarkMode"
-                            class="toggle-checkbox"
-                        />
-                        <span class="toggle-slider"></span>
-                        <span class="toggle-text"
-                            >ダークモード
-                            <span class="beta-badge">Beta</span></span
-                        >
-                    </label>
-                    <p class="description">e-classをダークテーマで表示します</p>
-                </div>
-            </div>
-
-            <div class="settings-section">
-                <h2 class="section-title">開発者向けオプション</h2>
-
-                <div class="setting-item">
-                    <label class="toggle-label">
-                        <input
-                            type="checkbox"
-                            id="debugMode"
-                            class="toggle-checkbox"
-                        />
-                        <span class="toggle-slider"></span>
-                        <span class="toggle-text">デバッグモード</span>
-                    </label>
-                    <p class="description">
-                        コンソールに詳細なデバッグ情報を表示します
-                    </p>
-                </div>
-            </div>
-
-            <div class="status" id="status"></div>
+                <p class="empty" id="searchEmpty" hidden></p>
+                <p class="status" id="status" role="status" aria-live="polite"></p>
+            </main>
         </div>
 
         <script src="utils/settings.js"></script>
