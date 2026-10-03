@@ -293,8 +293,8 @@ e-classページをダークテーマで表示します。
 すべてのe-classページの下部にBetterE-classのバージョン情報が表示されます。
 
 **表示内容**
-- 「Powered by WebClass | BetterE-class v1.8.2」
-- 「BetterE-class v1.8.2」をクリックするとGitHubリポジトリが開く
+- 「Powered by WebClass | BetterE-class v1.8.3」
+- 「BetterE-class v1.8.3」をクリックするとGitHubリポジトリが開く
 
 **用途**
 - バージョン確認
