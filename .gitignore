@@ -6,9 +6,6 @@ release/
 # Local AI state
 .claude/settings.local.json
 
-# Prettier
-.prettierrc
-
 # Mac OS
 .DS_Store
 
