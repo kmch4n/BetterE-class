@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: 脆弱性の報告
+    url: https://github.com/kmch4n/BetterE-class/security/advisories/new
+    about: 脆弱性は公開の Issue ではなく、こちらから非公開で報告してください。
+  - name: 使い方
+    url: https://github.com/kmch4n/BetterE-class/blob/main/docs/BetterE-class.md
+    about: すべての機能と使い方をまとめています。

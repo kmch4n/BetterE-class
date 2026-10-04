@@ -1,0 +1,33 @@
+name: 機能の要望
+description: 新しい機能や、今ある機能の改善を提案する
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        提案ありがとうございます。投稿の前に、同じ内容の Issue がないか検索してください。
+  - type: textarea
+    id: problem
+    attributes:
+      label: 困っていること
+      description: いま e-class を使っていて、何が不便かを書いてください。
+      placeholder: 締切が近い課題が複数あると、どれから手を付ければよいかわかりにくい
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: 提案する内容
+      description: どうなっていれば解決するかを書いてください。
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: ほかに考えた方法
+  - type: checkboxes
+    id: contribute
+    attributes:
+      label: 実装への参加
+      options:
+        - label: 自分で実装してみたい
