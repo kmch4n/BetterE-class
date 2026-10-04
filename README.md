@@ -137,15 +137,20 @@ BetterE-class は [GitHub Releases](https://github.com/kmch4n/BetterE-class/rele
 | `declarativeNetRequest` | ファイルをダウンロードではなくブラウザ内で表示する |
 | `clipboardWrite` | クイズの問題のコピー |
 
-## 開発
+## 開発に参加する
 
-ビルドは不要で、`extension` フォルダがそのまま拡張機能になります。リポジトリを取得し、上の手順4で `extension` フォルダを読み込めば手元のソースで動きます。テストは Node.js の標準機能で動きます。
+不具合の報告、要望、Pull Request を歓迎します。
+
+- 開発の進め方と決まりごと: [CONTRIBUTING.md](CONTRIBUTING.md)
+- 不具合の報告・要望: [Issues](https://github.com/kmch4n/BetterE-class/issues/new/choose)
+- 脆弱性の報告: [SECURITY.md](SECURITY.md)
+- 実装の詳細: [docs/TechNote.md](docs/TechNote.md)
+
+ビルドは不要で、`extension` フォルダがそのまま拡張機能になります。リポジトリを取得し、上の手順4で `extension` フォルダを読み込めば手元のソースで動きます。
 
 ```bash
 node --test tests/*.test.js
 ```
-
-構成や実装の詳細は [docs/TechNote.md](docs/TechNote.md) を参照してください。不具合や要望は [Issues](https://github.com/kmch4n/BetterE-class/issues) へどうぞ。
 
 > [!WARNING]
 > e-class の画面構成が変わると、予告なく動かなくなることがあります。利用は各自の判断でお願いします。本拡張機能の利用によって生じた損害について、作者は責任を負いません。
