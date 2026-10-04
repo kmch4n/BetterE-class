@@ -24,6 +24,7 @@
 - Do not add external data transmission, broader host permissions, or new Chrome permissions without explicit approval.
 - Do not edit generated `_metadata`, archived `release/` packages, or reference data unless the task explicitly requires it.
 - Update `extension/manifest.json` when adding, removing, or reordering injected scripts.
+- Before cutting a release or writing release notes, read `docs/RELEASING.md` and follow its steps and note format.
 
 ## Verification
 
