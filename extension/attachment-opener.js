@@ -94,13 +94,13 @@
                     }
                 }
             } catch (e) {
-                if (DEBUG) console.warn("[BetterE-class] Error accessing button frame:", e);
+                if (DEBUG) console.log("[BetterE-class] Error accessing button frame:", e);
             }
 
             if (buttonFrame) {
                 buttonFrame.postMessage(message, "*");
             } else {
-                if (DEBUG) console.warn("[BetterE-class] buttonFrame not found, skipping postMessage");
+                if (DEBUG) console.log("[BetterE-class] buttonFrame not found, skipping postMessage");
             }
             // Note: If button frame not found, isQuizPage check should prevent this from being called
         } catch (error) {

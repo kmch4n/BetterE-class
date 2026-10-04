@@ -29,7 +29,7 @@
     const container = topButton.parentElement;
 
     if (!container) {
-        if (DEBUG) console.warn("[BetterE-class] Parent container not found");
+        if (DEBUG) console.log("[BetterE-class] Parent container not found");
         return;
     }
 

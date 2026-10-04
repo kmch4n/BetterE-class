@@ -91,7 +91,7 @@
                             }
                         }
                     } catch (e) {
-                        if (DEBUG) console.warn("[BetterE-class] Error accessing frames:", e);
+                        if (DEBUG) console.log("[BetterE-class] Error accessing frames:", e);
                     }
 
                     if (chapterFrame) {
@@ -147,7 +147,7 @@
                     }
                 }
             } catch (e) {
-                if (DEBUG) console.warn("[BetterE-class] Error accessing frames:", e);
+                if (DEBUG) console.log("[BetterE-class] Error accessing frames:", e);
             }
 
             if (chapterFrame) {

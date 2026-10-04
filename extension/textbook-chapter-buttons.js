@@ -150,7 +150,7 @@
         try {
             const jsonScript = document.querySelector("script#json-data");
             if (!jsonScript) {
-                if (DEBUG) console.warn("[BetterE-class] JSON data not found");
+                if (DEBUG) console.log("[BetterE-class] JSON data not found");
                 return;
             }
 
@@ -302,7 +302,7 @@
 
         const currentPage = getCurrentPageNumber();
         if (!currentPage) {
-            if (DEBUG) console.warn("[BetterE-class] Could not determine current page");
+            if (DEBUG) console.log("[BetterE-class] Could not determine current page");
             return;
         }
 
@@ -343,7 +343,7 @@
     function observePageChanges() {
         const tocTable = document.querySelector("#TOCLayout");
         if (!tocTable) {
-            if (DEBUG) console.warn("[BetterE-class] TOC table not found");
+            if (DEBUG) console.log("[BetterE-class] TOC table not found");
             return;
         }
 
@@ -625,7 +625,7 @@
                 // Find the parent row
                 const row = link.closest("tr[data-page]");
                 if (!row) {
-                    if (DEBUG) console.warn("[BetterE-class] Could not find parent row for attachment");
+                    if (DEBUG) console.log("[BetterE-class] Could not find parent row for attachment");
                     return;
                 }
 

@@ -288,6 +288,9 @@
                     } catch (mutedError) {
                         console.warn("[BetterE-class] Video autoplay failed:", mutedError);
                     }
+                } else if (error && error.name === "AbortError") {
+                    // The page paused or reloaded the video before playback started.
+                    if (DEBUG) console.log("[BetterE-class] Video autoplay interrupted:", error);
                 } else {
                     console.warn("[BetterE-class] Video autoplay failed:", error);
                 }
